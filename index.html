@@ -547,8 +547,24 @@ body:not(.light) input.rmslider{background:linear-gradient(90deg,#0a7cff var(--v
 const LEVELS = {
   Primary:   {label:"Primary School", classes:["Standard 1","Standard 2","Standard 3","Standard 4","Standard 5","Standard 6","Standard 7","Standard 8"], icon:"📘", color:"#1F8A54"},
   Secondary: {label:"Secondary School", classes:["Form 1","Form 2","Form 3","Form 4"], icon:"🎓", color:"#1C6FA6"},
-  Tertiary:  {label:"Tertiary / College", classes:["Certificate","Diploma","Year 1","Year 2","Year 3","Year 4"], icon:"🏫", color:"#6B3FA0"},
+  Tertiary:  {label:"Tertiary / College", classes:["Engineering","IT & Computing","Health Sciences","Education","Business & Management","Agriculture & Natural Resources","Sciences","Law","Humanities & Social Sciences","Architecture & Construction","Tourism & Hospitality","Media & Communication","Theology","Other Courses"], sub:"Engineering • IT • Health • Education & more", legacy:"Other Courses", icon:"🏫", color:"#6B3FA0"},
 };
+const TIER_SEP=" | ";
+const TIERS=[
+  {k:"Basic",icon:"🌱",d:"New to this field? Start here with the fundamentals."},
+  {k:"Standard",icon:"📗",d:"You know the basics and want to go deeper."},
+  {k:"Advanced",icon:"🚀",d:"For professionals and experts in this field."}
+];
+function clsOf(b){return String(b.class||"").split(TIER_SEP)[0];}
+function tierOf(b){return String(b.class||"").split(TIER_SEP)[1]||"";}
+function inTier(b,t){return !t||t==="*"||tierOf(b)===t;}
+function inCls(b,level,c){
+  if(b.level!==level) return false;
+  const bc=clsOf(b);
+  if(bc===c) return true;
+  const L=LEVELS[level];
+  return !!(L&&L.legacy===c&&!L.classes.includes(bc));
+}
 const BADGE_COLORS = ["#E85D8A","#F2994A","#E0B32B","#2FA36B","#3B8FD4","#8A54C4","#E0724F","#4C5FD4"];
 const ADMIN_USER = "billz", ADMIN_PASS = "billz999";
 
@@ -689,7 +705,7 @@ function dlUrl(b){ return b.file_path+"?download="+encodeURIComponent((b.title||
 function bookCard(b){
   const ok=!!b.file_path;
   return `<div class="book"><div class="thumb" ${ok?`data-src="${esc(b.file_path)}" onclick="previewBook('${bkey(b)}')"`:''}>📄</div>
-    <div class="meta"><b>${esc(b.title)}</b><div>${esc(b.subject)} • ${esc(b.author)}</div><div>${esc(b.level)} → ${esc(b.class)}</div></div>
+    <div class="meta"><b>${esc(b.title)}</b><div>${esc(b.subject)} • ${esc(b.author)}</div><div>${esc(b.level)} → ${esc(clsOf(b))}${tierOf(b)?` • ${esc(tierOf(b))}`:""}</div></div>
     <div class="acts">${ok?`<button class="open" onclick="previewBook('${bkey(b)}')">Preview</button><a class="open dl" href="${esc(dlUrl(b))}">⬇ Save</a>`:''}</div></div>`;
 }
 
@@ -714,7 +730,13 @@ function route(){
   document.getElementById("aiFab").style.display = !["ai","admin",undefined].includes(parts[0]) ? "flex" : "none";
 
   if(parts[0] === "level" && parts[1] && LEVELS[parts[1]] && !parts[2]) return renderLevel(app, parts[1]);
-  if(parts[0] === "level" && parts[1] && LEVELS[parts[1]] && parts[2]) return parts[3] ? renderClassBooks(app, parts[1], parts[2], parts[3]) : renderClass(app, parts[1], parts[2]);
+  if(parts[0] === "level" && parts[1] && LEVELS[parts[1]] && parts[2]){
+    if(parts[1] === "Tertiary"){
+      if(!parts[3]) return renderTiers(app, parts[2]);
+      return parts[4] ? renderClassBooks(app, parts[1], parts[2], parts[4], parts[3]) : renderClass(app, parts[1], parts[2], parts[3]);
+    }
+    return parts[3] ? renderClassBooks(app, parts[1], parts[2], parts[3]) : renderClass(app, parts[1], parts[2]);
+  }
   if(parts[0] === "start") return renderStart(app);
   if(parts[0] === "library") return renderLibrary(app);
   if(parts[0] === "search") return renderSearch(app, parts[1]);
@@ -744,39 +766,55 @@ function renderLibrary(app){
   const D={Primary:["Build strong foundations for a brighter future.","pri"],Secondary:["Gain knowledge, develop skills, reach your goals.","sec"],Tertiary:["Advance your education, shape your career.","ter"]};
   app.innerHTML=`<div class="phero"><div class="pt"><div class="brandline">📖 <b>Edu <i>Library</i></b></div><h2 style="margin-top:18px">Welcome Back!</h2><p>Your journey to knowledge continues here.</p></div><div class="ph wel">${flag()}</div></div><p class="mot" id="mot">✨ Education changes lives</p>
    <div class="chooser"><h3>Choose Your Education Level</h3><p class="sub">Select your level to access classes and learning materials.</p>
-   ${Object.entries(LEVELS).map(([k,l])=>`<a class="lv ${D[k][1]}" href="#/level/${k}"><div class="orb2">${l.icon}</div><div><b>${esc(l.label)}</b><em>${l.classes[0]} – ${l.classes[l.classes.length-1]}</em><p>${D[k][0]}</p></div><i class="chev">›</i></a>`).join("")}</div>${recentRows()}`;
+   ${Object.entries(LEVELS).map(([k,l])=>`<a class="lv ${D[k][1]}" href="#/level/${k}"><div class="orb2">${l.icon}</div><div><b>${esc(l.label)}</b><em>${l.sub||(l.classes[0]+" – "+l.classes[l.classes.length-1])}</em><p>${D[k][0]}</p></div><i class="chev">›</i></a>`).join("")}</div>${recentRows()}`;
 }
 
-const TAG={"Standard 1":"Start your learning journey","Standard 2":"Build your knowledge","Standard 3":"Learn and grow","Standard 4":"Explore new ideas","Standard 5":"Be curious, be great","Standard 6":"Stronger skills, bigger dreams","Standard 7":"Learn today, lead tomorrow","Standard 8":"Achieve your goals","Form 1":"Build your foundation for success.","Form 2":"Expand your knowledge and gain new skills.","Form 3":"Prepare for higher opportunities.","Form 4":"Step closer to your dreams.","Certificate":"Short courses and practical skills (6 months – 1 year).","Diploma":"In-depth training and professional skills (1 – 2 years).","Year 1":"Begin your degree journey (First year).","Year 2":"Build on your knowledge and skills (Second year).","Year 3":"Advance your expertise (Third year).","Year 4":"Complete your degree (Final year)."};
+const TAG={"Standard 1":"Start your learning journey","Standard 2":"Build your knowledge","Standard 3":"Learn and grow","Standard 4":"Explore new ideas","Standard 5":"Be curious, be great","Standard 6":"Stronger skills, bigger dreams","Standard 7":"Learn today, lead tomorrow","Standard 8":"Achieve your goals","Form 1":"Build your foundation for success.","Form 2":"Expand your knowledge and gain new skills.","Form 3":"Prepare for higher opportunities.","Form 4":"Step closer to your dreams.","Engineering":"Civil, mechanical, electrical, mining and more.","IT & Computing":"Computer science, software, networks and information systems.","Health Sciences":"Medicine, nursing, pharmacy, public health and lab sciences.","Education":"Teacher training, curriculum and education management.","Business & Management":"Accounting, finance, marketing, economics and HR.","Agriculture & Natural Resources":"Crops, animals, forestry, fisheries and environment.","Sciences":"Biology, chemistry, physics, maths and statistics.","Law":"Legal studies, human rights and justice.","Humanities & Social Sciences":"Languages, history, psychology, development and public administration.","Architecture & Construction":"Architecture, surveying, planning and building.","Tourism & Hospitality":"Tourism, hotel management, wildlife and heritage.","Media & Communication":"Journalism, media, public relations and communication.","Theology":"Theology, ministry and religious studies.","Other Courses":"Every other course, plus books added before the new categories."};
+const TICON={"Engineering":"⚙️","IT & Computing":"💻","Health Sciences":"🩺","Education":"🎓","Business & Management":"💼","Agriculture & Natural Resources":"🌱","Sciences":"🔬","Law":"⚖️","Humanities & Social Sciences":"🌍","Architecture & Construction":"🏗️","Tourism & Hospitality":"🏨","Media & Communication":"🎙️","Theology":"📖","Other Courses":"📚"};
+const TERT_KEYS=[["Engineering",/\bengineer(?:ing|s)?\b/i],["IT & Computing",/\b(?:information technology|information systems?|computer science|computing|software|ict|cyber\s?security|networking)\b/i],["Health Sciences",/\b(?:medicine|medical|nursing|pharmacy|public health|midwifery|clinical|health sciences?|laboratory|biomedical)\b/i],["Business & Management",/\b(?:accounting|accountancy|finance|marketing|economics|business|commerce|banking|human resource|procurement|entrepreneurship)\b/i],["Agriculture & Natural Resources",/\b(?:agriculture|agricultural|agribusiness|forestry|fisheries|horticulture|environmental|natural resources?)\b/i],["Law",/\b(?:law|legal|llb)\b/i],["Architecture & Construction",/\b(?:architecture|surveying|construction|quantity surveying|physical planning|land management)\b/i],["Tourism & Hospitality",/\b(?:tourism|hospitality|hotel|wildlife)\b/i],["Media & Communication",/\b(?:journalism|media|public relations|communication)\b/i],["Theology",/\b(?:theology|ministry|religious studies|divinity)\b/i],["Education",/\b(?:education|teaching|teacher training)\b/i],["Sciences",/\b(?:biology|chemistry|physics|mathematics|statistics|geology|sciences?)\b/i],["Humanities & Social Sciences",/\b(?:sociology|psychology|history|linguistics|languages?|public administration|development studies|political science|social work|humanities)\b/i]];
+function tertCategory(x){for(const[c,r]of TERT_KEYS)if(r.test(x))return c;return "";}
 const GR={Primary:["#F5B400,#FF8A00","#FF7A18,#F2590C","#F0284A,#C4102F","#E01FA0,#9B2BE0","#7B3FEA,#5B2BD0","#1E7CF2,#1550D0","#12C4C4,#0A8FA8","#22C55E,#0E9F3E"],Secondary:["#1E7CF2,#0F4FD0","#22C55E,#0E9F3E","#FF9A1F,#E06A00","#8B5CFF,#5B2BD0"],Tertiary:["#8B3FE8,#5B2BD0","#1E7CF2,#0F4FD0","#22C55E,#0E9F3E","#FF9A1F,#E06A00","#8B5CFF,#5B2BD0","#12C4C4,#0A8FA8"]};
 function renderLevel(app, level){
   const l=LEVELS[level], books=loadBooks(), t=l.label.split(" ");
   setHeader(`<button class="back" onclick="location.hash='#/library'">←</button><div class="brandline">📖 <b>Edu <i>Library</i></b></div>`);
   setActiveNav("library");
   const cards=l.classes.map((c,i)=>{
-    const n=new Set(books.filter(b=>b.level===level&&b.class===c).map(b=>b.subject||"General")).size, g=GR[level][i%GR[level].length];
-    return `<a class="ct" style="background:linear-gradient(135deg,${g})" href="#/level/${level}/${encodeURIComponent(c)}"><div class="co">${level==="Tertiary"?(c.startsWith("Year")?c.slice(5):"🎓"):"📖"}</div><div class="cx"><b>${esc(c)}</b><p>${TAG[c]||""}</p>${level==="Secondary"?`<span class="sp">📖 ${n} Subject${n!==1?"s":""}</span>`:""}</div><i>›</i></a>`;}).join("");
+    const n=new Set(books.filter(b=>inCls(b,level,c)).map(b=>b.subject||"General")).size, g=GR[level][i%GR[level].length];
+    return `<a class="ct" style="background:linear-gradient(135deg,${g})" href="#/level/${level}/${encodeURIComponent(c)}"><div class="co">${level==="Tertiary"?(TICON[c]||"🎓"):"📖"}</div><div class="cx"><b>${esc(c)}</b><p>${TAG[c]||""}</p>${level==="Secondary"?`<span class="sp">📖 ${n} Subject${n!==1?"s":""}</span>`:""}</div><i>›</i></a>`;}).join("");
   const d={Primary:"Build strong foundations for a brighter future.",Secondary:"Build your knowledge, develop your skills, achieve your goals.",Tertiary:"Gain advanced knowledge, build your career and create a brighter future."}[level];
-  app.innerHTML=`<div class="lvlpg"><div class="phero"><div class="pt"><h2 data-whole="${esc(l.label)}">${esc(t[0])} <i>${esc(t.slice(1).join(" "))}</i></h2><h3>${l.classes[0]} – ${l.classes[l.classes.length-1]}</h3><p>${d}</p></div><div class="ph ${level.slice(0,3).toLowerCase()}">${flag()}</div></div><div class="cgrid ${level}">${cards}</div></div>`;
+  app.innerHTML=`<div class="lvlpg"><div class="phero"><div class="pt"><h2 data-whole="${esc(l.label)}">${esc(t[0])} <i>${esc(t.slice(1).join(" "))}</i></h2><h3>${l.sub||(l.classes[0]+" – "+l.classes[l.classes.length-1])}</h3><p>${d}</p></div><div class="ph ${level.slice(0,3).toLowerCase()}">${flag()}</div></div><div class="cgrid ${level}">${cards}</div></div>`;
 }
 
 function subIcon(k){k=k.toLowerCase();const m=[["math","🧮"],["engl","📖"],["bio","🧬"],["chem","⚗️"],["phys","⚛️"],["geo","🌍"],["hist","🏛️"],["comp","💻"],["agri","🌱"],["bus","💼"]];for(const[a,i]of m)if(k.includes(a))return i;return"📘";}
-function renderClass(app, level, cls){
-  const l=LEVELS[level], bs=loadBooks().filter(b=>b.level===level&&b.class===cls), subs={};
-  bs.forEach(b=>{const k=b.subject||"General";subs[k]=(subs[k]||0)+1;});
-  const u=`#/level/${level}/${encodeURIComponent(cls)}/`;
-  setHeader(`<button class="back" onclick="location.hash='#/level/${level}'">←</button><h2>${esc(l.label)}</h2>`);
+function tierName(t){return t==="*"?"All levels":(t||"");}
+function renderTiers(app, cls){
+  const all=loadBooks().filter(b=>inCls(b,"Tertiary",cls));
+  const u=`#/level/Tertiary/${encodeURIComponent(cls)}/`;
+  setHeader(`<button class="back" onclick="location.hash='#/level/Tertiary'">←</button><h2>${esc(LEVELS.Tertiary.label)}</h2>`);
   setActiveNav("library");
-  app.innerHTML=`<div class="pagehead"><h2>${esc(cls)}</h2><p>Choose a subject</p></div>`+(bs.length?`<div class="sublist"><a class="subrow" href="${u}*"><span>📚</span>All books<i>${bs.length}</i><em>›</em></a>${Object.entries(subs).map(([k,n])=>`<a class="subrow" href="${u}${encodeURIComponent(k)}"><span>${subIcon(k)}</span>${esc(k)}<i>${n}</i><em>›</em></a>`).join("")}</div>`:`<div class="empty">No books available for ${esc(cls)} yet.</div>`);
+  const cards=TIERS.map((t,i)=>{
+    const n=all.filter(b=>tierOf(b)===t.k).length;
+    return `<a class="ct" style="background:linear-gradient(135deg,${GR.Tertiary[i%GR.Tertiary.length]})" href="${u}${t.k}"><div class="co">${t.icon}</div><div class="cx"><b>${t.k}</b><p>${t.d}</p><span class="sp">📖 ${n} Book${n!==1?"s":""}</span></div><i>›</i></a>`;}).join("");
+  app.innerHTML=`<div class="pagehead"><h2>${esc(cls)}</h2><p>Choose the level that fits you</p></div><div class="cgrid Tertiary">${cards}</div><div class="sublist" style="margin-top:12px"><a class="subrow" href="${u}*"><span>📚</span>All levels<i>${all.length}</i><em>›</em></a></div>`;
 }
-function renderClassBooks(app, level, cls, subj){
+function renderClass(app, level, cls, tier){
+  const l=LEVELS[level], bs=loadBooks().filter(b=>inCls(b,level,cls)&&inTier(b,tier)), subs={};
+  bs.forEach(b=>{const k=b.subject||"General";subs[k]=(subs[k]||0)+1;});
+  const u=`#/level/${level}/${encodeURIComponent(cls)}/`+(tier?encodeURIComponent(tier)+"/":"");
+  const back=tier?`#/level/${level}/${encodeURIComponent(cls)}`:`#/level/${level}`;
+  setHeader(`<button class="back" onclick="location.hash='${back}'">←</button><h2>${esc(l.label)}</h2>`);
+  setActiveNav("library");
+  app.innerHTML=`<div class="pagehead"><h2>${esc(cls)}${tier?` • ${esc(tierName(tier))}`:""}</h2><p>Choose a subject</p></div>`+(bs.length?`<div class="sublist"><a class="subrow" href="${u}*"><span>📚</span>All books<i>${bs.length}</i><em>›</em></a>${Object.entries(subs).map(([k,n])=>`<a class="subrow" href="${u}${encodeURIComponent(k)}"><span>${subIcon(k)}</span>${esc(k)}<i>${n}</i><em>›</em></a>`).join("")}</div>`:`<div class="empty">No books available for ${esc(cls)}${tier?` (${esc(tierName(tier))})`:""} yet.</div>`);
+}
+function renderClassBooks(app, level, cls, subj, tier){
   const l = LEVELS[level];
-  const books = loadBooks().filter(b=>b.level===level && b.class===cls && (subj==='*'||b.subject===subj||(!b.subject&&subj==='General')));
-  setHeader(`<button class="back" onclick="location.hash='#/level/${level}/${encodeURIComponent(cls)}'">←</button><h2>${esc(l.label)}</h2>`);
+  const books = loadBooks().filter(b=>inCls(b,level,cls) && inTier(b,tier) && (subj==='*'||b.subject===subj||(!b.subject&&subj==='General')));
+  const backUrl = `#/level/${level}/${encodeURIComponent(cls)}`+(tier?"/"+encodeURIComponent(tier):"");
+  setHeader(`<button class="back" onclick="location.hash='${backUrl}'">←</button><h2>${esc(l.label)}</h2>`);
   setActiveNav("library");
   app.innerHTML = `
     <div class="banner" style="background:linear-gradient(135deg,${l.color},${l.color}CC)">
-      <h2>${esc(cls)} Books</h2><p>${esc(l.label)} → ${esc(cls)}</p></div>
+      <h2>${esc(cls)} Books</h2><p>${esc(l.label)} → ${esc(cls)}${tier?` • ${esc(tierName(tier))}`:""}</p></div>
     <form class="search" onsubmit="event.preventDefault()"><input placeholder="Search in ${esc(cls)}..." oninput="filterClassBooks(this.value)"></form>
     <div id="classBooks">${books.length ? books.map(bookCard).join("") : `<div class="empty">No books available for ${esc(cls)} yet.</div>`}</div>`;
   window._classBooks = books;
@@ -874,8 +912,9 @@ function renderAdminPanel(app){
         <div class="row2"><div class="field"><label>Subject</label><input id="f_subject"></div><div class="field"><label>Author</label><input id="f_author"></div></div>
         <div class="row2">
           <div class="field"><label>Education level</label><select id="f_level">${Object.keys(LEVELS).map(k=>`<option value="${k}">${LEVELS[k].label}</option>`).join("")}</select></div>
-          <div class="field"><label>Class</label><select id="f_class"></select></div>
+          <div class="field"><label id="f_classLbl">Class</label><select id="f_class"></select></div>
         </div>
+        <div class="field" id="tierWrap" style="display:none"><label>Book level (who is it for?)</label><select id="f_tier">${TIERS.map(t=>`<option value="${t.k}">${t.k}</option>`).join("")}</select></div>
         <div class="note" id="dest"></div>
         <div class="field"><label>Description</label><textarea id="f_desc" rows="3"></textarea></div>
         <div class="field"><label>Save to server</label><select id="f_server">${SERVERS.map(x=>`<option value="${x.id}"${x.ok?"":" disabled"}>${x.name}${x.ok?"":" (not connected yet)"}</option>`).join("")}</select></div>
@@ -913,8 +952,11 @@ function fillClasses(){
   const lv = document.getElementById("f_level").value;
   const sel = document.getElementById("f_class");
   sel.innerHTML = LEVELS[lv].classes.map(c=>`<option>${c}</option>`).join("");
-  const upd = ()=>{ document.getElementById("dest").textContent = `Upload destination: ${LEVELS[lv].label} → ${sel.value}`; };
-  sel.onchange = upd; upd();
+  const lbl=document.getElementById("f_classLbl"); if(lbl) lbl.textContent = lv==="Tertiary" ? "Course category" : "Class";
+  const tw=document.getElementById("tierWrap"), tsel=document.getElementById("f_tier");
+  if(tw) tw.style.display = lv==="Tertiary" ? "" : "none";
+  const upd = ()=>{ document.getElementById("dest").textContent = `Upload destination: ${LEVELS[lv].label} → ${sel.value}`+(lv==="Tertiary"&&tsel?` → ${tsel.value}`:""); };
+  sel.onchange = upd; if(tsel) tsel.onchange = upd; upd();
 }
 
 async function saveBook(){
@@ -922,7 +964,9 @@ async function saveBook(){
   const subject = document.getElementById("f_subject").value.trim();
   const author = document.getElementById("f_author").value.trim();
   const level = document.getElementById("f_level").value;
-  const cls = document.getElementById("f_class").value;
+  const cls0 = document.getElementById("f_class").value;
+  const tier = level==="Tertiary" ? (document.getElementById("f_tier")||{}).value||"" : "";
+  const cls = cls0 + (tier ? TIER_SEP+tier : "");
   const desc = document.getElementById("f_desc").value.trim();
   const fileInput = document.getElementById("f_file");
   const msg = document.getElementById("uploadMsg");
@@ -933,7 +977,7 @@ async function saveBook(){
   const S=srv((document.getElementById("f_server")||{}).value||"A");
   if(!S.ok){ msg.style.color = "#B3261E"; msg.textContent = S.name+" is not connected yet."; return; }
   const file = fileInput.files[0];
-  const path = `${level}/${cls}/${Date.now()}_${file.name}`.replace(/\s+/g,"_");
+  const path = `${level}/${cls0}${tier?"/"+tier:""}/${Date.now()}_${file.name}`.replace(/\s+/g,"_");
   btn.disabled = true;
   msg.style.color = "var(--sub)";
   msg.textContent = "Uploading PDF...";
@@ -947,7 +991,7 @@ async function saveBook(){
     if(dbErr) throw dbErr;
     await refreshBooks();
     msg.style.color = "var(--primary)";
-    msg.textContent = `Saved to ${level} → ${cls}.`;
+    msg.textContent = `Saved to ${level} → ${cls0}${tier?" → "+tier:""}.`;
     ["f_title","f_subject","f_author","f_desc"].forEach(id=>document.getElementById(id).value="");
     fileInput.value = "";
   } catch(e){
@@ -1059,10 +1103,36 @@ function nyCandidates(){
   order.forEach(pre=>cachedVoices.filter(v=>(v.lang||"").toLowerCase().replace("_","-").split("-")[0]===pre).sort((a,b)=>voiceScore(b)-voiceScore(a)).forEach(v=>out.push(v)));
   return out;
 }
+/* male / female choice: one setting used for BOTH English and Chichewa ("" = automatic) */
+function getGender(){try{const g=localStorage.getItem("edu_ai_gender");return g==="F"||g==="M"?g:"";}catch(e){return "";}}
+function setGender(g){try{if(g)localStorage.setItem("edu_ai_gender",g);else localStorage.removeItem("edu_ai_gender");}catch(e){}}
+/* best voices first, but voices of the wanted gender come before unknown ones, then the opposite gender */
+function orderForGender(list,g){
+  if(!g)return list;
+  return list.filter(v=>voiceGender(v)===g).concat(list.filter(v=>voiceGender(v)==="?"),list.filter(v=>voiceGender(v)!=="?"&&voiceGender(v)!==g));
+}
+/* on automatic, Chichewa follows the gender of the English voice so the two always match */
+function wantedGender(){
+  const g=getGender();if(g)return g;
+  const e=pickCalmVoice(),eg=e?voiceGender(e):"?";
+  return eg==="?"?"":eg;
+}
+/* if the phone has no voice of the wanted gender, lower or raise the pitch so it still sounds male or female */
+function genderPitch(v,g){
+  if(!g)return 1;
+  if(!v)return g==="M"?0.78:1;
+  const vg=voiceGender(v);
+  if(vg===g||vg==="?")return 1;
+  return g==="M"?0.75:1.3;
+}
+function ttsPitch(v,ny){
+  const p=V_STYLES[getVStyle()].p*genderPitch(v,ny?wantedGender():getGender());
+  return Math.min(2,Math.max(0.1,p));
+}
 function pickNyVoice(){
-  const c=getNyChoice();
-  if(c){const v=cachedVoices.find(v=>voiceKey(v)===c);if(v)return v;}
-  return nyCandidates()[0]||null;
+  const c=getNyChoice(),g=getGender();
+  if(c){const v=cachedVoices.find(v=>voiceKey(v)===c);if(v&&(!g||voiceGender(v)===g||voiceGender(v)==="?"))return v;}
+  return orderForGender(nyCandidates(),wantedGender())[0]||null;
 }
 
 /* voice gender is guessed from the voice's name; age is a style (pitch + speed) applied on top of any voice */
@@ -1094,11 +1164,11 @@ function voiceScore(v){
 function voiceIsNatural(v){return voiceScore(v)>=5;}
 function pickCalmVoice(){
   if(!cachedVoices.length) return null;
-  const chosen=getVoiceChoice();
-  if(chosen){const c=cachedVoices.find(v=>voiceKey(v)===chosen);if(c)return c;}
+  const chosen=getVoiceChoice(),g=getGender();
+  if(chosen){const c=cachedVoices.find(v=>voiceKey(v)===chosen);if(c&&(!g||voiceGender(c)===g||voiceGender(c)==="?"))return c;}
   const en=cachedVoices.filter(v=>/^en/i.test(v.lang||""));
-  const pool=en.length?en:cachedVoices;
-  return pool.slice().sort((a,b)=>voiceScore(b)-voiceScore(a))[0]||null;
+  const pool=(en.length?en:cachedVoices).slice().sort((a,b)=>voiceScore(b)-voiceScore(a));
+  return orderForGender(pool,g)[0]||null;
 }
 
 
@@ -1117,7 +1187,7 @@ window.addEventListener("hashchange",aiMenuClose);
 /* ---- voice selector: every student picks the voice they like ---- */
 function aiVoiceOpen(){
   if(!("speechSynthesis" in window)){alert("This phone can't read aloud.");return;}
-  let showAll=false,gf="all";
+  let showAll=false;
   const o=document.createElement("div");o.className="aimodal";
   o.innerHTML=`<div class="card aiprof aivoice" role="dialog" aria-label="Choose a voice">
     <h3>${window.VOICE_ICON}<span>Choose AI voice</span></h3>
@@ -1138,12 +1208,12 @@ function aiVoiceOpen(){
     ttsStop();
     const u=new SpeechSynthesisUtterance(ny?nyClean("Moni! Ndine Edu AI, mphunzitsi wanu wa pa sukulu."):"Hello! I am Edu AI, your study assistant.");
     const st=V_STYLES[getVStyle()];u.rate=(ny?0.88:0.96)*st.r;u.pitch=st.p;
-    const v=ny?pickNyVoice():pickCalmVoice();if(v){u.voice=v;u.lang=v.lang||u.lang;}else if(ny)u.lang="sw-KE";
+    const v=ny?pickNyVoice():pickCalmVoice();if(v){u.voice=v;u.lang=v.lang||u.lang;}else if(ny)u.lang="sw-KE";u.pitch=ttsPitch(v,ny);
     try{speechSynthesis.speak(u);}catch(_){}
   }
   function draw(){
     cachedVoices=speechSynthesis.getVoices()||cachedVoices;
-    const cur=getVoiceChoice(),curNy=getNyChoice(),vs=getVStyle();
+    const cur=getVoiceChoice(),curNy=getNyChoice(),vs=getVStyle(),gf=getGender()||"all";
     const byScore=(a,b)=>voiceScore(b)-voiceScore(a);
     const okG=v=>gf==="all"||voiceGender(v)===gf;
     const en=cachedVoices.filter(v=>/^en/i.test(v.lang||"")).sort(byScore);
@@ -1152,22 +1222,26 @@ function aiVoiceOpen(){
     const shown=base.filter(okG);
     const nF=base.filter(v=>voiceGender(v)==="F").length,nM=base.filter(v=>voiceGender(v)==="M").length;
     let h='<div class="avh2">Voice type</div><div class="avtabs" id="avG">'+
-      [["all","All"],["F","👩 Female ("+nF+")"],["M","👨 Male ("+nM+")"]].map(t=>`<button type="button" data-g="${t[0]}" class="${gf===t[0]?"sel":""}">${t[1]}</button>`).join("")+'</div>';
+      [["all","Auto"],["F","👩 Female ("+nF+")"],["M","👨 Male ("+nM+")"]].map(t=>`<button type="button" data-g="${t[0]}" class="${gf===t[0]?"sel":""}">${t[1]}</button>`).join("")+'</div>';
     h+='<div class="avh2">Voice age</div><div class="avtabs" id="avS">'+Object.keys(V_STYLES).map(k=>`<button type="button" data-s="${k}" class="${vs===k?"sel":""}">${V_STYLES[k].l.replace(/^\S+\s/,m=>m)}</button>`).join("")+'</div>';
-    h+='<p class="hint" style="margin:0 0 10px">Age changes how high or deep the voice sounds and how fast it speaks. Some phones do not say if a voice is male or female, so tap to listen.</p>';
+    h+='<p class="hint" style="margin:0 0 10px">Age changes how high or deep the voice sounds and how fast it speaks. Male or Female is used for both English and Chichewa. Some phones do not say if a voice is male or female, so tap to listen. If the phone has no voice of that type, Edu AI makes the closest one sound deeper or higher.</p>';
     h+=row("","en",!cur,"<b>Automatic</b>","Picks the most natural voice on your phone");
     if(!cachedVoices.length)h+='<p class="hint" style="margin:10px 0">Loading voices… if none appear, your phone has no voices installed.</p>';
-    else if(!shown.length)h+='<p class="hint" style="margin:10px 0">No '+(gf==="F"?"female":"male")+' voice was found on this phone. Try "All", or use the voice age above to make a voice sound deeper or higher.</p>';
+    else if(!shown.length)h+='<p class="hint" style="margin:10px 0">No '+(gf==="F"?"female":"male")+' voice is marked on this phone, so Edu AI will use the closest voice and make it sound '+(gf==="F"?"higher":"deeper")+'.</p>';
     shown.forEach(v=>{const k=voiceKey(v);h+=row(k,"en",cur===k,esc(label(v))+(voiceIsNatural(v)?" ✨":""),esc(gtag(v))+" · "+esc(v.lang||"")+(v.localService===false?" · online":"")+(voiceIsNatural(v)?" · sounds most human":""));});
-    const ny=nyCandidates();
+    const nyAll=nyCandidates(),ny=nyAll.filter(v=>gf==="all"||voiceGender(v)===gf||voiceGender(v)==="?");
     h+='<h4 class="avh">🇲🇼 Voice for Chichewa</h4><p class="hint" style="margin:0 0 8px">Used when Edu AI reads an answer written in Chichewa. Chichewa has very few phone voices, so the closest clear voice is used.</p>';
-    h+=row("","ny",!curNy,"<b>Automatic</b>",ny.length?"Best match on your phone":"No close voice found — the normal voice will be used");
+    h+=row("","ny",!curNy,"<b>Automatic</b>",ny.length?(gf==="all"?"Best match on your phone":"Closest "+(gf==="F"?"female":"male")+" voice on your phone"):(nyAll.length?"Closest voice, tone changed to sound "+(gf==="F"?"female":"male"):"No close voice found — the normal voice will be used"));
     ny.forEach(v=>{const k=voiceKey(v);const l=(v.lang||"").toLowerCase();const tag=l.startsWith("ny")?"Chichewa":(l.startsWith("sw")?"Swahili · closest sound":"Similar sound");h+=row(k,"ny",curNy===k,esc(label(v)),esc(gtag(v))+" · "+esc(v.lang||"")+" · "+tag);});
     list.innerHTML=h;
     more.style.display=(en.length&&rest.length)?"":"none";
     more.textContent=showAll?"Show English voices only":"Show voices in other languages";
     const sc=list.scrollTop;
-    list.querySelectorAll("#avG button").forEach(b=>b.onclick=()=>{gf=b.dataset.g;draw();});
+    list.querySelectorAll("#avG button").forEach(b=>b.onclick=()=>{
+      const g=b.dataset.g==="all"?"":b.dataset.g;setGender(g);
+      if(g){[[getVoiceChoice,setVoiceChoice],[getNyChoice,setNyChoice]].forEach(pr=>{const k=pr[0](),vv=k&&cachedVoices.find(x=>voiceKey(x)===k);if(vv&&voiceGender(vv)!=="?"&&voiceGender(vv)!==g)pr[1]("");});}
+      const t=list.scrollTop;draw();list.scrollTop=t;say(false);
+    });
     list.querySelectorAll("#avS button").forEach(b=>b.onclick=()=>{setVStyle(b.dataset.s);draw();say(false);});
     list.querySelectorAll(".avrow").forEach(b=>b.onclick=()=>{
       const ny=b.dataset.kind==="ny";
@@ -1237,6 +1311,7 @@ function ttsNext(){
   {const st=V_STYLES[getVStyle()];u.rate=(ny?0.88:0.96)*st.r;u.pitch=st.p;u.volume=1;}
   const v=ny?pickNyVoice():pickCalmVoice();
   if(v){u.voice=v;u.lang=v.lang||u.lang;}else if(ny){u.lang="sw-KE";}
+  u.pitch=ttsPitch(v,ny);
   u.onend=()=>{if(TTS.tok!==my||TTS.state!=="playing")return;TTS.pos++;ttsNext();};
   u.onerror=e=>{if(TTS.tok!==my||TTS.state!=="playing")return;if(e&&(e.error==="interrupted"||e.error==="canceled"))return;TTS.pos++;ttsNext();};
   TTS.u=u;
@@ -1298,7 +1373,7 @@ function aiProfileOpen(){
     <div class="field"><label>Your name</label><input id="pfName" maxlength="30" autocomplete="given-name"></div>
     <div class="row2">
       <div class="field"><label>Level</label><select id="pfLevel"><option value="">Choose…</option>${Object.keys(LEVELS).map(k=>`<option value="${k}">${esc(LEVELS[k].label)}</option>`).join("")}</select></div>
-      <div class="field"><label>Class</label><select id="pfCls"><option value="">—</option></select></div>
+      <div class="field"><label id="pfClsLbl">Class</label><select id="pfCls"><option value="">—</option></select></div>
     </div>
     <button type="button" class="btn green" id="pfSave">Save</button>
     <button type="button" class="lnk" id="pfClear">Clear my details</button>
@@ -1306,7 +1381,7 @@ function aiProfileOpen(){
   document.body.appendChild(o);
   const nm=o.querySelector("#pfName"),lv=o.querySelector("#pfLevel"),cl=o.querySelector("#pfCls");
   nm.value=p.name||"";lv.value=p.level&&LEVELS[p.level]?p.level:"";
-  const fill=()=>{const l=LEVELS[lv.value];cl.innerHTML='<option value="">—</option>'+(l?l.classes.map(c=>`<option>${esc(c)}</option>`).join(""):"");};
+  const fill=()=>{const lb=o.querySelector("#pfClsLbl");if(lb)lb.textContent=lv.value==="Tertiary"?"Course area":"Class";const l=LEVELS[lv.value];cl.innerHTML='<option value="">—</option>'+(l?l.classes.map(c=>`<option>${esc(c)}</option>`).join(""):"");};
   fill();cl.value=p.cls||"";
   lv.onchange=()=>{fill();};
   const close=()=>o.remove();
@@ -1362,7 +1437,7 @@ function buildBookContext(){
   const books = loadBooks();
   if(!books.length) return "";
   const lines = books.slice(0, 40).map(b =>
-    `- "${b.title}" (${b.subject || "subject not set"}) by ${b.author || "unknown author"} — ${b.level}, ${b.class}`
+    `- "${b.title}" (${b.subject || "subject not set"}) by ${b.author || "unknown author"} — ${b.level}, ${clsOf(b)}${tierOf(b)?" ("+tierOf(b)+" level)":""}`
   );
   return "The student's Edu Library currently contains these books. You have NOT read their actual contents — only this catalog info (title, subject, author, level, class). Never claim to know what's on a specific page or inside the book beyond this list. You can use it to know what's available and suggest relevant ones by title.\n" + lines.join("\n");
 }
@@ -1372,15 +1447,15 @@ function buildAppContext(){
   const h=(location.hash||"#/").slice(2).split("/").filter(Boolean).map(decodeURIComponent);
   let where="the home screen";
   if(h[0]==="library")where="the Library (choosing an education level)";
-  else if(h[0]==="level"&&h[1])where="the "+((LEVELS[h[1]]&&LEVELS[h[1]].label)||h[1])+" section"+(h[2]?", class "+h[2]:"")+(h[3]&&h[3]!=="*"?", subject "+h[3]:"");
+  else if(h[0]==="level"&&h[1])where="the "+((LEVELS[h[1]]&&LEVELS[h[1]].label)||h[1])+" section"+(h[2]?(h[1]==="Tertiary"?", course category ":", class ")+h[2]:"")+(h[1]==="Tertiary"?((h[3]?", book level "+(h[3]==="*"?"All levels":h[3]):"")+(h[4]&&h[4]!=="*"?", subject "+h[4]:"")):(h[3]&&h[3]!=="*"?", subject "+h[3]:""));
   else if(h[0]==="search")where="Search Books";
   else if(h[0]==="ai")where="the Edu AI chat";
   const pr=getProfile();
-  const who=(pr.name||pr.level||pr.cls)?`ABOUT THE STUDENT: ${pr.name?"name is "+pr.name+"; ":""}${pr.level&&LEVELS[pr.level]?"studies at "+LEVELS[pr.level].label+"; ":""}${pr.cls?"class "+pr.cls+". ":""}Use their name now and then, and explain at a level that suits their class.`:"";
+  const who=(pr.name||pr.level||pr.cls)?`ABOUT THE STUDENT: ${pr.name?"name is "+pr.name+"; ":""}${pr.level&&LEVELS[pr.level]?"studies at "+LEVELS[pr.level].label+"; ":""}${pr.cls?(pr.level==="Tertiary"?"course area ":"class ")+pr.cls+". ":""}Use their name now and then, and explain at a level that suits their class.`:"";
   return [
     who,
     `ABOUT THE APP YOU LIVE IN: You are Edu AI, the built-in study assistant of "Edu Library", a mobile-friendly digital library and e-learning web app for students in Malawi. Edu Library was created and is owned by ${APP_OWNER}. If anyone asks who made, built, owns or runs Edu Library (or you), answer: ${APP_OWNER}.`,
-    `How the app works: the home screen has a "Get Started" button; the bottom tabs are Home, Search, Library and Admin (shown with symbol icons). At the top right of every screen there is an eye button for Reading mode (a warm orange screen tint that is easier on the eyes; tapping it turns it on and shows a slider to make the colour stronger or lighter), a sun/moon button for light and dark theme, and a gear button for Settings (screen colour choices, and About with the app version). The language button (English / Chichewa) appears only on the start page. Library -> choose an education level -> choose a class -> choose a subject (or "All books") -> list of books. Levels and classes: ${lv}. Every book is a PDF with Preview (in-app reader) and Save (download). The Preview screen has a reading-mode button that cycles the screen between normal, warm orange and dim brown for comfortable reading. Search finds books by title, subject, author, level or class. The app supports English and Chichewa, with theme and language buttons at the top right. Books are uploaded by the app admin from the Admin tab; students cannot upload. "Continue Reading" and "Recently Added" rows on the Library screen help students pick up where they left off.`,
+    `How the app works: the home screen has a "Get Started" button; the bottom tabs are Home, Search, Library and Admin (shown with symbol icons). At the top right of every screen there is an eye button for Reading mode (a warm orange screen tint that is easier on the eyes; tapping it turns it on and shows a slider to make the colour stronger or lighter), a sun/moon button for light and dark theme, and a gear button for Settings (screen colour choices, and About with the app version). The language button (English / Chichewa) appears only on the start page. Library -> choose an education level -> choose a class -> choose a subject (or "All books") -> list of books. In Tertiary / College, after choosing a course category the student also picks a book level: Basic (new to the field), Standard (has some knowledge) or Advanced (professionals), or All levels. Levels and classes: ${lv}. Every book is a PDF with Preview (in-app reader) and Save (download). The Preview screen has a reading-mode button that cycles the screen between normal, warm orange and dim brown for comfortable reading. Search finds books by title, subject, author, level or class. The app supports English and Chichewa, with theme and language buttons at the top right. Books are uploaded by the app admin from the Admin tab; students cannot upload. "Continue Reading" and "Recently Added" rows on the Library screen help students pick up where they left off.`,
     `ABOUT YOUR CREATOR (share ONLY when someone directly asks who made, built or owns you or the app, how it began, or about his background; never bring any of it up on your own, never in greetings or unrelated answers): Edu Library and you were created by ${APP_OWNER}, who built the whole app himself. Always call him "${APP_OWNER}". Only if someone asks for his government name, full name or real name, say it is ${APP_OWNER_LEGAL} (people know him as ${APP_OWNER}). The idea: he had this idea for many years but lacked the resources to make it real. A few months ago he started coding in Python. The first version was a desktop app; he then redesigned it as an HTML web app so it is mobile-friendly and works on students' phones. Personal details, to be shared only if asked: he was born in 2003 at Limbe Hospital in Blantyre, Malawi, so he is around ${ownerAge()} years old. Only the birth year is known: never state or guess an exact birthday, day, month or time of birth, and if asked for it say he prefers to keep that private. Education: for primary school he attended Zingwangwa Primary School and then Fishing Line Primary School. For secondary school he attended Zingwangwa Progressive Secondary School, then Beacon High School, then Mulomba CDSS, and then Madaliso High School. He wrote his MSCE at Madaliso High School in 2022, repeated it in 2024, and is writing MSCE again. Share these facts warmly and briefly, only the part that was asked, and never invent extra personal details. His story is a good example to encourage students who have had to repeat a class or change schools: persistence pays off.`,
     `YOUR OWN FEATURES (mention them only when relevant to what the student is doing or asks, never boast): the plus button on the left of the message bar lets a student add a photo, such as a textbook page, diagram or homework question, for you to explain; the microphone button lets students speak instead of typing, which helps students who struggle with spelling, and their words appear in the message box; the send button sends the message and turns into a stop button while you are answering; the play/pause button on each of your replies reads it aloud and can be paused and resumed, and the audio keeps playing if the student switches apps; the Voice button at the top of the chat lets each student choose their favourite voice for you, and also a separate voice for reading Chichewa answers (the voices available depend on their phone, and Chichewa voices are rare, so the closest clear voice is used and Chichewa may not sound perfect); you can answer in Chichewa whenever a student asks, and when you do, the app reads your answer aloud with a slower pace and pronunciation-friendly handling of Chichewa spelling; you learn each student's name and class from the chat and adapt to them automatically; the menu button at the top left opens their saved chats; the suggestion buttons above the message bar (Explain this topic, Create a quiz, Summarize this lesson, Help me study) give quick starts; and you can make simple pictures when a student asks for one.`,
     `WHICH AI MODELS POWER YOU (share ONLY when someone directly asks which AI or model you are or what powers you; never volunteer it): you run on Google Gemini as the main model, with Groq and Mistral models as automatic backups that take over if one is busy or reaches its limit; pictures are made by Gemini's image model. Say this honestly, and add that you cannot always tell which of them is answering at a given moment. Never claim to be any other product.`,
@@ -1564,10 +1639,9 @@ function aiAutoLearn(text){
     let lv="",cl="";
     let m=t.match(/\b(?:form|f)\s*([1-4])\b/i);if(m){lv="Secondary";cl="Form "+m[1];}
     if(!cl){m=t.match(/\b(?:standard|std)\s*([1-8])\b/i);if(m){lv="Primary";cl="Standard "+m[1];}}
-    if(!cl){m=t.match(/\byear\s*([1-4])\b/i);if(m){lv="Tertiary";cl="Year "+m[1];}}
-    if(!cl&&/\bdiploma\b/i.test(t)){lv="Tertiary";cl="Diploma";}
-    if(!cl&&/\bcertificate\b/i.test(t)){lv="Tertiary";cl="Certificate";}
-    if(cl&&/\b(i am|i'm|im|i study|i'm in|i am in|my class|class)\b/i.test(t)&&cl!==pr.cls){pr.level=lv;pr.cls=cl;ch=true;}
+    let tert=false;
+    if(!cl){m=t.match(/\b(?:i\s*(?:am|'m)\s+(?:a\s+)?(?:studying|student|doing|pursuing|taking)|i\s+study|i'm\s+studying|studying|my\s+(?:course|degree|programme|program|major)(?:\s+is)?|(?:degree|diploma|certificate|bsc|course|major)\s+in|majoring\s+in)\b([^.?!]{0,60})/i);if(m){const hit=tertCategory(m[1]||"");if(hit){lv="Tertiary";cl=hit;tert=true;}}}
+    if(cl&&(tert||/\b(i am|i'm|im|i study|i'm in|i am in|my class|class)\b/i.test(t))&&cl!==pr.cls){pr.level=lv;pr.cls=cl;ch=true;}
     if(ch){saveProfile(pr);aiRefreshProfileUI();}
   }catch(_){}
 }
