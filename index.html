@@ -180,6 +180,7 @@ body.light .aibar .aisend,body.light .aibar .aisend.arrow{background:linear-grad
 .bubble code{background:rgba(127,127,127,.2);padding:1px 5px;border-radius:5px;font-size:12.5px}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/appwrite@21.5.0"></script>
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;800&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <style>
@@ -573,9 +574,21 @@ const ADMIN_USER = "billz", ADMIN_PASS = "billz999";
    These links live only in this file, they cannot be changed from the Admin screen. */
 const SERVERS=[
   {id:"A",name:"Server A",url:"https://uozxdopexjbxjpatodpl.supabase.co",key:"sb_publishable_7WBlnIk-CDi-nSiUT9JDBg_7iRT8j-V"},
-  {id:"B",name:"Server B",url:"",key:""}
+  {id:"B",name:"Server B",type:"appwrite",endpoint:"https://fra.cloud.appwrite.io/v1",project:"6abc042e003c999d9977",db:"6abc081a001aa74f7a4c",table:"6abc0877003260119342",bucket:"6abc129c000afccadc97"}
 ];
-SERVERS.forEach(x=>{x.ok=!!(x.url&&x.key);x.sb=x.ok?supabase.createClient(x.url,x.key):null;});
+SERVERS.forEach(x=>{
+  if(x.type==="appwrite"){
+    x.ok=false;
+    try{
+      if(window.Appwrite&&x.endpoint&&x.project&&x.db&&x.table&&x.bucket){
+        const c=new Appwrite.Client().setEndpoint(x.endpoint).setProject(x.project);
+        x.tdb=new Appwrite.TablesDB(c);x.storage=new Appwrite.Storage(c);x.ok=true;
+      }
+    }catch(e){console.error("Edu Library: Server "+x.id+" could not start",e);}
+  }else{
+    x.ok=!!(x.url&&x.key);x.sb=x.ok?supabase.createClient(x.url,x.key):null;
+  }
+});
 function srv(id){return SERVERS.find(x=>x.id===id)||SERVERS[0];}
 const sb=SERVERS[0].sb;
 (function(){let s="<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 90 60' preserveAspectRatio='none'><rect width='90' height='20' fill='#111'/><rect y='20' width='90' height='20' fill='#CE1126'/><rect y='40' width='90' height='20' fill='#339E35'/><g fill='#CE1126' stroke='#CE1126' stroke-width='1.2'><path d='M37 20a8 8 0 0116 0z' stroke='none'/>";for(let a=0;a<=180;a+=22.5){const t=a*Math.PI/180;s+=`<line x1='${45-11*Math.cos(t)}' y1='${20-11*Math.sin(t)}' x2='${45-16*Math.cos(t)}' y2='${20-16*Math.sin(t)}'/>`}s+="</g></svg>";document.documentElement.style.setProperty("--flagimg",`url("data:image/svg+xml,${encodeURIComponent(s)}")`)})();
@@ -679,9 +692,26 @@ async function renderPages(url){
 
 
 let booksCache = [];
+async function loadAppwriteBooks(x){
+  try{
+    let out=[],off=0;
+    while(true){
+      const r=await x.tdb.listRows({databaseId:x.db,tableId:x.table,queries:[Appwrite.Query.orderDesc("$createdAt"),Appwrite.Query.limit(100),Appwrite.Query.offset(off)]});
+      const rows=r.rows||[];
+      rows.forEach(w=>out.push({id:w.$id,title:w.title||"",subject:w.subject||"",author:w.author||"",level:w.level||"",class:w.class||"",description:w.description||"",file_path:w.file_path||"",added:w.$createdAt}));
+      if(rows.length<100)break;
+      off+=100;
+    }
+    return {data:out,error:null};
+  }catch(e){return {data:null,error:e};}
+}
+function loadServerBooks(x){
+  if(x.type==="appwrite")return loadAppwriteBooks(x);
+  return x.sb.from("books").select("*").order("added",{ascending:false});
+}
 async function refreshBooks(){
   const live=SERVERS.filter(x=>x.ok);
-  const res=await Promise.allSettled(live.map(x=>x.sb.from("books").select("*").order("added",{ascending:false})));
+  const res=await Promise.allSettled(live.map(x=>loadServerBooks(x)));
   let all=[];const failed=new Set();
   res.forEach((r,i)=>{
     const x=live[i];
@@ -701,7 +731,10 @@ function loadBooks(){ return booksCache; }
 function isAdmin(){ return sessionStorage.getItem("edu_admin")==="1"; }
 function esc(s){ return String(s||"").replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 
-function dlUrl(b){ return b.file_path+"?download="+encodeURIComponent((b.title||"book")+".pdf"); }
+function dlUrl(b){
+  if(srv(b._s||"A").type==="appwrite")return String(b.file_path).replace("/view?","/download?");
+  return b.file_path+"?download="+encodeURIComponent((b.title||"book")+".pdf");
+}
 function bookCard(b){
   const ok=!!b.file_path;
   return `<div class="book"><div class="thumb" ${ok?`data-src="${esc(b.file_path)}" onclick="previewBook('${bkey(b)}')"`:''}>📄</div>
@@ -937,7 +970,7 @@ function renderAdminPanel(app){
       const n=books.filter(b=>(b._s||"A")===x.id).length;
       return `<div class="card" style="max-width:100%;margin:0 0 12px;padding:18px">
         <div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><b>🌐 Books · ${esc(x.name)}</b><span style="font-size:12px;font-weight:700;color:${x.ok?"var(--primary)":"var(--sub)"}">${x.ok?"● Connected":"○ Not connected yet"}</span></div>
-        <div style="${box}">${x.ok?esc(x.url):"Will be added soon"}</div>
+        <div style="${box}">${x.ok?esc(x.url||x.endpoint):"Will be added soon"}</div>
         <p style="color:var(--sub);font-size:12px;margin:8px 0 0">${x.ok?n+" book"+(n!==1?"s":"")+" stored here":"Extra space for new uploads."}</p></div>`;
     }).join("")+`
       <div class="card" style="max-width:100%;margin:0 0 12px;padding:18px">
@@ -982,13 +1015,19 @@ async function saveBook(){
   msg.style.color = "var(--sub)";
   msg.textContent = "Uploading PDF...";
   try{
-    const { error: upErr } = await S.sb.storage.from("books").upload(path, file);
-    if(upErr) throw upErr;
-    const { data: pub } = S.sb.storage.from("books").getPublicUrl(path);
-    const { error: dbErr } = await S.sb.from("books").insert({
-      title, subject, author, level, class: cls, description: desc, file_path: pub.publicUrl
-    });
-    if(dbErr) throw dbErr;
+    if(S.type==="appwrite"){
+      const up = await S.storage.createFile({bucketId:S.bucket,fileId:Appwrite.ID.unique(),file:file});
+      const fileUrl = S.endpoint+"/storage/buckets/"+S.bucket+"/files/"+up.$id+"/view?project="+S.project;
+      await S.tdb.createRow({databaseId:S.db,tableId:S.table,rowId:Appwrite.ID.unique(),data:{title:title||"",subject:subject||"",author:author||"",level:level||"",class:cls||"",description:desc||"",file_path:fileUrl}});
+    }else{
+      const { error: upErr } = await S.sb.storage.from("books").upload(path, file);
+      if(upErr) throw upErr;
+      const { data: pub } = S.sb.storage.from("books").getPublicUrl(path);
+      const { error: dbErr } = await S.sb.from("books").insert({
+        title, subject, author, level, class: cls, description: desc, file_path: pub.publicUrl
+      });
+      if(dbErr) throw dbErr;
+    }
     await refreshBooks();
     msg.style.color = "var(--primary)";
     msg.textContent = `Saved to ${level} → ${cls0}${tier?" → "+tier:""}.`;
