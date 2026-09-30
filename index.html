@@ -209,12 +209,17 @@ option{color:#000}::placeholder{color:#7f92b8}
 .thumb{width:62px;height:84px;flex:none;border-radius:8px;overflow:hidden;background:rgba(255,255,255,.06);border:1px solid var(--line);display:flex;align-items:center;justify-content:center;font-size:22px;cursor:pointer}
 .thumb img{width:100%;height:100%;object-fit:cover}
 .acts{display:flex;flex-direction:column;gap:6px}
+.book .acts .open.ib{display:flex;align-items:center;justify-content:center;width:44px;height:38px;padding:0;box-sizing:border-box;margin:0 auto}
+.book .acts .open.ib svg,.pvbar .open svg{width:20px;height:20px;display:block;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.pvbar a.open{display:inline-flex;align-items:center;justify-content:center}
+#navX{touch-action:pan-y;user-select:none;-webkit-user-select:none;-webkit-tap-highlight-color:transparent}
 .pv{position:fixed;inset:0;z-index:100;background:#050816;display:flex;flex-direction:column}
 .pvbar{display:flex;align-items:center;gap:10px;padding:10px 14px;padding-top:calc(10px + env(safe-area-inset-top,0px));border-bottom:1px solid var(--line)}
 .pvbar b{flex:1;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .pvbar button{background:none;border:none;color:#fff;font-size:20px}
-.pvbody{flex:1;overflow:auto;padding:8px}
-.pvpage{margin:0 auto 10px;background:#fff;border-radius:6px;overflow:hidden;box-shadow:0 0 22px rgba(0,229,255,.18)}
+.pvbody{flex:1;overflow:auto;padding:8px;touch-action:pan-x pan-y;overscroll-behavior:contain}
+.pvwrap{margin:0 auto}
+.pvpage{position:relative;margin:0 auto 10px;background:#fff;border-radius:6px;overflow:hidden;box-shadow:0 0 22px rgba(0,229,255,.18)}
 </style>
 <style>
 body{background:linear-gradient(180deg,#0a1a45,#060d24 55%,#050a1c);background-attachment:fixed}
@@ -541,7 +546,7 @@ body:not(.light) input.rmslider{background:linear-gradient(90deg,#0a7cff var(--v
   <a href="#/" data-r="/"><span class="ic"><svg class="nic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 10.2V20h13v-9.8"/><path d="M10 20v-5.5h4V20"/></svg></span>Home</a>
   <a href="#/search" data-r="search"><span class="ic"><svg class="nic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4.5 4.5"/></svg></span>Search</a>
   <a href="#/library" data-r="library"><span class="ic"><svg class="nic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="4" width="4.6" height="16" rx="1"/><rect x="9.6" y="4" width="4.6" height="16" rx="1"/><path d="m16.2 5.6 3.7-1 3 14.6-3.7 1z" transform="translate(-1.6 0)"/></svg></span>Library</a>
-  <a href="#/admin" data-r="admin"><span class="ic"><svg class="nic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="3.8"/><path d="M4.5 20c.7-3.700 3.900-5.800 7.500-5.800s6.800 2.100 7.500 5.800"/></svg></span>Admin</a>
+  <a href="#/exams" data-r="exams" id="navX" data-mode="exam"><span class="ic"><svg class="nic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6.5 3h8l4 4v14h-12z"/><path d="M14.5 3v4h4"/><path d="M9.5 12h6M9.5 16h6"/></svg></span>Exams</a>
 </nav>
 
 <script>
@@ -557,7 +562,49 @@ const TIERS=[
   {k:"Advanced",icon:"🚀",d:"For professionals and experts in this field."}
 ];
 function clsOf(b){return String(b.class||"").split(TIER_SEP)[0];}
+const IC_EYE='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z"/><circle cx="12" cy="12" r="3"/></svg>';
+const IC_DL='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11"/><path d="m7 11 5 5 5-5"/><path d="M5 20h14"/></svg>';
+/* Bottom-right slot: shows Exams (paper icon). Two quick swipes to the right turn it into Admin, and again back to Exams. */
+const NAV_MODES={
+  exam:{href:"#/exams",r:"exams",label:"Exams",svg:'<svg class="nic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6.5 3h8l4 4v14h-12z"/><path d="M14.5 3v4h4"/><path d="M9.5 12h6M9.5 16h6"/></svg>'},
+  admin:{href:"#/admin",r:"admin",label:"Admin",svg:'<svg class="nic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="3.8"/><path d="M4.5 20c.7-3.700 3.900-5.800 7.500-5.800s6.800 2.100 7.500 5.800"/></svg>'}
+};
+function setNavMode(m){
+  const a=document.getElementById("navX");if(!a)return;
+  if(!NAV_MODES[m])m="exam";
+  const c=NAV_MODES[m];
+  a.setAttribute("href",c.href);a.dataset.r=c.r;a.dataset.mode=m;
+  a.innerHTML='<span class="ic">'+c.svg+'</span>'+c.label;
+  const first=(location.hash.replace(/^#\/?/,"").split("/")[0])||"/";
+  a.classList.toggle("active",first===c.r);
+  try{sessionStorage.setItem("edu_navmode",m);}catch(e){}
+}
+(function(){
+  const a=document.getElementById("navX");if(!a)return;
+  let saved="exam";try{saved=sessionStorage.getItem("edu_navmode")||"exam";}catch(e){}
+  setNavMode(saved);
+  let sx=0,sy=0,st=0,down=false,last=0,block=0;
+  a.addEventListener("pointerdown",e=>{down=true;sx=e.clientX;sy=e.clientY;st=Date.now();try{a.setPointerCapture(e.pointerId);}catch(_){}});
+  a.addEventListener("pointerup",e=>{
+    if(!down)return;down=false;
+    const dx=e.clientX-sx,dy=e.clientY-sy,now=Date.now();
+    if(dx>=40&&Math.abs(dy)<Math.max(30,dx*0.6)&&now-st<700){
+      block=now+500;
+      if(now-last<1600){
+        last=0;
+        setNavMode(a.dataset.mode==="admin"?"exam":"admin");
+        try{if(navigator.vibrate)navigator.vibrate(25);}catch(_){}
+      }else last=now;
+    }
+  });
+  a.addEventListener("pointercancel",()=>{down=false;});
+  a.addEventListener("click",e=>{if(Date.now()<block){e.preventDefault();e.stopPropagation();}},true);
+})();
+function isExam(b){return tierOf(b)==="Exam";}
 function tierOf(b){return String(b.class||"").split(TIER_SEP)[1]||"";}
+/* Only these classes have a national exam body: Standard 8 -> MANEB, Form 2 -> JCE, Form 4 -> MSCE (Form 2 / Form 4 let the admin pick JCE or MSCE). All other classes just have exams per subject. */
+const EXAM_BODIES={"Standard 8":["MANEB"],"Form 2":["JCE","MSCE"],"Form 4":["JCE","MSCE"]};
+function examBody(b){return String(b.class||"").split(TIER_SEP)[2]||"";}
 function inTier(b,t){return !t||t==="*"||tierOf(b)===t;}
 function inCls(b,level,c){
   if(b.level!==level) return false;
@@ -574,7 +621,10 @@ const BADGE_COLORS = ["#E85D8A","#F2994A","#E0B32B","#2FA36B","#3B8FD4","#8A54C4
    These links live only in this file, they cannot be changed from the Admin screen. */
 const SERVERS=[
   {id:"A",name:"Server A",url:"https://uozxdopexjbxjpatodpl.supabase.co",key:"sb_publishable_7WBlnIk-CDi-nSiUT9JDBg_7iRT8j-V"},
-  {id:"B",name:"Server B",type:"appwrite",endpoint:"https://fra.cloud.appwrite.io/v1",project:"6abc042e003c999d9977",db:"6abc081a001aa74f7a4c",table:"6abc0877003260119342",bucket:"6abc129c000afccadc97"}
+  {id:"B",name:"Server B",type:"appwrite",endpoint:"https://fra.cloud.appwrite.io/v1",project:"6abc042e003c999d9977",db:"6abc081a001aa74f7a4c",table:"6abc0877003260119342",bucket:"6abc129c000afccadc97"},
+  /* Examination servers (exam PDFs only). Fill in endpoint / project / db / table / bucket of each new Appwrite project to switch it on. */
+  {id:"C",name:"Server C",exam:true,type:"appwrite",endpoint:"",project:"",db:"",table:"",bucket:""},
+  {id:"D",name:"Server D",exam:true,type:"appwrite",endpoint:"",project:"",db:"",table:"",bucket:""}
 ];
 SERVERS.forEach(x=>{
   if(x.type==="appwrite"){
@@ -582,7 +632,7 @@ SERVERS.forEach(x=>{
     try{
       if(window.Appwrite&&x.endpoint&&x.project&&x.db&&x.table&&x.bucket){
         const c=new Appwrite.Client().setEndpoint(x.endpoint).setProject(x.project);
-        x.tdb=new Appwrite.TablesDB(c);x.storage=new Appwrite.Storage(c);x.ok=true;
+        x.tdb=new Appwrite.TablesDB(c);x.storage=new Appwrite.Storage(c);x.acct=new Appwrite.Account(c);x.ok=true;
       }
     }catch(e){console.error("Edu Library: Server "+x.id+" could not start",e);}
   }else{
@@ -591,6 +641,23 @@ SERVERS.forEach(x=>{
 });
 function srv(id){return SERVERS.find(x=>x.id===id)||SERVERS[0];}
 const sb=SERVERS[0].sb;
+/* Appwrite owner sign-in: same email and password as the Supabase owner login */
+async function appwriteLogin(email,password){
+  const failed=[];
+  for(const x of SERVERS){
+    if(x.type!=="appwrite"||!x.ok||!x.acct)continue;
+    try{
+      try{await x.acct.deleteSession({sessionId:"current"});}catch(_){}
+      await x.acct.createEmailPasswordSession({email:email,password:password});
+    }catch(e){failed.push(x.name);}
+  }
+  return failed;
+}
+async function appwriteLogout(){
+  for(const x of SERVERS){
+    if(x.type==="appwrite"&&x.ok&&x.acct){try{await x.acct.deleteSession({sessionId:"current"});}catch(_){}}
+  }
+}
 /* If the saved sign-in has expired, drop the admin flag (real protection is in the Supabase rules) */
 if(sb){sb.auth.getSession().then(({data})=>{if(!data||!data.session){sessionStorage.removeItem("edu_admin");if((location.hash||"").indexOf("#/admin/panel")===0)location.hash="#/admin";}}).catch(()=>{});}
 (function(){let s="<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 90 60' preserveAspectRatio='none'><rect width='90' height='20' fill='#111'/><rect y='20' width='90' height='20' fill='#CE1126'/><rect y='40' width='90' height='20' fill='#339E35'/><g fill='#CE1126' stroke='#CE1126' stroke-width='1.2'><path d='M37 20a8 8 0 0116 0z' stroke='none'/>";for(let a=0;a<=180;a+=22.5){const t=a*Math.PI/180;s+=`<line x1='${45-11*Math.cos(t)}' y1='${20-11*Math.sin(t)}' x2='${45-16*Math.cos(t)}' y2='${20-16*Math.sin(t)}'/>`}s+="</g></svg>";document.documentElement.style.setProperty("--flagimg",`url("data:image/svg+xml,${encodeURIComponent(s)}")`)})();
@@ -666,32 +733,242 @@ new MutationObserver(hydrateThumbs).observe(document.getElementById("app"),{chil
 let RM=+(localStorage.getItem("edu_rm")||0);const RM_ICON=["📖","🟠","🟤"];
 function applyReading(){const m=document.querySelector(".pv");if(!m)return;m.dataset.rm=RM;const b=m.querySelector("#rmBtn");if(b)b.textContent=RM_ICON[RM];}
 function toggleReading(){RM=(RM+1)%3;try{localStorage.setItem("edu_rm",RM);}catch(e){}applyReading();}
-function closePreview(){const m=document.querySelector(".pv");if(m)m.remove();}
+let PV=null; /* PDF reader state */
+function closePreview(){
+  if(PV){try{PV.io.disconnect();}catch(_){}try{PV.pdf.destroy();}catch(_){}PV=null;}
+  const m=document.querySelector(".pv");if(m)m.remove();
+}
 window.addEventListener("hashchange",closePreview);
 function previewBook(id){
   const b=findBook(id);if(!b)return;closePreview();
   try{const r=JSON.parse(localStorage.getItem("edu_recent")||"[]").filter(x=>x!=id);r.unshift(id);localStorage.setItem("edu_recent",JSON.stringify(r.slice(0,8)));}catch(e){}
   const m=document.createElement("div");m.className="pv";
-  m.innerHTML=`<div class="pvbar"><button onclick="closePreview()">✕</button><b>${esc(b.title)}</b><button id="rmBtn" title="Reading mode" onclick="toggleReading()">📖</button><a class="open" href="${esc(dlUrl(b))}">⬇ Save</a></div><div class="pvbody" id="pvbody"><div class="empty">Loading preview…</div></div><div class="pvtint"></div>`;
+  m.innerHTML=`<div class="pvbar"><button onclick="closePreview()">✕</button><b>${esc(b.title)}</b><button type="button" aria-label="Zoom out" onclick="pvStep(-1)">\u2212</button><button type="button" aria-label="Zoom in" onclick="pvStep(1)">+</button><button id="rmBtn" title="Reading mode" onclick="toggleReading()">📖</button><a class="open" aria-label="Save" title="Save" href="${esc(dlUrl(b))}">${IC_DL}</a></div><div class="pvbody" id="pvbody"><div class="empty">Loading preview…</div></div><div class="pvtint"></div>`;
   document.body.appendChild(m);applyReading();renderPages(b.file_path);
 }
+/*PV-BEGIN*/
+const PV_STEPS=[1,1.5,2,3,4];
+function pvLayout(){
+  const w=Math.round(PV.baseW*PV.Z);
+  PV.wrap.style.width=w+"px";
+  PV.wrap.querySelectorAll(".pvpage").forEach(el=>{el.style.width=w+"px";el.style.height=Math.round(w*(el._r||PV.r0))+"px";pvDropTile(el);});
+}
+function pvDropTile(el){
+  el._tid=(el._tid||0)+1;
+  try{if(el._ttask)el._ttask.cancel();}catch(_){}
+  el._ttask=null;
+  if(el._tile&&el._tile.parentNode){const c=el._tile;c.width=0;c.height=0;c.remove();}
+  el._tile=null;el._tileInfo=null;
+}
+function pvReset(el){
+  el._tk=(el._tk||0)+1;el._busy=false;el._z=null;
+  try{if(el._task)el._task.cancel();}catch(_){}
+  el._task=null;
+  pvDropTile(el);
+  const c=el.firstChild;
+  if(c){if(c.tagName==="CANVAS"){c.width=0;c.height=0;}el.replaceChildren();}
+}
+async function pvDraw(el){
+  const tk=(el._tk=(el._tk||0)+1);el._busy=true;
+  try{
+    const pg=await PV.pdf.getPage(+el.dataset.p);
+    if(!PV||el._tk!==tk)return;
+    const base=pg.getViewport({scale:1});
+    el._r=base.height/base.width;
+    const z=PV.Z,cssW=Math.round(PV.baseW*z);
+    const dpr=Math.min(window.devicePixelRatio||1,3);
+    let sc=cssW/base.width*dpr;
+    el._need=sc;
+    const px=base.width*base.height*sc*sc;
+    if(px>PV.MAXPX)sc*=Math.sqrt(PV.MAXPX/px);
+    const vp=pg.getViewport({scale:sc});
+    const cv=document.createElement("canvas");
+    cv.width=Math.max(1,Math.floor(vp.width));cv.height=Math.max(1,Math.floor(vp.height));
+    cv.style.cssText="display:block;width:100%;height:100%";
+    const task=pg.render({canvasContext:cv.getContext("2d"),viewport:vp});
+    el._task=task;
+    await task.promise;
+    if(!PV||el._tk!==tk)return;
+    el.style.height=Math.round(cssW*el._r)+"px";
+    pvDropTile(el);
+    el.replaceChildren(cv);
+    el._sc=sc;
+    el._z=z;el._task=null;el._busy=false;
+    pvSharpSoon();
+  }catch(e){
+    if(el._tk===tk){el._task=null;el._busy=false;}
+  }
+}
+function pvRefresh(){
+  PV.wrap.querySelectorAll(".pvpage").forEach(el=>{
+    el._tk=(el._tk||0)+1;el._busy=false;el._z=null;
+    try{if(el._task)el._task.cancel();}catch(_){}
+    el._task=null;
+    PV.io.unobserve(el);PV.io.observe(el);
+  });
+}
+function pvAnchor(x,y){
+  const at=(px,py)=>{const e=document.elementFromPoint(px,py);return e&&e.closest?e.closest(".pvpage"):null;};
+  let pg=at(x,y);
+  if(!pg){for(const dy of [-14,14,-30,30]){pg=at(x,y+dy);if(pg)break;}}
+  if(!pg)return null;
+  const r=pg.getBoundingClientRect();
+  return {el:pg,fx:(x-r.left)/r.width,fy:(y-r.top)/r.height};
+}
+function pvSetZoom(z,sx,sy,anchor){
+  if(!PV)return;
+  z=Math.max(PV.MIN,Math.min(PV.MAX,z));
+  if(Math.abs(z-PV.Z)<0.01)return;
+  const body=PV.body,br=body.getBoundingClientRect();
+  if(sx==null){sx=br.left+br.width/2;sy=br.top+br.height/2;}
+  const a=anchor||pvAnchor(sx,sy);
+  PV.Z=z;pvLayout();
+  if(a&&a.el.isConnected){
+    const r=a.el.getBoundingClientRect();
+    body.scrollLeft+=r.left+a.fx*r.width-sx;
+    body.scrollTop+=r.top+a.fy*r.height-sy;
+  }
+  pvRefresh();
+}
+function pvStep(dir){
+  if(!PV)return;
+  const z=PV.Z;let t=z;
+  if(dir>0)t=PV_STEPS.find(s=>s>z+0.05)||PV.MAX;
+  else{for(const s of PV_STEPS){if(s<z-0.05)t=s;}}
+  pvSetZoom(t);
+}
+function pvGestures(body,wrap){
+  let st=null,pinched=false,tap=null,lastTap=null;
+  const dist=t=>Math.hypot(t[0].clientX-t[1].clientX,t[0].clientY-t[1].clientY);
+  const mid=t=>[(t[0].clientX+t[1].clientX)/2,(t[0].clientY+t[1].clientY)/2];
+  body.addEventListener("touchstart",e=>{
+    if(!PV)return;
+    if(e.touches.length===2){
+      const m=mid(e.touches),w=wrap.getBoundingClientRect();
+      st={d0:dist(e.touches)||1,z0:PV.Z,sx:m[0],sy:m[1],s:1,anchor:pvAnchor(m[0],m[1])};
+      wrap.style.transformOrigin=(m[0]-w.left)+"px "+(m[1]-w.top)+"px";
+      pinched=true;tap=null;
+    }else if(e.touches.length===1&&!st){
+      tap={x:e.touches[0].clientX,y:e.touches[0].clientY,moved:false};
+    }
+  },{passive:true});
+  body.addEventListener("touchmove",e=>{
+    if(!PV)return;
+    if(st&&e.touches.length===2){
+      e.preventDefault();
+      st.s=Math.max(PV.MIN/st.z0,Math.min(PV.MAX/st.z0,dist(e.touches)/st.d0));
+      wrap.style.transform="scale("+st.s+")";
+    }else if(tap&&e.touches.length===1){
+      const t=e.touches[0];
+      if(Math.abs(t.clientX-tap.x)>10||Math.abs(t.clientY-tap.y)>10)tap.moved=true;
+    }
+  },{passive:false});
+  const end=e=>{
+    if(st&&e.touches.length<2){
+      const s=st.s,z0=st.z0,a=st.anchor,sx=st.sx,sy=st.sy;
+      st=null;
+      wrap.style.transform="";wrap.style.transformOrigin="";
+      if(PV&&Math.abs(s-1)>0.03)pvSetZoom(z0*s,sx,sy,a);
+      setTimeout(()=>{pinched=false;},350);
+      return;
+    }
+    if(e.touches.length===0&&tap&&!tap.moved&&!pinched&&PV){
+      const now=Date.now();
+      if(lastTap&&now-lastTap.t<320&&Math.abs(tap.x-lastTap.x)<30&&Math.abs(tap.y-lastTap.y)<30){
+        pvSetZoom(PV.Z<1.4?2.5:1,tap.x,tap.y);
+        lastTap=null;
+      }else lastTap={x:tap.x,y:tap.y,t:now};
+    }
+    if(e.touches.length===0)tap=null;
+  };
+  body.addEventListener("touchend",end);
+  body.addEventListener("touchcancel",end);
+}
+window.addEventListener("resize",()=>{
+  if(!PV)return;
+  clearTimeout(PV._rt);
+  PV._rt=setTimeout(()=>{
+    if(!PV)return;
+    const nw=Math.min(PV.body.clientWidth-16,800);
+    if(nw>0&&Math.abs(nw-PV.baseW)>2){PV.baseW=nw;pvLayout();pvRefresh();}
+  },250);
+});
 async function renderPages(url){
   const body=document.getElementById("pvbody");
   try{
-    const pdf=await pdfjsLib.getDocument(url).promise;body.innerHTML="";
-    const w=Math.min(body.clientWidth-16,800);
-    const io=new IntersectionObserver(es=>es.forEach(async e=>{
-      const el=e.target;if(!e.isIntersecting||el.dataset.d)return;el.dataset.d=1;
-      const pg=await pdf.getPage(+el.dataset.p);
-      const vp=pg.getViewport({scale:w/pg.getViewport({scale:1}).width*1.5});
-      const cv=document.createElement("canvas");cv.width=vp.width;cv.height=vp.height;cv.style.width=w+"px";
-      await pg.render({canvasContext:cv.getContext("2d"),viewport:vp}).promise;
-      el.replaceChildren(cv);el.style.minHeight=0;
-    }),{root:body,rootMargin:"400px"});
-    for(let i=1;i<=pdf.numPages;i++){const d=document.createElement("div");d.className="pvpage";d.dataset.p=i;d.style.width=w+"px";d.style.minHeight=w*1.4+"px";body.appendChild(d);io.observe(d);}
+    const pdf=await pdfjsLib.getDocument(url).promise;
+    if(!body.isConnected){try{pdf.destroy();}catch(_){}return;}
+    const v1=(await pdf.getPage(1)).getViewport({scale:1});
+    body.innerHTML="";
+    const wrap=document.createElement("div");wrap.className="pvwrap";body.appendChild(wrap);
+    PV={pdf,body,wrap,baseW:Math.min(body.clientWidth-16,800),Z:1,MIN:1,MAX:4,MAXPX:3e6,r0:v1.height/v1.width,io:null};
+    PV.io=new IntersectionObserver(es=>es.forEach(e=>{
+      const el=e.target;
+      if(e.isIntersecting){if((el._z!==PV.Z||!el.firstChild)&&!el._busy)pvDraw(el);}
+      else pvReset(el);
+    }),{root:body,rootMargin:"300px"});
+    for(let i=1;i<=pdf.numPages;i++){const d=document.createElement("div");d.className="pvpage";d.dataset.p=i;wrap.appendChild(d);}
+    pvLayout();
+    wrap.querySelectorAll(".pvpage").forEach(d=>PV.io.observe(d));
+    pvGestures(body,wrap);
+    body.addEventListener("scroll",pvSharpSoon,{passive:true});
   }catch(e){body.innerHTML='<div class="empty">Preview unavailable. Use Save.</div>';}
 }
-
+/* Sharp text when zoomed: the visible part of each page is drawn again at full screen resolution */
+function pvSharpSoon(){
+  if(!PV)return;
+  clearTimeout(PV._st);
+  PV._st=setTimeout(()=>{
+    if(!PV)return;
+    if(PV.wrap.style.transform){pvSharpSoon();return;}
+    pvSharp();
+  },160);
+}
+function pvSharp(){
+  if(!PV)return;
+  const br=PV.body.getBoundingClientRect();
+  PV.wrap.querySelectorAll(".pvpage").forEach(el=>{
+    if(!el.firstChild||el._busy||el._z!==PV.Z)return;
+    const r=el.getBoundingClientRect();
+    if(r.bottom<br.top||r.top>br.bottom||r.right<br.left||r.left>br.right)return;
+    pvTile(el,r,br);
+  });
+}
+async function pvTile(el,r,br){
+  try{
+    if(!el._need||!el._sc||el._sc>=el._need*0.98){pvDropTile(el);return;}
+    const vx0=Math.max(0,br.left-r.left),vy0=Math.max(0,br.top-r.top);
+    const vx1=Math.min(r.width,br.right-r.left),vy1=Math.min(r.height,br.bottom-r.top);
+    const t=el._tileInfo;
+    if(t&&t.z===PV.Z&&vx0>=t.x0&&vy0>=t.y0&&vx1<=t.x1&&vy1<=t.y1)return;
+    const M=120;
+    const x0=Math.floor(Math.max(0,vx0-M)),y0=Math.floor(Math.max(0,vy0-M));
+    const x1=Math.ceil(Math.min(r.width,vx1+M)),y1=Math.ceil(Math.min(r.height,vy1+M));
+    const w=x1-x0,h=y1-y0;
+    if(w<8||h<8)return;
+    const myTk=el._tk,myId=(el._tid=(el._tid||0)+1);
+    try{if(el._ttask)el._ttask.cancel();}catch(_){}
+    const pg=await PV.pdf.getPage(+el.dataset.p);
+    if(!PV||el._tk!==myTk||el._tid!==myId)return;
+    const base=pg.getViewport({scale:1});
+    let d=Math.min(window.devicePixelRatio||1,3);
+    if(w*h*d*d>8e6)d=Math.sqrt(8e6/(w*h));
+    const sc=(r.width/base.width)*d;
+    const vp=pg.getViewport({scale:sc,offsetX:-x0*d,offsetY:-y0*d});
+    const cv=document.createElement("canvas");
+    cv.width=Math.max(1,Math.round(w*d));cv.height=Math.max(1,Math.round(h*d));
+    cv.style.cssText="position:absolute;left:"+x0+"px;top:"+y0+"px;width:"+w+"px;height:"+h+"px;pointer-events:none";
+    const task=pg.render({canvasContext:cv.getContext("2d"),viewport:vp});
+    el._ttask=task;
+    await task.promise;
+    if(!PV||el._tk!==myTk||el._tid!==myId)return;
+    const old=el._tile;
+    el.appendChild(cv);
+    if(old&&old.parentNode){old.width=0;old.height=0;old.remove();}
+    el._tile=cv;el._tileInfo={z:PV.Z,x0,y0,x1,y1};el._ttask=null;
+  }catch(e){}
+}
+/*PV-END*/
 
 let booksCache = [];
 async function loadAppwriteBooks(x){
@@ -729,9 +1006,10 @@ async function refreshBooks(){
 }
 function bkey(b){return (b._s||"A")+":"+b.id;}
 function findBook(k){return booksCache.find(x=>bkey(x)===String(k))||booksCache.find(x=>(x._s||"A")==="A"&&x.id==k);}
-function loadBooks(){ return booksCache; }
+function loadBooks(){ return booksCache.filter(b=>!isExam(b)); }
+function loadExams(){ return booksCache.filter(isExam); }
 function isAdmin(){ return sessionStorage.getItem("edu_admin")==="1"; }
-function adminLogout(){ sessionStorage.removeItem("edu_admin"); if(sb){sb.auth.signOut().catch(()=>{});} location.hash="#/"; }
+function adminLogout(){ sessionStorage.removeItem("edu_admin"); appwriteLogout(); if(sb){sb.auth.signOut().catch(()=>{});} setNavMode("exam"); location.hash="#/"; }
 function esc(s){ return String(s||"").replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 
 function dlUrl(b){
@@ -741,8 +1019,8 @@ function dlUrl(b){
 function bookCard(b){
   const ok=!!b.file_path;
   return `<div class="book"><div class="thumb" ${ok?`data-src="${esc(b.file_path)}" onclick="previewBook('${bkey(b)}')"`:''}>📄</div>
-    <div class="meta"><b>${esc(b.title)}</b><div>${esc(b.subject)} • ${esc(b.author)}</div><div>${esc(b.level)} → ${esc(clsOf(b))}${tierOf(b)?` • ${esc(tierOf(b))}`:""}</div></div>
-    <div class="acts">${ok?`<button class="open" onclick="previewBook('${bkey(b)}')">Preview</button><a class="open dl" href="${esc(dlUrl(b))}">⬇ Save</a>`:''}</div></div>`;
+    <div class="meta"><b>${esc(b.title)}</b><div>${esc(b.subject)}${b.author?` • ${esc(b.author)}`:""}</div><div>${esc(b.level)} → ${esc(clsOf(b))}${tierOf(b)?` • ${esc(tierOf(b))}`:""}${examBody(b)?` • ${esc(examBody(b))}`:""}</div></div>
+    <div class="acts">${ok?`<button class="open ib" type="button" aria-label="Preview" title="Preview" onclick="previewBook('${bkey(b)}')">${IC_EYE}</button><a class="open dl ib" aria-label="Save" title="Save" href="${esc(dlUrl(b))}">${IC_DL}</a>`:''}</div></div>`;
 }
 
 function setHeader(html){ document.getElementById("topHeader").innerHTML = `<div class="topbar">${html}</div>`; }
@@ -773,6 +1051,7 @@ function route(){
     }
     return parts[3] ? renderClassBooks(app, parts[1], parts[2], parts[3]) : renderClass(app, parts[1], parts[2]);
   }
+  if(parts[0] === "exams") return renderExams(app, parts[1], parts[2]);
   if(parts[0] === "start") return renderStart(app);
   if(parts[0] === "library") return renderLibrary(app);
   if(parts[0] === "search") return renderSearch(app, parts[1]);
@@ -791,11 +1070,43 @@ function renderHome(app){
    <a class="go2" href="#/library">Get Started →</a></div>`;
 }
 function renderStart(app){ renderLibrary(app); }
+function renderExams(app, level, cls){
+  setActiveNav("exams");
+  const all=loadExams();
+  if(!level||!LEVELS[level]){
+    setHeader(`<div class="brand"><span class="mark">📝</span>Examinations</div>`);
+    const CL={Primary:"pri",Secondary:"sec",Tertiary:"ter"};
+    app.innerHTML=`<div class="pagehead"><h2>Examinations</h2><p>Choose your education level to find exam papers for your class.</p></div>
+      <div class="chooser">${Object.entries(LEVELS).map(([k,l])=>{const n=all.filter(b=>b.level===k).length;
+        return `<a class="lv ${CL[k]}" href="#/exams/${k}"><div class="orb2">${l.icon}</div><div><b>${esc(l.label)}</b><em>${n} exam paper${n!==1?"s":""}</em><p>${esc(l.sub||(l.classes[0]+" – "+l.classes[l.classes.length-1]))}</p></div><i class="chev">›</i></a>`;}).join("")}</div>`;
+    return;
+  }
+  const l=LEVELS[level];
+  if(!cls){
+    setHeader(`<button class="back" onclick="location.hash='#/exams'">←</button><h2>Examinations</h2>`);
+    const cards=l.classes.map((c,i)=>{
+      const n=all.filter(b=>inCls(b,level,c)).length, g=GR[level][i%GR[level].length];
+      return `<a class="ct" style="background:linear-gradient(135deg,${g})" href="#/exams/${level}/${encodeURIComponent(c)}"><div class="co">${level==="Tertiary"?(TICON[c]||"📝"):"📝"}</div><div class="cx"><b>${esc(c)}</b><p>${n} exam paper${n!==1?"s":""}</p></div><i>›</i></a>`;}).join("");
+    app.innerHTML=`<div class="pagehead"><h2>${esc(l.label)}</h2><p>${level==="Tertiary"?"Choose a course category":"Choose a class"}</p></div><div class="cgrid ${level}">${cards}</div>`;
+    return;
+  }
+  const bs=all.filter(b=>inCls(b,level,cls));
+  setHeader(`<button class="back" onclick="location.hash='#/exams/${level}'">←</button><h2>Examinations</h2>`);
+  app.innerHTML=`<div class="banner" style="background:linear-gradient(135deg,${l.color},${l.color}CC)"><h2>${esc(cls)} Exams</h2><p>${esc(l.label)} → ${esc(cls)}</p></div>
+    <form class="search" onsubmit="event.preventDefault()"><input placeholder="Search exam papers in ${esc(cls)}..." oninput="filterExams(this.value)"></form>
+    <div id="examList">${bs.length?bs.map(bookCard).join(""):`<div class="empty">No exam papers for ${esc(cls)} yet.</div>`}</div>`;
+  window._exams=bs;
+  window.filterExams=q=>{
+    q=q.toLowerCase();
+    const r=window._exams.filter(b=>[b.title,b.subject,b.author,examBody(b)].join(" ").toLowerCase().includes(q));
+    document.getElementById("examList").innerHTML=r.length?r.map(bookCard).join(""):`<div class="empty">No exam papers matched.</div>`;
+  };
+}
 function recentRows(){
   let ids=[];try{ids=JSON.parse(localStorage.getItem("edu_recent")||"[]");}catch(e){}
-  const rec=ids.map(id=>findBook(id)).filter(Boolean);
+  const rec=ids.map(id=>findBook(id)).filter(b=>b&&!isExam(b));
   const row=(t,a)=>a.length?`<h3 class="hd">${t}</h3><div class="hrow">${a.map(b=>`<div class="hcard" onclick="previewBook('${bkey(b)}')"><div class="thumb" ${b.file_path?`data-src="${esc(b.file_path)}"`:""}>📄</div><b>${esc(b.title)}</b><span>${esc(b.class)}</span></div>`).join("")}</div>`:"";
-  return row("Continue Reading",rec.slice(0,8))+row("Recently Added",booksCache.slice(0,8));
+  return row("Continue Reading",rec.slice(0,8))+row("Recently Added",loadBooks().slice(0,8));
 }
 function renderLibrary(app){
   setHeader(""); setActiveNav("library");
@@ -913,6 +1224,12 @@ function renderAdmin(app){
       const { error } = await sb.auth.signInWithPassword({ email: f.user.value.trim(), password: f.pass.value });
       if(error) throw error;
       sessionStorage.setItem("edu_admin","1");
+      const bad = await appwriteLogin(f.user.value.trim(), f.pass.value);
+      if(bad.length){
+        msg.style.color="#B3261E";
+        msg.textContent = bad.join(", ")+" login failed, so uploads there will not work. Opening the panel...";
+        await new Promise(r=>setTimeout(r,2500));
+      }
       location.hash = "#/admin/panel";
     }catch(err){
       msg.textContent = "Incorrect email or password.";
@@ -931,6 +1248,7 @@ function renderAdminPanel(app){
     <div class="sidebar">
       <button data-t="dashboard" class="${adminTab==='dashboard'?'active':''}">📊 Dashboard</button>
       <button data-t="upload" class="${adminTab==='upload'?'active':''}">📤 Upload PDF</button>
+      <button data-t="exams" class="${adminTab==='exams'?'active':''}">📝 Upload Exams</button>
       <button data-t="theme" class="${adminTab==='theme'?'active':''}">🎨 Theme</button>
       <button data-t="server" class="${adminTab==='server'?'active':''}">🌐 Server</button>
     </div>
@@ -957,13 +1275,34 @@ function renderAdminPanel(app){
         <div class="field" id="tierWrap" style="display:none"><label>Book level (who is it for?)</label><select id="f_tier">${TIERS.map(t=>`<option value="${t.k}">${t.k}</option>`).join("")}</select></div>
         <div class="note" id="dest"></div>
         <div class="field"><label>Description</label><textarea id="f_desc" rows="3"></textarea></div>
-        <div class="field"><label>Save to server</label><select id="f_server">${SERVERS.map(x=>`<option value="${x.id}"${x.ok?"":" disabled"}>${x.name}${x.ok?"":" (not connected yet)"}</option>`).join("")}</select></div>
+        <div class="field"><label>Save to server</label><select id="f_server">${SERVERS.filter(x=>!x.exam).map(x=>`<option value="${x.id}"${x.ok?"":" disabled"}>${x.name}${x.ok?"":" (not connected yet)"}</option>`).join("")}</select></div>
         <div class="field"><label>PDF file</label><input id="f_file" type="file" accept="application/pdf"></div>
         <button class="btn green" id="saveBookBtn" onclick="saveBook()">Save Book</button>
         <div class="msg" id="uploadMsg"></div>
       </div>`;
     document.getElementById("f_level").onchange = fillClasses;
     fillClasses();
+  } else if(adminTab==="exams"){
+    const ES=SERVERS.filter(x=>x.exam), first=(ES.find(x=>x.ok)||{}).id;
+    body.innerHTML = `
+      <div class="card" style="max-width:100%;margin:0">
+        <p style="color:var(--sub);font-size:13px;margin:0 0 14px">Upload exam papers as PDF. They are saved on the examination servers.</p>
+        <div class="field"><label>Exam title</label><input id="x_title" placeholder="e.g. 2023 Paper 1"></div>
+        <div class="field"><label>Exam subject</label><input id="x_subject" placeholder="e.g. Mathematics"></div>
+        <div class="row2">
+          <div class="field"><label>Education level</label><select id="x_level">${Object.keys(LEVELS).map(k=>`<option value="${k}">${LEVELS[k].label}</option>`).join("")}</select></div>
+          <div class="field"><label id="x_classLbl">Class</label><select id="x_class"></select></div>
+        </div>
+        <div class="field" id="x_bodyWrap" style="display:none"><label>Examination</label><select id="x_body"></select></div>
+        <div class="note" id="x_dest"></div>
+        <div class="field"><label>Description (optional)</label><textarea id="x_desc" rows="3"></textarea></div>
+        <div class="field"><label>Examination server</label><select id="x_server">${ES.map(x=>`<option value="${x.id}"${x.ok?"":" disabled"}${x.id===first?" selected":""}>${x.name}${x.ok?"":" (not connected yet)"}</option>`).join("")}</select></div>
+        <div class="field"><label>Exam PDF file</label><input id="x_file" type="file" accept="application/pdf"></div>
+        <button class="btn green" id="saveExamBtn" onclick="saveExam()">Upload PDF Exam</button>
+        <div class="msg" id="examMsg"></div>
+      </div>`;
+    document.getElementById("x_level").onchange = fillExamClasses;
+    fillExamClasses();
   } else if(adminTab==="theme"){
     body.innerHTML = `<p style="color:var(--sub);font-size:13px;margin:0 0 14px">Choose accent colors for each level.</p>
       ${Object.entries(LEVELS).map(([k,l])=>`
@@ -974,11 +1313,11 @@ function renderAdminPanel(app){
   } else if(adminTab==="server"){
     const box="margin-top:10px;padding:11px 13px;border:1px solid var(--line);border-radius:9px;background:rgba(127,127,127,.12);color:var(--sub);font-size:13px;word-break:break-all";
     body.innerHTML = SERVERS.map(x=>{
-      const n=books.filter(b=>(b._s||"A")===x.id).length;
+      const n=(x.exam?loadExams():books).filter(b=>(b._s||"A")===x.id).length;
       return `<div class="card" style="max-width:100%;margin:0 0 12px;padding:18px">
-        <div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><b>🌐 Books · ${esc(x.name)}</b><span style="font-size:12px;font-weight:700;color:${x.ok?"var(--primary)":"var(--sub)"}">${x.ok?"● Connected":"○ Not connected yet"}</span></div>
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><b>${x.exam?"📝 Examinations":"🌐 Books"} · ${esc(x.name)}</b><span style="font-size:12px;font-weight:700;color:${x.ok?"var(--primary)":"var(--sub)"}">${x.ok?"● Connected":"○ Not connected yet"}</span></div>
         <div style="${box}">${x.ok?esc(x.url||x.endpoint):"Will be added soon"}</div>
-        <p style="color:var(--sub);font-size:12px;margin:8px 0 0">${x.ok?n+" book"+(n!==1?"s":"")+" stored here":"Extra space for new uploads."}</p></div>`;
+        <p style="color:var(--sub);font-size:12px;margin:8px 0 0">${x.ok?n+(x.exam?" exam paper":" book")+(n!==1?"s":"")+" stored here":(x.exam?"Reserved for examination PDFs.":"Extra space for new uploads.")}</p></div>`;
     }).join("")+`
       <div class="card" style="max-width:100%;margin:0 0 12px;padding:18px">
         <b>🤖 Edu AI Backend</b>
@@ -993,10 +1332,67 @@ function fillClasses(){
   const sel = document.getElementById("f_class");
   sel.innerHTML = LEVELS[lv].classes.map(c=>`<option>${c}</option>`).join("");
   const lbl=document.getElementById("f_classLbl"); if(lbl) lbl.textContent = lv==="Tertiary" ? "Course category" : "Class";
-  const tw=document.getElementById("tierWrap"), tsel=document.getElementById("f_tier");
-  if(tw) tw.style.display = lv==="Tertiary" ? "" : "none";
-  const upd = ()=>{ document.getElementById("dest").textContent = `Upload destination: ${LEVELS[lv].label} → ${sel.value}`+(lv==="Tertiary"&&tsel?` → ${tsel.value}`:""); };
-  sel.onchange = upd; if(tsel) tsel.onchange = upd; upd();
+  const tw=document.getElementById("tierWrap"), tsel=document.getElementById("f_tier"), kind=document.getElementById("f_kind");
+  const upd = ()=>{
+    const ex = !!kind && kind.value==="exam";
+    if(tw) tw.style.display = (lv==="Tertiary" && !ex) ? "" : "none";
+    document.getElementById("dest").textContent = ex
+      ? `Upload destination: Examinations → ${LEVELS[lv].label} → ${sel.value}`
+      : `Upload destination: ${LEVELS[lv].label} → ${sel.value}`+(lv==="Tertiary"&&tsel?` → ${tsel.value}`:"");
+  };
+  sel.onchange = upd; if(tsel) tsel.onchange = upd; if(kind) kind.onchange = upd; upd();
+}
+
+function fillExamClasses(){
+  const lv=document.getElementById("x_level").value, sel=document.getElementById("x_class");
+  sel.innerHTML=LEVELS[lv].classes.map(c=>`<option>${c}</option>`).join("");
+  document.getElementById("x_classLbl").textContent = lv==="Tertiary" ? "Course category" : "Class";
+  sel.onchange=updExamBody; updExamBody();
+}
+function updExamBody(){
+  const c=document.getElementById("x_class").value, opts=EXAM_BODIES[c], w=document.getElementById("x_bodyWrap"), b=document.getElementById("x_body");
+  if(opts){
+    b.innerHTML=opts.map(o=>`<option>${o}</option>`).join("");
+    if(c==="Form 2") b.value="JCE"; if(c==="Form 4") b.value="MSCE";
+    w.style.display=""; b.onchange=updExamDest;
+  }else{ b.innerHTML=""; w.style.display="none"; }
+  updExamDest();
+}
+function updExamDest(){
+  const lv=document.getElementById("x_level").value, c=document.getElementById("x_class").value, opts=EXAM_BODIES[c], b=document.getElementById("x_body");
+  document.getElementById("x_dest").textContent=`Upload destination: Examinations → ${LEVELS[lv].label} → ${c}`+(opts&&b.value?` → ${b.value}`:"");
+}
+async function saveExam(){
+  const g=id=>document.getElementById(id);
+  const title=g("x_title").value.trim(), subject=g("x_subject").value.trim(), level=g("x_level").value, cls0=g("x_class").value;
+  const body=EXAM_BODIES[cls0]?g("x_body").value:"", desc=g("x_desc").value.trim(), fileInput=g("x_file"), msg=g("examMsg"), btn=g("saveExamBtn");
+  if(!title||!subject||!fileInput.files[0]){ msg.style.color="#B3261E"; msg.textContent="Enter the exam title, the subject and choose a PDF file."; return; }
+  const file=fileInput.files[0];
+  if(file.type!=="application/pdf"){ msg.style.color="#B3261E"; msg.textContent="Please choose a PDF file."; return; }
+  const S=srv((g("x_server")||{}).value||"C");
+  if(!S.exam||!S.ok){ msg.style.color="#B3261E"; msg.textContent=(S.exam?S.name:"An examination server")+" is not connected yet."; return; }
+  const cls=cls0+TIER_SEP+"Exam"+(body?TIER_SEP+body:"");
+  const path=`${level}/${cls0}/Exam${body?"/"+body:""}/${Date.now()}_${file.name}`.replace(/\s+/g,"_");
+  btn.disabled=true; msg.style.color="var(--sub)"; msg.textContent="Uploading PDF exam...";
+  try{
+    if(S.type==="appwrite"){
+      const up=await S.storage.createFile({bucketId:S.bucket,fileId:Appwrite.ID.unique(),file:file});
+      const fileUrl=S.endpoint+"/storage/buckets/"+S.bucket+"/files/"+up.$id+"/view?project="+S.project;
+      await S.tdb.createRow({databaseId:S.db,tableId:S.table,rowId:Appwrite.ID.unique(),data:{title:title,subject:subject,author:"",level:level,class:cls,description:desc,file_path:fileUrl}});
+    }else{
+      const {error:upErr}=await S.sb.storage.from("books").upload(path,file);
+      if(upErr) throw upErr;
+      const {data:pub}=S.sb.storage.from("books").getPublicUrl(path);
+      const {error:dbErr}=await S.sb.from("books").insert({title,subject,author:"",level,class:cls,description:desc,file_path:pub.publicUrl});
+      if(dbErr) throw dbErr;
+    }
+    await refreshBooks();
+    msg.style.color="var(--primary)";
+    msg.textContent=`Saved: ${subject} → Examinations → ${level} → ${cls0}${body?" → "+body:""}.`;
+    ["x_title","x_subject","x_desc"].forEach(id=>g(id).value=""); fileInput.value="";
+  }catch(e){
+    msg.style.color="#B3261E"; msg.textContent="Upload failed: "+(e.message||"please try again.");
+  }finally{ btn.disabled=false; }
 }
 
 async function saveBook(){
@@ -1005,8 +1401,9 @@ async function saveBook(){
   const author = document.getElementById("f_author").value.trim();
   const level = document.getElementById("f_level").value;
   const cls0 = document.getElementById("f_class").value;
-  const tier = level==="Tertiary" ? (document.getElementById("f_tier")||{}).value||"" : "";
-  const cls = cls0 + (tier ? TIER_SEP+tier : "");
+  const isEx = (document.getElementById("f_kind")||{}).value==="exam";
+  const tier = (level==="Tertiary" && !isEx) ? (document.getElementById("f_tier")||{}).value||"" : "";
+  const cls = cls0 + (isEx ? TIER_SEP+"Exam" : (tier ? TIER_SEP+tier : ""));
   const desc = document.getElementById("f_desc").value.trim();
   const fileInput = document.getElementById("f_file");
   const msg = document.getElementById("uploadMsg");
@@ -1017,7 +1414,7 @@ async function saveBook(){
   const S=srv((document.getElementById("f_server")||{}).value||"A");
   if(!S.ok){ msg.style.color = "#B3261E"; msg.textContent = S.name+" is not connected yet."; return; }
   const file = fileInput.files[0];
-  const path = `${level}/${cls0}${tier?"/"+tier:""}/${Date.now()}_${file.name}`.replace(/\s+/g,"_");
+  const path = `${level}/${cls0}${isEx?"/Exam":(tier?"/"+tier:"")}/${Date.now()}_${file.name}`.replace(/\s+/g,"_");
   btn.disabled = true;
   msg.style.color = "var(--sub)";
   msg.textContent = "Uploading PDF...";
@@ -1037,7 +1434,7 @@ async function saveBook(){
     }
     await refreshBooks();
     msg.style.color = "var(--primary)";
-    msg.textContent = `Saved to ${level} → ${cls0}${tier?" → "+tier:""}.`;
+    msg.textContent = `Saved to ${isEx?"Examinations → ":""}${level} → ${cls0}${tier?" → "+tier:""}.`;
     ["f_title","f_subject","f_author","f_desc"].forEach(id=>document.getElementById(id).value="");
     fileInput.value = "";
   } catch(e){
@@ -1501,7 +1898,7 @@ function buildAppContext(){
   return [
     who,
     `ABOUT THE APP YOU LIVE IN: You are Edu AI, the built-in study assistant of "Edu Library", a mobile-friendly digital library and e-learning web app for students in Malawi. Edu Library was created and is owned by ${APP_OWNER}. If anyone asks who made, built, owns or runs Edu Library (or you), answer: ${APP_OWNER}.`,
-    `How the app works: the home screen has a "Get Started" button; the bottom tabs are Home, Search, Library and Admin (shown with symbol icons). At the top right of every screen there is an eye button for Reading mode (a warm orange screen tint that is easier on the eyes; tapping it turns it on and shows a slider to make the colour stronger or lighter), a sun/moon button for light and dark theme, and a gear button for Settings (screen colour choices, and About with the app version). The language button (English / Chichewa) appears only on the start page. Library -> choose an education level -> choose a class -> choose a subject (or "All books") -> list of books. In Tertiary / College, after choosing a course category the student also picks a book level: Basic (new to the field), Standard (has some knowledge) or Advanced (professionals), or All levels. Levels and classes: ${lv}. Every book is a PDF with Preview (in-app reader) and Save (download). The Preview screen has a reading-mode button that cycles the screen between normal, warm orange and dim brown for comfortable reading. Search finds books by title, subject, author, level or class. The app supports English and Chichewa, with theme and language buttons at the top right. Books are uploaded by the app admin from the Admin tab; students cannot upload. "Continue Reading" and "Recently Added" rows on the Library screen help students pick up where they left off.`,
+    `How the app works: the home screen has a "Get Started" button; the bottom tabs are Home, Search, Library and Exams (shown with symbol icons). The Exams tab (paper icon) holds exam papers grouped by education level and then by class or course category, with a search box inside each class. At the top right of every screen there is an eye button for Reading mode (a warm orange screen tint that is easier on the eyes; tapping it turns it on and shows a slider to make the colour stronger or lighter), a sun/moon button for light and dark theme, and a gear button for Settings (screen colour choices, and About with the app version). The language button (English / Chichewa) appears only on the start page. Library -> choose an education level -> choose a class -> choose a subject (or "All books") -> list of books. In Tertiary / College, after choosing a course category the student also picks a book level: Basic (new to the field), Standard (has some knowledge) or Advanced (professionals), or All levels. Levels and classes: ${lv}. Every book is a PDF with Preview (in-app reader) and Save (download). The Preview screen has a reading-mode button that cycles the screen between normal, warm orange and dim brown for comfortable reading. Search finds books by title, subject, author, level or class. The app supports English and Chichewa, with theme and language buttons at the top right. Books are uploaded by the app admin from the Admin tab; students cannot upload. "Continue Reading" and "Recently Added" rows on the Library screen help students pick up where they left off.`,
     `ABOUT YOUR CREATOR (share ONLY when someone directly asks who made, built or owns you or the app, how it began, or about his background; never bring any of it up on your own, never in greetings or unrelated answers): Edu Library and you were created by ${APP_OWNER}, who built the whole app himself. Always call him "${APP_OWNER}". Only if someone asks for his government name, full name or real name, say it is ${APP_OWNER_LEGAL} (people know him as ${APP_OWNER}). The idea: he had this idea for many years but lacked the resources to make it real. A few months ago he started coding in Python. The first version was a desktop app; he then redesigned it as an HTML web app so it is mobile-friendly and works on students' phones. Personal details, to be shared only if asked: he was born in 2003 at Limbe Hospital in Blantyre, Malawi, so he is around ${ownerAge()} years old. Only the birth year is known: never state or guess an exact birthday, day, month or time of birth, and if asked for it say he prefers to keep that private. Education: for primary school he attended Zingwangwa Primary School and then Fishing Line Primary School. For secondary school he attended Zingwangwa Progressive Secondary School, then Beacon High School, then Mulomba CDSS, and then Madaliso High School. He wrote his MSCE at Madaliso High School in 2022, repeated it in 2024, and is writing MSCE again. Share these facts warmly and briefly, only the part that was asked, and never invent extra personal details. His story is a good example to encourage students who have had to repeat a class or change schools: persistence pays off.`,
     `YOUR OWN FEATURES (mention them only when relevant to what the student is doing or asks, never boast): the plus button on the left of the message bar lets a student add a photo, such as a textbook page, diagram or homework question, for you to explain; the microphone button lets students speak instead of typing, which helps students who struggle with spelling, and their words appear in the message box; the send button sends the message and turns into a stop button while you are answering; the play/pause button on each of your replies reads it aloud and can be paused and resumed, and the audio keeps playing if the student switches apps; the Voice button at the top of the chat lets each student choose their favourite voice for you, and also a separate voice for reading Chichewa answers (the voices available depend on their phone, and Chichewa voices are rare, so the closest clear voice is used and Chichewa may not sound perfect); you can answer in Chichewa whenever a student asks, and when you do, the app reads your answer aloud with a slower pace and pronunciation-friendly handling of Chichewa spelling; you learn each student's name and class from the chat and adapt to them automatically; the menu button at the top left opens their saved chats; the suggestion buttons above the message bar (Explain this topic, Create a quiz, Summarize this lesson, Help me study) give quick starts; and you can make simple pictures when a student asks for one.`,
     `WHICH AI MODELS POWER YOU (share ONLY when someone directly asks which AI or model you are or what powers you; never volunteer it): you run on Google Gemini as the main model, with Groq and Mistral models as automatic backups that take over if one is busy or reaches its limit; pictures are made by Gemini's image model. Say this honestly, and add that you cannot always tell which of them is answering at a given moment. Never claim to be any other product.`,
@@ -1766,7 +2163,7 @@ window.addEventListener("hashchange", render);
 </script>
 <script>
 /* ---------- Reading mode + Settings ---------- */
-const APP_VERSION="1.0.1"; // <- change this when you release a new version
+const APP_VERSION="1.0.4"; // <- change this when you release a new version
 const APP_BUILD_NOTE="Mobile-friendly digital library for students in Malawi";
 (function(){
   const EYE_SVG='<svg class="sic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-6.5 10-6.5S22 12 22 12s-3.6 6.5-10 6.5S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>',GEAR_SVG='<svg class="sic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h0a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51h0a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v0a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>';
