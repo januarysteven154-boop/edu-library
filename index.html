@@ -141,6 +141,8 @@ body.light .aibar .aisend,body.light .aibar .aisend.arrow{background:linear-grad
   .aiprev{padding:10px 0 2px 8px}
   .aiprevbox{position:relative;width:76px;height:76px}
   .aiprevbox img{width:76px;height:76px;object-fit:cover;border-radius:14px;display:block;border:1px solid var(--line)}
+  .aiprevdoc{display:flex;align-items:center;gap:8px;max-width:230px;height:52px;padding:0 14px 0 12px;border-radius:14px;border:1px solid var(--line);background:rgba(127,127,127,.12);font-size:13px;font-weight:600}
+  .aiprevdoc span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .aiprevx{position:absolute;top:-6px;right:-6px;width:24px;height:24px;padding:0;border-radius:50%;border:none;background:#0b1b3f;color:#fff;font-size:12px;line-height:24px;text-align:center;box-shadow:0 1px 4px rgba(0,0,0,.4)}
   body.light .aiprevx{background:#fff;color:#0b1b3f}
   .aizoom{position:fixed;inset:0;z-index:200;background:rgba(0,0,0,.88);display:flex;align-items:center;justify-content:center;padding:16px;cursor:zoom-out}
@@ -1861,8 +1863,8 @@ function renderAI(app){
         <div class="aipill">
           <div id="aiPrev" class="aiprev" hidden></div>
           <div class="aipillrow">
-          <button type="button" class="aiic plus" title="Add a photo" aria-label="Add a photo" onclick="document.getElementById('aiPhoto').click()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></button>
-          <input type="file" id="aiPhoto" accept="image/*" hidden onchange="aiPhotoPick(this)">
+          <button type="button" class="aiic plus" title="Add a photo or document" aria-label="Add a photo or document" onclick="document.getElementById('aiPhoto').click()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></button>
+          <input type="file" id="aiPhoto" accept="image/*,.pdf,.docx,.doc,.pptx,.ppt,.xlsx,.xls,.odt,.ods,.odp,.txt,.md,.csv,.tsv,.json,.xml,.html,.htm,.log" hidden onchange="aiPhotoPick(this)">
           <textarea id="aiInput" rows="1" aria-label="Message" oninput="aiGrow(this)" onkeydown="aiKey(event)"></textarea>
           <button type="button" id="aiMic" class="aiic" title="Speak instead of typing" aria-label="Speak instead of typing" onclick="aiMicToggle()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="3" width="6" height="12" rx="3"/><path d="M5 11a7 7 0 0 0 14 0"/><path d="M12 18v3"/></svg></button>
           </div>
@@ -1909,7 +1911,7 @@ function buildAppContext(){
   ].filter(Boolean).join("\n")+"\n\n"+buildBookContext();
 }
 const AI_THUMBS=new WeakMap();
-let AI_PENDING=null,AI_RUN=null,AI_BUSY=false,AI_LISTEN=false,AI_REC=null;
+let AI_PENDING=null,AI_PENDING_NAME="",AI_RUN=null,AI_BUSY=false,AI_LISTEN=false,AI_REC=null;
 const AI_SR=window.SpeechRecognition||window.webkitSpeechRecognition;
 const AI_STOP='<svg viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="6" width="12" height="12" rx="2.4"/></svg>';
 const AI_PLANE='<svg viewBox="0 0 24 24" fill="currentColor"><path d="M3.4 20.4l17.5-7.5a1 1 0 0 0 0-1.8L3.4 3.6a1 1 0 0 0-1.4 1.2L4 10.5 15 12 4 13.5 2 19.2a1 1 0 0 0 1.4 1.2z"/></svg>';
@@ -1929,9 +1931,19 @@ function aiSyncSend(){
     p.hidden=!AI_PENDING;p.innerHTML="";
     if(AI_PENDING){
       const box=document.createElement("div");box.className="aiprevbox";
-      const im=document.createElement("img");im.src=AI_PENDING;im.alt="";
-      const x=document.createElement("button");x.type="button";x.className="aiprevx";x.setAttribute("aria-label","Remove photo");x.textContent="✕";x.onclick=aiClearPending;
-      box.appendChild(im);box.appendChild(x);p.appendChild(box);
+      const isImg=AI_PENDING.indexOf("data:image")===0;
+      if(isImg){
+        const im=document.createElement("img");im.src=AI_PENDING;im.alt="";
+        box.appendChild(im);
+      }else{
+        box.style.width="auto";box.style.height="auto";
+        const d=document.createElement("div");d.className="aiprevdoc";
+        const ic=document.createElement("b");ic.textContent="📄";
+        const nm=document.createElement("span");nm.textContent=AI_PENDING_NAME||"Document";
+        d.appendChild(ic);d.appendChild(nm);box.appendChild(d);
+      }
+      const x=document.createElement("button");x.type="button";x.className="aiprevx";x.setAttribute("aria-label","Remove attachment");x.textContent="✕";x.onclick=aiClearPending;
+      box.appendChild(x);p.appendChild(box);
     }
   }
   const t=document.getElementById("aiInput");
@@ -1970,7 +1982,7 @@ function aiMicToggle(){
   if(AI_LISTEN&&AI_REC){AI_REC.stop();return;}
   aiListen(aiVoiceLang());
 }
-function aiClearPending(){AI_PENDING=null;aiSyncSend();}
+function aiClearPending(){AI_PENDING=null;AI_PENDING_NAME="";aiSyncSend();}
 function aiZoom(src){
   const o=document.createElement("div");o.className="aizoom";
   const im=document.createElement("img");im.src=src;im.alt="";
@@ -2033,22 +2045,144 @@ async function aiRun(userTurn,task){
   }
   finishAI(turns,cid);
 }
+const AI_DOC_MAX=2800000; /* bytes: a scanned PDF is sent whole, the server accepts about 3 MB */
+const AI_DOC_FILE_MAX=25000000; /* bytes: biggest file we will open on the phone */
+const AI_DOC_TEXT_MAX=120000; /* characters of text sent to the AI */
+const AI_TEXT_EXT=["txt","md","csv","tsv","json","xml","log","html","htm"];
+const AI_ZIP_EXT=["docx","pptx","xlsx","odt","ods","odp"];
+function aiToDataUrl(file,mime){
+  return new Promise((ok,no)=>{
+    const r=new FileReader();r.onerror=no;
+    r.onload=()=>{const b=String(r.result||"");const i=b.indexOf(",");ok("data:"+mime+";base64,"+(i>=0?b.slice(i+1):""));};
+    r.readAsDataURL(file);
+  });
+}
+function aiTextToDataUrl(t){
+  const b=new TextEncoder().encode(t);let s="";
+  for(let i=0;i<b.length;i+=0x8000)s+=String.fromCharCode.apply(null,b.subarray(i,i+0x8000));
+  return "data:text/plain;base64,"+btoa(s);
+}
+function aiLoadJSZip(){
+  if(window.JSZip)return Promise.resolve();
+  return new Promise((ok,no)=>{
+    const s=document.createElement("script");
+    s.src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js";
+    s.onload=()=>ok();
+    s.onerror=()=>no(new Error("Could not load the document reader. Check your internet and try again."));
+    document.head.appendChild(s);
+  });
+}
+function aiXmlDecode(t){return String(t).replace(/&lt;/g,"<").replace(/&gt;/g,">").replace(/&quot;/g,'"').replace(/&apos;/g,"'").replace(/&amp;/g,"&");}
+function aiParas(xml,paraEnd,re){
+  return xml.split(paraEnd).map(p=>{let o="",m;re.lastIndex=0;while((m=re.exec(p)))o+=m[1];return aiXmlDecode(o);}).filter(x=>x.trim()).join("\n");
+}
+function aiNum(a,b){return (parseInt((a.match(/(\d+)/)||[0,0])[1],10))-(parseInt((b.match(/(\d+)/)||[0,0])[1],10));}
+async function aiZipText(f,ext){
+  await aiLoadJSZip();
+  const zip=await JSZip.loadAsync(f);
+  const names=Object.keys(zip.files);
+  let out="";
+  if(ext==="docx"){
+    const x=zip.file("word/document.xml");if(!x)throw new Error("That Word file looks damaged.");
+    out=aiParas(await x.async("string"),"</w:p>",/<w:t(?:\s[^>]*)?>([^<]*)<\/w:t>/g);
+  }else if(ext==="pptx"){
+    const sl=names.filter(n=>/^ppt\/slides\/slide\d+\.xml$/.test(n)).sort(aiNum);
+    for(let i=0;i<sl.length;i++){
+      const t=aiParas(await zip.file(sl[i]).async("string"),"</a:p>",/<a:t(?:\s[^>]*)?>([^<]*)<\/a:t>/g);
+      if(t)out+="[Slide "+(i+1)+"]\n"+t+"\n\n";
+    }
+  }else if(ext==="xlsx"){
+    const shared=[];
+    const ss=zip.file("xl/sharedStrings.xml");
+    if(ss){
+      const sx=await ss.async("string");const re=/<si>([\s\S]*?)<\/si>/g;let m;
+      while((m=re.exec(sx))){let v="",q;const tr=/<t(?:\s[^>]*)?>([^<]*)<\/t>/g;while((q=tr.exec(m[1])))v+=q[1];shared.push(aiXmlDecode(v));}
+    }
+    const sh=names.filter(n=>/^xl\/worksheets\/sheet\d+\.xml$/.test(n)).sort(aiNum);
+    for(let i=0;i<sh.length;i++){
+      const sx=await zip.file(sh[i]).async("string");
+      let rows="";
+      sx.split("</row>").forEach(r=>{
+        const cells=[];const cr=/<c\s([^>]*?)(?:\/>|>([\s\S]*?)<\/c>)/g;let c;
+        while((c=cr.exec(r))){
+          const body=c[2]||"";const isS=/\bt="s"/.test(c[1]);const isInline=/\bt="inlineStr"/.test(c[1]);
+          let v="";
+          if(isInline){const t=body.match(/<t(?:\s[^>]*)?>([^<]*)<\/t>/);v=t?aiXmlDecode(t[1]):"";}
+          else{const vm=body.match(/<v>([^<]*)<\/v>/);if(vm)v=isS?(shared[parseInt(vm[1],10)]||""):aiXmlDecode(vm[1]);}
+          cells.push(v);
+        }
+        if(cells.some(x=>String(x).trim()))rows+=cells.join(" | ")+"\n";
+      });
+      if(rows)out+="[Sheet "+(i+1)+"]\n"+rows+"\n";
+    }
+  }else{
+    const x=zip.file("content.xml");if(!x)throw new Error("That file looks damaged.");
+    out=aiXmlDecode((await x.async("string")).replace(/<text:tab\/>/g,"\t").replace(/<text:line-break\/>/g,"\n").replace(/<\/text:(?:p|h)>/g,"\n").replace(/<\/table:table-cell>/g," | ").replace(/<\/table:table-row>/g,"\n").replace(/<[^>]+>/g,""));
+  }
+  return out;
+}
+async function aiPdfText(f){
+  const pdf=await pdfjsLib.getDocument({data:await f.arrayBuffer()}).promise;
+  let out="";const n=Math.min(pdf.numPages,120);
+  for(let i=1;i<=n;i++){
+    const tc=await (await pdf.getPage(i)).getTextContent();
+    out+="\n[Page "+i+"]\n"+tc.items.map(x=>x.str).join(" ");
+    if(out.length>AI_DOC_TEXT_MAX)break;
+  }
+  return out;
+}
+/* Turns any supported document into something the AI can read. Returns {url}. */
+async function aiReadDocument(f){
+  const nm=(f.name||"").toLowerCase();
+  const ext=(nm.match(/\.([a-z0-9]+)$/)||[])[1]||"";
+  if(f.size>AI_DOC_FILE_MAX)throw new Error("That file is too big (over 25 MB). Please choose a smaller one.");
+  let text="";
+  if(ext==="pdf"||f.type==="application/pdf"){
+    let t="";try{t=await aiPdfText(f);}catch(_){}
+    if(t.replace(/\[Page \d+\]|\s/g,"").length>=80){text=t;}
+    else{
+      if(f.size>AI_DOC_MAX)throw new Error("This PDF looks like scanned pages and is over 2.8 MB. Please choose a smaller one.");
+      return {url:await aiToDataUrl(f,"application/pdf")};
+    }
+  }else if(AI_ZIP_EXT.indexOf(ext)>=0){
+    text=await aiZipText(f,ext);
+  }else if(ext==="doc"||ext==="xls"||ext==="ppt"||ext==="rtf"||ext==="pages"||ext==="numbers"||ext==="key"){
+    throw new Error("Files of this type can't be read yet. Please save it as .docx, .xlsx, .pptx or PDF and try again.");
+  }else if(AI_TEXT_EXT.indexOf(ext)>=0||/^text\//.test(f.type)){
+    text=await f.text();
+    if(ext==="html"||ext==="htm")text=aiXmlDecode(text.replace(/<(script|style)[\s\S]*?<\/\1>/gi," ").replace(/<\/(p|div|li|tr|h[1-6])>/gi,"\n").replace(/<[^>]+>/g," "));
+  }else{
+    throw new Error("That file type isn't supported. You can use photos, PDF, Word, PowerPoint, Excel, OpenDocument and text files.");
+  }
+  text=text.replace(/\n{3,}/g,"\n\n").trim();
+  if(!text)throw new Error("I couldn't find any readable text in that file.");
+  if(text.length>AI_DOC_TEXT_MAX)text=text.slice(0,AI_DOC_TEXT_MAX)+"\n\n[The document was cut here because it is very long.]";
+  return {url:aiTextToDataUrl(text)};
+}
 async function aiPhotoPick(inp){
   const f=inp.files&&inp.files[0];inp.value="";
   if(!f)return;
-  try{AI_PENDING=await shrinkImg(f,1024);}catch(_){alert("Could not read that image.");return;}
+  if(f.type&&f.type.indexOf("image/")===0){
+    try{AI_PENDING=await shrinkImg(f,1024);AI_PENDING_NAME="";}catch(_){alert("Could not read that image.");return;}
+  }else{
+    const t=document.getElementById("aiInput");if(t)t.placeholder="Reading document…";
+    try{const d=await aiReadDocument(f);AI_PENDING=d.url;AI_PENDING_NAME=f.name||"Document";}
+    catch(e){aiSyncSend();alert((e&&e.message)||"Could not read that document.");return;}
+  }
   aiSyncSend();
   const box=document.getElementById("aiInput");if(box)box.focus();
 }
 function aiSendPhoto(q){
-  const thumb=AI_PENDING;AI_PENDING=null;
+  const thumb=AI_PENDING,dname=AI_PENDING_NAME;AI_PENDING=null;AI_PENDING_NAME="";
   const box=document.getElementById("aiInput");if(box){box.value="";aiGrow(box);}
   aiSyncSend();
-  const u={role:"user",content:q||"Please explain this image."};
-  AI_THUMBS.set(u,thumb);
+  const isDoc=thumb.indexOf("data:image")!==0;
+  const u={role:"user",content:isDoc?("📄 "+(dname||"Document")+(q?"\n"+q:"")):(q||"Please explain this image.")};
+  if(!isDoc)AI_THUMBS.set(u,thumb);
+  const ask=isDoc?(q||"Please read this document and give me a clear summary with the key points."):u.content;
   aiRun(u,async()=>{
-    const d=await aiPost("/image",{image:thumb,prompt:u.content});
-    return{role:"assistant",content:(d.reply&&String(d.reply).trim())||"Sorry, I couldn't read that image."};
+    const d=await aiPost("/image",{image:thumb,prompt:ask},90000);
+    return{role:"assistant",content:(d.reply&&String(d.reply).trim())||(isDoc?"Sorry, I couldn't read that document.":"Sorry, I couldn't read that image.")};
   });
 }
 function aiIntent(t){
@@ -2163,7 +2297,7 @@ window.addEventListener("hashchange", render);
 </script>
 <script>
 /* ---------- Reading mode + Settings ---------- */
-const APP_VERSION="1.0.4"; // <- change this when you release a new version
+const APP_VERSION="1.0.6"; // <- change this when you release a new version
 const APP_BUILD_NOTE="Mobile-friendly digital library for students in Malawi";
 (function(){
   const EYE_SVG='<svg class="sic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-6.5 10-6.5S22 12 22 12s-3.6 6.5-10 6.5S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>',GEAR_SVG='<svg class="sic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h0a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51h0a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v0a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>';
