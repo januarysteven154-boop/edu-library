@@ -1552,7 +1552,7 @@ let cachedVoices = [];
 function loadVoices(){
   cachedVoices = window.speechSynthesis.getVoices();
 }
-try{["edu_ai_gender","edu_ai_voice","edu_ai_voice_ny"].forEach(k=>localStorage.removeItem(k));}catch(e){}
+try{["edu_ai_gender","edu_ai_voice","edu_ai_voice_ny","edu_ai_vstyle"].forEach(k=>localStorage.removeItem(k));}catch(e){}
 if("speechSynthesis" in window){
   loadVoices();
   window.speechSynthesis.onvoiceschanged = loadVoices;
@@ -1588,6 +1588,7 @@ function isEnglishText(t){
   let c=0;w.forEach(x=>{if(EN_WORDS.has(x))c++;});
   return c/w.length>=0.2;
 }
+function isNyCode(c){return c==="ny"||c==="nya"||c==="nya_mang";}
 function vPre(v){return (v.lang||"").toLowerCase().replace("_","-").split("-")[0];}
 /* "local" = the selected local language (or Chichewa text); "en" = English text */
 function ttsKindFor(text){
@@ -1601,25 +1602,22 @@ function ttsLocalVoice(code){
   const pre=TTS_PREFIX[code]||[];
   const exact=cachedVoices.filter(v=>pre.indexOf(vPre(v))>-1).sort((a,b)=>voiceScore(b)-voiceScore(a))[0];
   if(exact)return {v:exact,exact:true};
-  return {v:nyCandidates()[0]||null,exact:false};
+  if(isNyCode(code))return {v:nyCandidates()[0]||null,exact:false};
+  return {v:null,exact:false};
 }
 function ttsVoiceFor(kind,code){
   if(kind==="en"){const v=pickCalmVoice();return {v:v,exact:!!v};}
   return ttsLocalVoice(code);
 }
 function ttsApply(u,kind,code){
-  const st=V_STYLES[getVStyle()],loc=kind==="local";
-  u.rate=(loc?0.88:0.96)*st.r;u.pitch=Math.min(2,Math.max(0.1,st.p));u.volume=1;
+  const loc=kind==="local";
+  u.rate=loc?0.88:0.96;u.pitch=1;u.volume=1;
   const r=ttsVoiceFor(kind,code);
   if(r.v){u.voice=r.v;u.lang=r.v.lang||u.lang;}
   else if(!cachedVoices.length)u.lang=loc?(TTS_LOCALE[code]||"en"):"en";
   return r;
 }
 
-/* voice style (child / young / adult / mature) changes pitch and speed only; it does not claim any gender */
-const V_STYLES={child:{l:"👧 Child",p:1.55,r:1.08},young:{l:"🧑 Young",p:1.2,r:1.03},adult:{l:"🧔 Adult",p:1,r:1},mature:{l:"👴 Mature",p:0.82,r:0.94}};
-function getVStyle(){try{const k=localStorage.getItem("edu_ai_vstyle");return V_STYLES[k]?k:"adult";}catch(e){return "adult";}}
-function setVStyle(k){try{localStorage.setItem("edu_ai_vstyle",k);}catch(e){}}
 function voiceScore(v){
   const n=(v.name||"")+" "+(v.voiceURI||""),l=(v.lang||"").toLowerCase();
   let sc=0;
@@ -1644,7 +1642,7 @@ function aiMenuToggle(e){
   if(e)e.stopPropagation();
   if(document.getElementById("aiMenu")){aiMenuClose();return;}
   const m=document.createElement("div");m.id="aiMenu";m.className="aimenu";
-  m.innerHTML=`<div class="aimcard" role="menu"><div class="aimtitle">Edu AI Assistant</div><button type="button" role="menuitem" id="aiMenuVoice">${window.VOICE_ICON}<span>Read-aloud voice</span></button></div>`;
+  m.innerHTML=`<div class="aimcard" role="menu"><div class="aimtitle">Edu AI Assistant</div><button type="button" role="menuitem" id="aiMenuVoice">${window.VOICE_ICON}<span>Read aloud</span></button></div>`;
   m.onclick=ev=>{if(ev.target===m)aiMenuClose();};
   document.body.appendChild(m);
   m.querySelector("#aiMenuVoice").onclick=()=>{aiMenuClose();aiVoiceOpen();};
@@ -1654,10 +1652,9 @@ window.addEventListener("hashchange",aiMenuClose);
 function aiVoiceOpen(){
   if(!("speechSynthesis" in window)){alert("This phone can't read aloud.");return;}
   const o=document.createElement("div");o.className="aimodal";
-  o.innerHTML=`<div class="card aiprof aivoice" role="dialog" aria-label="Read-aloud voice">
-    <h3>${window.VOICE_ICON}<span>Read-aloud voice</span></h3>
-    <p class="hint">Edu AI reads answers in the language you chose, using a voice that is on your phone. Which voices exist depends on your phone.</p>
-    <div class="avh2">Voice style</div><div class="avtabs" id="avS"></div>
+  o.innerHTML=`<div class="card aiprof aivoice" role="dialog" aria-label="Read aloud">
+    <h3>${window.VOICE_ICON}<span>Read aloud</span></h3>
+    <p class="hint">Edu AI reads answers aloud in the language you chose. Your phone picks the voice, so which voices exist depends on your phone. The written answer stays in your language either way.</p>
     <p class="hint" id="avInfo" style="margin:10px 0"></p>
     <button type="button" class="btn" id="avTest">Listen</button>
     <button type="button" class="btn green" id="avDone">Done</button>
@@ -1667,7 +1664,7 @@ function aiVoiceOpen(){
   o.onclick=e=>{if(e.target===o)close();};
   o.querySelector("#avDone").onclick=close;
   const nm=v=>String(v.name||"voice").replace(/^(Microsoft|Google)\s+/i,"").replace(/\s*-\s*.*$/,"").trim()||"voice";
-  const isNy=()=>LANG==="ny"||LANG==="nya"||LANG==="nya_mang";
+  const isNy=()=>isNyCode(LANG);
   function infoText(){
     try{cachedVoices=speechSynthesis.getVoices()||cachedVoices;}catch(_){}
     const ln=langName();
@@ -1688,9 +1685,6 @@ function aiVoiceOpen(){
     }catch(_){}
   }
   function draw(){
-    const vs=getVStyle();
-    o.querySelector("#avS").innerHTML=Object.keys(V_STYLES).map(k=>`<button type="button" data-s="${k}" class="${vs===k?"sel":""}">${V_STYLES[k].l}</button>`).join("");
-    o.querySelectorAll("#avS button").forEach(b=>b.onclick=()=>{setVStyle(b.dataset.s);draw();say();});
     o.querySelector("#avInfo").textContent=infoText();
   }
   o.querySelector("#avTest").onclick=say;
@@ -1752,11 +1746,11 @@ function ttsNext(){
   const loc=TTS.kind==="local";
   let u;
   try{
-    u=new SpeechSynthesisUtterance(loc?nyClean(TTS.chunks[TTS.pos]):TTS.chunks[TTS.pos]);
+    u=new SpeechSynthesisUtterance(loc&&isNyCode(TTS.code)?nyClean(TTS.chunks[TTS.pos]):TTS.chunks[TTS.pos]);
     ttsApply(u,TTS.kind,TTS.code);
   }catch(_){ttsEnd();return;}
   u.onend=()=>{if(TTS.tok!==my||TTS.state!=="playing")return;TTS.pos++;ttsNext();};
-  u.onerror=e=>{if(TTS.tok!==my||TTS.state!=="playing")return;if(e&&(e.error==="interrupted"||e.error==="canceled"))return;TTS.pos++;ttsNext();};
+  u.onerror=e=>{if(TTS.tok!==my||TTS.state!=="playing")return;if(e&&(e.error==="interrupted"||e.error==="canceled"))return;if(e&&/^(not-allowed|synthesis-unavailable|language-unavailable|voice-unavailable)$/.test(e.error||"")){ttsEnd();return;}TTS.pos++;ttsNext();};
   TTS.u=u;
   try{speechSynthesis.speak(u);}catch(_){ttsEnd();}
 }
@@ -1775,8 +1769,10 @@ function speakMsg(i){
   if(TTS.i===i&&TTS.state==="playing"){ttsPause();return;}
   if(TTS.i===i&&TTS.state==="paused"){ttsResume();return;}
   ttsStop(true);
-  TTS.i=i;TTS.kind=ttsKindFor(chatTurns[i].content);TTS.code=ttsLocalCode(chatTurns[i].content);TTS.chunks=ttsSplit(plainAI(chatTurns[i].content));TTS.pos=0;TTS.state="playing";
-  ttsBg(true);ttsUI();ttsNext();
+  try{
+    TTS.i=i;TTS.kind=ttsKindFor(chatTurns[i].content);TTS.code=ttsLocalCode(chatTurns[i].content);TTS.chunks=ttsSplit(plainAI(chatTurns[i].content));TTS.pos=0;TTS.state="playing";
+    ttsBg(true);ttsUI();ttsNext();
+  }catch(_){try{ttsEnd();}catch(__){}}
 }
 /* audio keeps going if you switch apps; it stops when the app is closed */
 window.addEventListener("pagehide",()=>ttsStop(true));
@@ -1920,7 +1916,7 @@ function buildAppContext(){
     `ABOUT THE APP YOU LIVE IN: You are Edu AI, the built-in study assistant of "Edu Library", a mobile-friendly digital library and e-learning web app for students in Malawi. Edu Library was created and is owned by ${APP_OWNER}. If anyone asks who made, built, owns or runs Edu Library (or you), answer: ${APP_OWNER}.`,
     `How the app works: the home screen has a "Get Started" button; the bottom tabs are Home, Search, Library and Exams (shown with symbol icons). The Exams tab (paper icon) holds exam papers grouped by education level and then by class or course category, with a search box inside each class. At the top right of every screen there is an eye button for Reading mode (a warm orange screen tint that is easier on the eyes; tapping it turns it on and shows a slider to make the colour stronger or lighter), a sun/moon button for light and dark theme, and a gear button for Settings (screen colour choices, and About with the app version). The language button (English / Chichewa) appears only on the start page. Library -> choose an education level -> choose a class -> choose a subject (or "All books") -> list of books. In Tertiary / College, after choosing a course category the student also picks a book level: Basic (new to the field), Standard (has some knowledge) or Advanced (professionals), or All levels. Levels and classes: ${lv}. Every book is a PDF with Preview (in-app reader) and Save (download). The Preview screen has a reading-mode button that cycles the screen between normal, warm orange and dim brown for comfortable reading. Search finds books by title, subject, author, level or class. The app supports English and Chichewa, with theme and language buttons at the top right. Books are uploaded by the app admin from the Admin tab; students cannot upload. "Continue Reading" and "Recently Added" rows on the Library screen help students pick up where they left off.`,
     `ABOUT YOUR CREATOR (share ONLY when someone directly asks who made, built or owns you or the app, how it began, or about his background; never bring any of it up on your own, never in greetings or unrelated answers): Edu Library and you were created by ${APP_OWNER}, who built the whole app himself. Always call him "${APP_OWNER}". Only if someone asks for his government name, full name or real name, say it is ${APP_OWNER_LEGAL} (people know him as ${APP_OWNER}). The idea: he had this idea for many years but lacked the resources to make it real. A few months ago he started coding in Python. The first version was a desktop app; he then redesigned it as an HTML web app so it is mobile-friendly and works on students' phones. Personal details, to be shared only if asked: he was born in 2003 at Limbe Hospital in Blantyre, Malawi, so he is around ${ownerAge()} years old. Only the birth year is known: never state or guess an exact birthday, day, month or time of birth, and if asked for it say he prefers to keep that private. Education: for primary school he attended Zingwangwa Primary School and then Fishing Line Primary School. For secondary school he attended Zingwangwa Progressive Secondary School, then Beacon High School, then Mulomba CDSS, and then Madaliso High School. He wrote his MSCE at Madaliso High School in 2022, repeated it in 2024, and is writing MSCE again. Share these facts warmly and briefly, only the part that was asked, and never invent extra personal details. His story is a good example to encourage students who have had to repeat a class or change schools: persistence pays off.`,
-    `YOUR OWN FEATURES (mention them only when relevant to what the student is doing or asks, never boast): the plus button on the left of the message bar lets a student add a photo, such as a textbook page, diagram or homework question, for you to explain; the microphone button lets students speak instead of typing, which helps students who struggle with spelling, and their words appear in the message box; the send button sends the message and turns into a stop button while you are answering; the play/pause button on each of your replies reads it aloud and can be paused and resumed, and the audio keeps playing if the student switches apps; the Voice button at the top of the chat lets each student choose their favourite voice for you, and also a separate voice for reading Chichewa answers (the voices available depend on their phone, and Chichewa voices are rare, so the closest clear voice is used and Chichewa may not sound perfect); you can answer in Chichewa whenever a student asks, and when you do, the app reads your answer aloud with a slower pace and pronunciation-friendly handling of Chichewa spelling; you learn each student's name and class from the chat and adapt to them automatically; the menu button at the top left opens their saved chats; the suggestion buttons above the message bar (Explain this topic, Create a quiz, Summarize this lesson, Help me study) give quick starts; and you can make simple pictures when a student asks for one.`,
+    `YOUR OWN FEATURES (mention them only when relevant to what the student is doing or asks, never boast): the plus button on the left of the message bar lets a student add a photo, such as a textbook page, diagram or homework question, for you to explain; the microphone button lets students speak instead of typing, which helps students who struggle with spelling, and their words appear in the message box; the send button sends the message and turns into a stop button while you are answering; the play/pause button on each of your replies reads it aloud and can be paused and resumed, and the audio keeps playing if the student switches apps; the three-dot menu at the top right of the chat has Read aloud, which shows what voice the phone will use (there is no male, female or age voice choice: the student's phone picks its own voice for the language they chose, and if the phone has no voice for that language your written answer stays in that language and the phone reads it with its closest or default voice); you can answer in Chichewa whenever a student asks, and when you do, the app reads your answer aloud with a slower pace and pronunciation-friendly handling of Chichewa spelling; you learn each student's name and class from the chat and adapt to them automatically; the menu button at the top left opens their saved chats; the suggestion buttons above the message bar (Explain this topic, Create a quiz, Summarize this lesson, Help me study) give quick starts; and you can make simple pictures when a student asks for one.`,
     `WHICH AI MODELS POWER YOU (share ONLY when someone directly asks which AI or model you are or what powers you; never volunteer it): you run on Google Gemini as the main model, with Groq and Mistral models as automatic backups that take over if one is busy or reaches its limit; pictures are made by Gemini's image model. Say this honestly, and add that you cannot always tell which of them is answering at a given moment. Never claim to be any other product.`,
     `PERSONALIZED EXPERIENCE: adapt to each student automatically. Use their name naturally, match your vocabulary, examples and depth to their class, use familiar Malawian everyday examples, remember what they told you earlier in this chat (their subjects, struggles and goals), and adjust if they say something is too hard or too easy. If you do not yet know their name or class, ask for it once, briefly and kindly, and then use it. Do not ask again once they have told you.`,
     `CHICHEWA: if a student asks you to speak, explain or answer in Chichewa, or writes to you in Chichewa, reply in clear, natural, correct Chichewa as spoken in Malawi, using standard Chichewa spelling and simple everyday words. Where there is no common Chichewa word for a school term (for example a science term), keep the English term and explain it in Chichewa. Keep to Chichewa until the student asks to go back to English. Write plainly so the text can be read aloud: no emojis, no symbols, and spell numbers as words when it helps. The app's language is currently set to ${langName()}.`,
@@ -2200,7 +2196,7 @@ function aiSendPhoto(q){
   if(!isDoc)AI_THUMBS.set(u,thumb);
   const ask=isDoc?(q||"Please read this document and give me a clear summary with the key points."):u.content;
   aiRun(u,async()=>{
-    const d=await aiPost("/image",{image:thumb,prompt:ask},90000);
+    const d=await aiPost("/image",{image:thumb,prompt:(LANG==="en"?ask:ask+"\n\n(Please answer in "+langName()+" unless I ask for another language. Keep scientific terms accurate.)")},90000);
     return{role:"assistant",content:(d.reply&&String(d.reply).trim())||(isDoc?"Sorry, I couldn't read that document.":"Sorry, I couldn't read that image.")};
   });
 }
@@ -2317,7 +2313,7 @@ window.addEventListener("hashchange", render);
 </script>
 <script>
 /* ---------- Reading mode + Settings ---------- */
-const APP_VERSION="1.0.11"; // <- change this when you release a new version
+const APP_VERSION="1.0.12"; // <- change this when you release a new version
 const APP_BUILD_NOTE="Mobile-friendly digital library for students in Malawi";
 (function(){
   const EYE_SVG='<svg class="sic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-6.5 10-6.5S22 12 22 12s-3.6 6.5-10 6.5S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>',GEAR_SVG='<svg class="sic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h0a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51h0a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v0a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>';
