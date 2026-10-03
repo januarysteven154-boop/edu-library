@@ -1065,7 +1065,7 @@ function route(){
   if(parts[0] === "start") return renderStart(app);
   if(parts[0] === "library") return renderLibrary(app);
   if(parts[0] === "search") return renderSearch(app, parts[1]);
-  if(parts[0] === "ai") return renderAI(app);
+  if(parts[0] === "ai") return (window.EduAcct&&EduAcct.isIn())?renderAI(app):renderAIGate(app);
   if(parts[0] === "admin" && parts[1] === "panel") return isAdmin() ? renderAdminPanel(app) : (location.hash="#/admin");
   if(parts[0] === "admin") return renderAdmin(app);
   return renderHome(app);
@@ -1499,6 +1499,12 @@ function eduDeviceHeaders(){
 }
 
 
+async function eduAuthHeaders(){
+  const h=eduDeviceHeaders();
+  try{const t=window.EduAcct&&await EduAcct.token();if(t)h["Authorization"]="Bearer "+t;}catch(e){}
+  return h;
+}
+
 function fmtInline(t){
   return esc(t)
     .replace(/`([^`]+)`/g,"<code>$1</code>")
@@ -1867,13 +1873,27 @@ function renderAIMessages(streamingText){
   const sc=document.getElementById("aiScroll");if(sc)sc.scrollTop=sc.scrollHeight;
 }
 
+window.eduAcctChanged=function(){ if(/^#\/ai(\/|$)/.test(location.hash)) route(); };
+function renderAIGate(app){
+  AI_PENDING=null;
+  setHeader(`<button class="back" onclick="aiBack()">←</button><h2>✨ Edu AI Assistant</h2>`);
+  setActiveNav("");
+  app.innerHTML=`<div class="card" style="margin-top:16px;text-align:center">
+    <div style="font-size:44px;line-height:1">🔐</div>
+    <h2 style="font-size:20px;margin:10px 0 6px">Sign in to use Edu AI</h2>
+    <p class="rmdesc" style="margin:0 0 16px">Edu AI needs a free account. Choose a username and a 6-number PIN. No email, phone number or real name.</p>
+    <div class="acstack"><button type="button" class="btn green" onclick="EduAcct.open('in')">Sign in</button><button type="button" class="btn" onclick="EduAcct.open('new')">Create account</button></div>
+    <p class="hint" style="margin:14px 0 0">Books and exam papers stay free for everyone, with no account.</p>
+  </div>`;
+}
+
 function renderAI(app){
   AI_PENDING=null;AI_LISTEN=false;if(AI_REC){try{AI_REC.abort();}catch(_){}AI_REC=null;}
   if(aiReset){chatTurns=[];curConvId=null;aiReset=false;}
   setHeader(`<button class="hamb" aria-label="Chat history" onclick="toggleAIHist()">☰</button><button class="back" onclick="aiBack()">←</button><h2>✨ Edu AI Assistant</h2><button type="button" class="aimore" id="aiMore" aria-label="More options" aria-haspopup="true" onclick="aiMenuToggle(event)">⋮</button>`);
   setActiveNav("");
   app.innerHTML = `
-    <div id="aiHist" class="aihist"><div class="aiov" onclick="toggleAIHist(false)"></div><aside class="aidrawer"><div class="hhead"><b>Chats</b><button onclick="toggleAIHist(false)" aria-label="Close">✕</button></div><div class="hrule"></div><div class="hlbl">Recents</div><div id="aiHistList"></div><div class="hfoot"><button type="button" class="hav" id="aiHav" aria-label="About you" onclick="toggleAIHist(false);aiProfileOpen()"></button><button type="button" class="hnew" onclick="aiNewChat()">+ New chat</button></div></aside></div>
+    <div id="aiHist" class="aihist"><div class="aiov" onclick="toggleAIHist(false)"></div><aside class="aidrawer"><div class="hhead"><b>Chats</b><button onclick="toggleAIHist(false)" aria-label="Close">✕</button></div><div class="hrule"></div><div id="acctPrompt"></div><div class="hlbl">Recents</div><div id="aiHistList"></div><div class="hfoot"><button type="button" class="hav" id="aiHav" aria-label="About you" onclick="toggleAIHist(false);aiProfileOpen()"></button><button type="button" class="hnew" onclick="aiNewChat()">+ New chat</button></div></aside></div>
     
     <div class="aiwrap"><div class="aiscroll" id="aiScroll"><div class="pagehead"><p style="color:var(--sub);font-size:13px;margin-top:-4px">Your study assistant for Edu Library.</p></div>
       <div id="aiMsgs" class="aimsgs"></div>
@@ -1895,6 +1915,7 @@ function renderAI(app){
   renderAIMessages();
   aiSyncSend();
   aiRefreshProfileUI();
+  if(window.EduAcct)EduAcct.mount("acctPrompt","prompt");
   aiFit();
 }
 
@@ -2030,10 +2051,11 @@ function shrinkImg(file,max){
 async function aiPost(path,body,ms){
   const ctrl=new AbortController();const to=setTimeout(()=>ctrl.abort(),ms||45000);if(AI_RUN)AI_RUN.ctrl=ctrl;
   try{
-    const res=await fetch(aiBase()+path,{method:"POST",signal:ctrl.signal,headers:eduDeviceHeaders(),body:JSON.stringify(body)});
+    const res=await fetch(aiBase()+path,{method:"POST",signal:ctrl.signal,headers:await eduAuthHeaders(),body:JSON.stringify(body)});
     let d=null,raw="";
     try{raw=await res.text();}catch(_){}
     try{d=raw?JSON.parse(raw):null;}catch(_){}
+    if(res.status===401&&window.EduAcct){EduAcct.expired();throw new Error("Please sign in again to use Edu AI.");}
     if(!res.ok){
       let why="";
       if(d){
@@ -2265,9 +2287,10 @@ async function aiSend(text){
       const res = await fetch(endpoint, {
         method: "POST",
         signal: ctrl.signal,
-        headers: eduDeviceHeaders(),
+        headers: await eduAuthHeaders(),
         body: JSON.stringify({ messages: turns.slice(-12), context: buildAppContext() })
       });
+      if(res.status===401&&window.EduAcct){EduAcct.expired();throw new Error("Please sign in again to use Edu AI.");}
       let data=null; try{ data=await res.json(); }catch(_){}
       if(!res.ok) throw new Error("Server responded "+res.status+(data&&(data.error||data.message)?": "+(typeof (data.error||data.message)==="string"?(data.error||data.message):JSON.stringify(data.error||data.message)):""));
       const reply = data && (data.reply || data.text || data.message || data.content || (data.choices&&data.choices[0]&&data.choices[0].message&&data.choices[0].message.content) || (Array.isArray(data.content)&&data.content.map(x=>x.text||"").join("")));
@@ -2317,7 +2340,7 @@ window.addEventListener("hashchange", render);
 </script>
 <script>
 /* ---------- Reading mode + Settings ---------- */
-const APP_VERSION="1.0.6"; // <- change this when you release a new version
+const APP_VERSION="1.0.8"; // <- change this when you release a new version
 const APP_BUILD_NOTE="Mobile-friendly digital library for students in Malawi";
 (function(){
   const EYE_SVG='<svg class="sic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-6.5 10-6.5S22 12 22 12s-3.6 6.5-10 6.5S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>',GEAR_SVG='<svg class="sic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h0a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51h0a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v0a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>';
@@ -2376,6 +2399,8 @@ const APP_BUILD_NOTE="Mobile-friendly digital library for students in Malawi";
         <div class="rmadj" style="margin-top:16px">${EYE_SVG}<span>Adjust</span></div>
         <input class="rmslider" type="range" min="0" max="100" step="1" aria-label="Adjust reading mode colour">
       </div>
+      <div class="setsec">My account</div>
+      <div class="setbox" id="acctSet"></div>
       <div class="setsec">About</div>
       <div class="setbox">
         <div class="aboutrow"><span>App</span><b>Edu Library</b></div>
@@ -2394,6 +2419,7 @@ const APP_BUILD_NOTE="Mobile-friendly digital library for students in Malawi";
       <button type="button" class="btn green" id="stDone" style="margin-top:16px">Done</button>
     </div>`;
     document.body.appendChild(o);
+    if(window.EduAcct)EduAcct.mount(o.querySelector("#acctSet"),"settings");
     const close=()=>o.remove();
     o.onclick=e=>{if(e.target===o)close();};
     o.querySelector("#stDone").onclick=close;
@@ -2411,7 +2437,189 @@ const APP_BUILD_NOTE="Mobile-friendly digital library for students in Malawi";
     apply();
   }
   window.addEventListener("hashchange",closePop);
+  window.eduOpenSettings=openSettings;
   init();
+})();
+</script>
+
+<script>
+/* ---------- Student accounts (username + PIN), required for Edu AI ---------- */
+(function(){
+  const KEY="edu_acct";
+  const ld=()=>{try{return JSON.parse(localStorage.getItem(KEY)||"null");}catch(e){return null;}};
+  const sv=v=>{try{if(v)localStorage.setItem(KEY,JSON.stringify(v));else localStorage.removeItem(KEY);}catch(e){}};
+  let acct=ld();const mounts=[];
+  const stl=document.createElement("style");
+  stl.textContent=".acp{background:rgba(127,127,127,.16);border-radius:14px;padding:12px;margin:0 0 14px}.acp b{display:block;font-size:15px;margin-bottom:3px}.acp p{margin:0 0 10px;font-size:13px;line-height:1.45;opacity:.85}.acr{display:flex;gap:8px}.acp button{flex:1;border:none;border-radius:999px;padding:10px 12px;font-weight:700;font-size:13.5px;background:rgba(127,127,127,.28);color:inherit}.acp button.p{background:#1E7CF2;color:#fff}.accode{font-family:ui-monospace,Menlo,monospace;font-size:22px;font-weight:700;letter-spacing:1px;text-align:center;padding:14px;border-radius:10px;background:rgba(127,127,127,.16);margin:10px 0;user-select:all}.acstack{display:flex;flex-direction:column;gap:8px}.btn.danger{background:#FCE8E6;color:#B3261E}.acchk{display:flex;gap:8px;align-items:center;font-size:13.5px;margin:12px 0}.acchk.ag{align-items:flex-start;line-height:1.4}.acchk.ag input{margin-top:3px}.agbox{max-height:44vh;overflow:auto;font-size:13.5px;line-height:1.5;text-align:left;margin:8px 0}.agbox p{margin:0 0 8px}.agbox ul{margin:0;padding-left:18px}.agbox li{margin:0 0 6px}";
+  document.head.appendChild(stl);
+  const $=(m,s)=>m.querySelector(s);
+  const em=d=>d&&d.error?d.error:"Something went wrong. Try again in a few minutes.";
+  const busy=(b,on,t)=>{b.disabled=on;if(t)b.textContent=t;};
+  const post=(p,b)=>fetch(aiBase()+p,{method:"POST",headers:eduDeviceHeaders(),body:JSON.stringify(b)})
+    .then(r=>r.json().then(d=>({s:r.status,d}),()=>({s:r.status,d:{}})))
+    .catch(()=>({s:0,d:{error:"Can't connect. Check your internet and try again."}}));
+  function saveSession(d,username){
+    const s=d&&d.session;if(!s||!s.access_token)return false;
+    acct={username,access_token:s.access_token,refresh_token:s.refresh_token,expires_at:s.expires_at,url:d.supabaseUrl,key:d.publishableKey};
+    sv(acct);refresh();return true;
+  }
+  async function freshToken(){
+    if(!acct)return null;
+    if(acct.expires_at*1000>Date.now()+60000)return acct.access_token;
+    try{
+      const r=await fetch(acct.url+"/auth/v1/token?grant_type=refresh_token",{method:"POST",headers:{apikey:acct.key,"Content-Type":"application/json"},body:JSON.stringify({refresh_token:acct.refresh_token})});
+      const d=await r.json();
+      if(!r.ok||!d.access_token){signOut(true);return null;}
+      acct.access_token=d.access_token;acct.refresh_token=d.refresh_token||acct.refresh_token;
+      acct.expires_at=d.expires_at||Math.floor(Date.now()/1000)+(d.expires_in||3600);
+      sv(acct);return acct.access_token;
+    }catch(e){return null;}
+  }
+  function signOut(skip){
+    const a=acct;acct=null;sv(null);
+    if(a&&!skip){try{fetch(a.url+"/auth/v1/logout?scope=local",{method:"POST",headers:{apikey:a.key,Authorization:"Bearer "+a.access_token}}).catch(()=>{});}catch(e){}}
+    refresh();
+  }
+  function close(){const m=document.getElementById("acctModal");if(m)m.remove();}
+  const AG="edu_agree_v1";
+  const agreed=()=>{try{return !!localStorage.getItem(AG);}catch(e){return false;}};
+  function agree(next){
+    if(agreed()){next();return;}
+    const m=modal('<h3>Before you start</h3><div class="agbox"><p><b>Edu AI is a free study helper. Please read this once.</b></p><ul>'+
+      '<li><b>Use it to learn.</b> Be kind. Do not ask for harmful, rude or adult content.</li>'+
+      '<li><b>AI can be wrong.</b> Check important answers with your teacher or your books.</li>'+
+      '<li><b>Keep your details private.</b> Do not type your real name, phone number, address or passwords, and do not send photos of people.</li>'+
+      '<li><b>What we keep.</b> Your username, a scrambled PIN and a recovery code. No email, real name or phone number. Your chats stay on your phone.</li>'+
+      '<li><b>Who sees your questions.</b> Your messages and photos are sent to AI services (such as Mistral and Google) so they can answer.</li>'+
+      '<li><b>You are in control.</b> You can delete your account and data any time in Settings.</li>'+
+      '<li><b>Under 18?</b> Your parent or guardian should know you use Edu Library and agree to it.</li></ul></div>'+
+      '<label class="acchk ag"><input type="checkbox" id="acA"><span>I have read this. I am 18 or older, or my parent or guardian agrees that I can use Edu Library.</span></label>'+
+      '<button class="btn green" id="acGo">Agree and continue</button><div class="msg" id="acMsg"></div><button class="lnk" id="acC">Not now</button>');
+    $(m,"#acC").onclick=close;
+    $(m,"#acGo").onclick=()=>{
+      if(!$(m,"#acA").checked){$(m,"#acMsg").textContent="Tick the box to continue.";return;}
+      try{localStorage.setItem(AG,new Date().toISOString());}catch(e){}
+      close();next();
+    };
+  }
+  function modal(inner,sticky){
+    close();
+    const m=document.createElement("div");m.id="acctModal";m.className="aimodal";m.style.zIndex="170";
+    m.innerHTML='<div class="card aiprof setcard" role="dialog">'+inner+'</div>';
+    if(!sticky)m.onclick=e=>{if(e.target===m)close();};
+    document.body.appendChild(m);return m;
+  }
+  function info(title,text){
+    const m=modal('<h3>'+esc(title)+'</h3><p class="hint">'+esc(text)+'</p><button class="btn green" id="acGo">Done</button>');
+    $(m,"#acGo").onclick=close;
+  }
+  const UF='<div class="field"><label>Username</label><input id="acU" type="text" maxlength="20" autocapitalize="none" autocomplete="off" spellcheck="false">';
+  const PF=(l,h)=>'<div class="field"><label>'+l+'</label><input id="acP" type="password" inputmode="numeric" maxlength="6" autocomplete="off">'+(h?'<div class="hint" style="margin:4px 0 0">'+h+'</div>':'')+'</div>';
+  function loginView(note){
+    const m=modal('<h3>Sign in</h3><p class="hint">'+(note||"Use the username and 6-number PIN you chose.")+'</p>'+UF+'</div>'+PF("PIN")+
+      '<button class="btn green" id="acGo">Sign in</button><div class="msg" id="acMsg"></div><button class="lnk" id="acF">Forgot your PIN?</button><button class="lnk" id="acN">Create account</button><button class="lnk" id="acC">Cancel</button>');
+    $(m,"#acF").onclick=()=>recoverView();$(m,"#acN").onclick=()=>signupView();$(m,"#acC").onclick=close;
+    const go=$(m,"#acGo"),msg=$(m,"#acMsg");
+    go.onclick=async()=>{
+      const u=$(m,"#acU").value.trim().toLowerCase(),p=$(m,"#acP").value.trim();
+      if(!u||!p){msg.textContent="Enter your username and PIN.";return;}
+      msg.textContent="";busy(go,true,"Please wait…");
+      const r=await post("/student-login",{username:u,pin:p});
+      if(r.d&&r.d.ok&&saveSession(r.d,u)){close();return;}
+      busy(go,false,"Sign in");msg.textContent=em(r.d);
+    };
+  }
+  function signupView(){
+    const m=modal('<h3>Create account</h3><p class="hint">Pick a username that is not your real name.</p>'+UF+'<div class="hint" style="margin:4px 0 0">3 to 20 letters, numbers or _</div></div>'+PF("PIN","6 numbers you'll remember. Not 123456.")+
+      '<button class="btn green" id="acGo">Create account</button><div class="msg" id="acMsg"></div><p class="hint" style="margin:12px 0 0">We keep only your username, a scrambled PIN and a recovery code. No email, real name, phone or photo. You can delete your account and data any time in Settings.</p><button class="lnk" id="acL">I already have an account</button><button class="lnk" id="acC">Cancel</button>');
+    $(m,"#acL").onclick=()=>loginView();$(m,"#acC").onclick=close;
+    const go=$(m,"#acGo"),msg=$(m,"#acMsg");
+    go.onclick=async()=>{
+      const u=$(m,"#acU").value.trim().toLowerCase(),p=$(m,"#acP").value.trim();
+      if(!/^[a-z0-9_]{3,20}$/.test(u)){msg.textContent="Username must be 3 to 20 letters, numbers or _ (no spaces).";return;}
+      if(!/^[0-9]{6}$/.test(p)){msg.textContent="PIN must be exactly 6 numbers.";return;}
+      msg.textContent="";busy(go,true,"Please wait…");
+      const r=await post("/student-signup",{username:u,pin:p});
+      if(r.d&&r.d.ok&&r.d.recoveryCode){const has=saveSession(r.d,u);codeView(r.d.recoveryCode,has?"":"Account created. Sign in to continue.");return;}
+      busy(go,false,"Create account");msg.textContent=em(r.d);
+    };
+  }
+  function codeView(code,after){
+    const m=modal('<h3>Save your recovery code</h3><div class="accode">'+esc(code)+'</div><p class="hint">If you forget your PIN, this code is the only way back in. Write it on paper. You will only see it once.</p><label class="acchk"><input type="checkbox" id="acK">I\'ve written it down</label><button class="btn green" id="acGo">Continue</button><div class="msg" id="acMsg"></div>',true);
+    $(m,"#acGo").onclick=()=>{
+      if(!$(m,"#acK").checked){$(m,"#acMsg").textContent="Tick the box once you've written it down.";return;}
+      if(after)loginView(after);else close();
+    };
+  }
+  function recoverView(){
+    const m=modal('<h3>Reset your PIN</h3><p class="hint">Enter your username, your recovery code and a new PIN.</p>'+UF+'</div><div class="field"><label>Recovery code</label><input id="acR" type="text" maxlength="14" autocapitalize="characters" autocomplete="off" spellcheck="false" placeholder="XXXX-XXXX-XXXX"></div>'+PF("New PIN","6 numbers you'll remember. Not 123456.")+
+      '<button class="btn green" id="acGo">Reset PIN</button><div class="msg" id="acMsg"></div><button class="lnk" id="acC">Cancel</button>');
+    $(m,"#acC").onclick=close;
+    const go=$(m,"#acGo"),msg=$(m,"#acMsg");
+    go.onclick=async()=>{
+      const u=$(m,"#acU").value.trim().toLowerCase(),rc=$(m,"#acR").value.trim(),p=$(m,"#acP").value.trim();
+      if(!u||!rc){msg.textContent="Enter your username and recovery code.";return;}
+      if(!/^[0-9]{6}$/.test(p)){msg.textContent="New PIN must be exactly 6 numbers.";return;}
+      msg.textContent="";busy(go,true,"Please wait…");
+      const r=await post("/student-recover",{username:u,recoveryCode:rc,newPin:p});
+      if(r.d&&r.d.ok){
+        const has=saveSession(r.d,u);
+        if(r.d.recoveryCode)codeView(r.d.recoveryCode,has?"":"PIN changed. Sign in with your new PIN.");
+        else info("PIN changed",r.d.note||"Your PIN is changed.");
+        return;
+      }
+      busy(go,false,"Reset PIN");msg.textContent=em(r.d);
+    };
+  }
+  function delAcctView(){
+    if(!acct)return;
+    const m=modal('<h3>Delete my account and data</h3><p class="hint">This removes your username, your recovery code and everything saved to your account. It can\'t be undone. Enter your PIN to confirm.</p>'+PF("PIN")+
+      '<button class="btn danger" id="acGo">Delete everything</button><div class="msg" id="acMsg"></div><button class="lnk" id="acC">Cancel</button>');
+    $(m,"#acC").onclick=close;
+    const go=$(m,"#acGo"),msg=$(m,"#acMsg");
+    go.onclick=async()=>{
+      const p=$(m,"#acP").value.trim();
+      if(!/^[0-9]{6}$/.test(p)){msg.textContent="Enter your 6-number PIN.";return;}
+      msg.textContent="";busy(go,true,"Please wait…");
+      const tk=await freshToken();
+      if(!tk){busy(go,false,"Delete everything");msg.textContent="Sign in again, then try once more.";return;}
+      const r=await post("/student-delete",{token:tk,what:"account",username:acct.username,pin:p});
+      if(r.d&&r.d.ok){signOut(true);info("Account deleted","Your account and data are deleted.");return;}
+      busy(go,false,"Delete everything");msg.textContent=em(r.d);
+    };
+  }
+  async function delChats(){
+    if(!acct||!confirm("Delete all your chats? This can't be undone."))return;
+    const tk=await freshToken();
+    if(!tk){info("Sign in again","Your session ended. Sign in and try again.");return;}
+    const r=await post("/student-delete",{token:tk,what:"chats"});
+    if(r.d&&r.d.ok){
+      try{AI_CONVS=[];persistConvs();chatTurns=[];curConvId=null;renderAIMessages();drawAIHist();}catch(e){}
+      info("Chats deleted","Your chats are deleted.");
+    }else info("Couldn't delete chats",em(r.d));
+  }
+  const acts={in:()=>agree(loginView),new:()=>agree(signupView),chats:delChats,del:delAcctView,out:()=>signOut(),
+    my:()=>{try{toggleAIHist(false);}catch(e){}if(window.eduOpenSettings)eduOpenSettings();}};
+  function draw(el,kind){
+    const pr=kind==="prompt";
+    if(!acct)el.innerHTML=pr
+      ?'<div class="acp"><b>Student account</b><p>Sign in with a username and PIN. No email or real name needed.</p><div class="acr"><button type="button" class="p" data-a="in">Sign in</button><button type="button" data-a="new">Create account</button></div></div>'
+      :'<p class="rmdesc" style="margin:0 0 10px">Edu AI needs a free account. Sign in with a username and PIN. No email or real name needed.</p><div class="acstack"><button type="button" class="btn green" data-a="in">Sign in</button><button type="button" class="btn" data-a="new">Create account</button></div>';
+    else el.innerHTML=pr
+      ?'<div class="acp"><b>Signed in as '+esc(acct.username)+'</b><div class="acr"><button type="button" data-a="my">My account</button><button type="button" data-a="out">Sign out</button></div></div>'
+      :'<div class="aboutrow"><span>Signed in as</span><b>'+esc(acct.username)+'</b></div><div class="acstack" style="margin-top:10px"><button type="button" class="btn" data-a="chats">Delete my chats</button><button type="button" class="btn danger" data-a="del">Delete my account and data</button><button type="button" class="btn" data-a="out">Sign out</button></div>';
+  }
+  function mount(target,kind){
+    const el=typeof target==="string"?document.getElementById(target):target;
+    if(!el)return;
+    el.onclick=e=>{const a=e.target.closest("[data-a]");if(a&&acts[a.dataset.a])acts[a.dataset.a]();};
+    mounts.push({el,kind});draw(el,kind);
+  }
+  function refresh(){
+    for(let i=mounts.length-1;i>=0;i--){const x=mounts[i];if(!x.el.isConnected){mounts.splice(i,1);continue;}draw(x.el,x.kind);}
+    if(typeof window.eduAcctChanged==="function")window.eduAcctChanged();
+  }
+  window.EduAcct={mount,refresh,isIn:()=>!!acct,token:freshToken,expired:()=>signOut(true),open:k=>agree(k==="new"?signupView:loginView)};
 })();
 </script>
 
