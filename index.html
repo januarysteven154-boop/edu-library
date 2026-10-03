@@ -696,7 +696,7 @@ const I18N_X={"ny":{"Language":"Chilankhulo","Welcome to Edu Library":"Takulandi
 Object.keys(I18N_X).forEach(c=>{I18N[c]=Object.assign({},I18N_X[c],I18N[c]||{});});
 Object.assign(I18N.ny,{"Sign in":"Lowani","Sign out":"Tulukani","Create account":"Pangani akaunti","Username":"Dzina lolowera","Cancel":"Lekani","Done":"Chabwino","Sign in to use Edu AI":"Lowani kuti mugwiritse ntchito Edu AI","Edu AI needs a free account. Choose a username and a 6-number PIN. No email, phone number or real name.":"Edu AI imafuna akaunti yaulere. Sankhani dzina lolowera ndi PIN ya manambala 6. Palibe imelo, nambala ya foni kapena dzina lanu lenileni.","Books and exam papers stay free for everyone, with no account.":"Mabuku ndi mapepala a mayeso ndi aulere kwa aliyense, popanda akaunti.","Forgot your PIN?":"Mwayiwala PIN yanu?","I already have an account":"Ndili kale ndi akaunti","Settings":"Zokonda"});
 const AIQ={en:"✦ Ask me anything school related",ny:"✦ Ndifunseni chilichonse chokhudza sukulu"};
-const LANGS=[["en","English"],["ny","Chichewa"],["tum","Chitumbuka"],["yao","Chiyao"],["lom","Chilomwe"],["seh","Chisena"],["tog","Chitonga"],["ndl","Chindali"],["suk","Chisukwa"],["ngo","Chingoni"],["kdn","Chikunda"],["nkh","Chinkhonde"],["lbb","Chilambya"],["nya","Chinyanja"],["nya_mang","Chimang'anja"],["nyk","Chinyakyusa"],["sen","Chisenga"]];
+const LANGS=[["en","English"],["ny","Chichewa"],["tum","Chitumbuka"],["yao","Chiyao"],["lom","Chilomwe"],["seh","Chisena"]];
 const AIQ_X={tum:"✦ Fumbani chilichose chakukhwaskana na sukulu",yao:"✦ Mundite nduna ya chonse chakusukulu",lom:"✦ Funsani chilichonse chokhudza sukulu",seh:"✦ Funsani cinthu ciri conse cakusukulu"};
 Object.assign(AIQ,AIQ_X);
 function langName(){const l=LANGS.find(x=>x[0]===LANG);return l?l[1]:"English";}
@@ -711,7 +711,9 @@ function applyLang(){
     while(n=tw.nextNode()){if(n._o===undefined)n._o=n.nodeValue;const k=n._o.trim();if(!k)continue;const t=d&&d[k];n.nodeValue=t?n._o.replace(k,t):n._o;}});
   const lb=document.getElementById("lgCode");if(lb)lb.textContent=LANG.toUpperCase().slice(0,2);
 }
-function applyTheme(){document.body.classList.toggle("light",THEME==="light");const b=document.getElementById("thBtn");if(b)b.textContent=THEME==="light"?"🌙":"☀️";}
+const TH_SUN='<svg class="sic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2.5v2.2M12 19.3v2.2M2.5 12h2.2M19.3 12h2.2M5.3 5.3l1.6 1.6M17.1 17.1l1.6 1.6M18.7 5.3l-1.6 1.6M6.9 17.1l-1.6 1.6"/></svg>';
+const TH_MOON='<svg class="sic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.5 14.2A8.5 8.5 0 0 1 9.8 3.5a8.5 8.5 0 1 0 10.7 10.7z"/></svg>';
+function applyTheme(){document.body.classList.toggle("light",THEME==="light");const b=document.getElementById("thBtn");if(b){const l=THEME==="light";b.innerHTML=l?TH_MOON:TH_SUN;const t=l?"Switch to dark theme":"Switch to light theme";b.setAttribute("aria-label",t);b.title=t;}}
 (function(){
   const c=document.createElement("div");c.id="ctl";
   c.innerHTML=`<button id="lgBtn" aria-label="Language">🌐<small id="lgCode"></small></button><button id="rmBtn" aria-label="Reading mode" aria-pressed="false"><svg class="sic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-6.5 10-6.5S22 12 22 12s-3.6 6.5-10 6.5S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg></button><button id="thBtn" aria-label="Theme"></button><button id="stBtn" aria-label="Settings"><svg class="sic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h0a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51h0a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v0a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></button><div id="lgSheet" hidden></div>`;
@@ -1550,14 +1552,11 @@ let cachedVoices = [];
 function loadVoices(){
   cachedVoices = window.speechSynthesis.getVoices();
 }
+try{["edu_ai_gender","edu_ai_voice","edu_ai_voice_ny"].forEach(k=>localStorage.removeItem(k));}catch(e){}
 if("speechSynthesis" in window){
   loadVoices();
   window.speechSynthesis.onvoiceschanged = loadVoices;
 }
-function getVoiceChoice(){try{return localStorage.getItem("edu_ai_voice")||"";}catch(e){return "";}}
-function setVoiceChoice(v){try{if(v)localStorage.setItem("edu_ai_voice",v);else localStorage.removeItem("edu_ai_voice");}catch(e){}}
-function voiceKey(v){return v.voiceURI||v.name;}
-
 /* ---- Chichewa reading: detect it, pick the closest voice, and make the spelling easier to pronounce ---- */
 const NY_WORDS=new Set("ndi ndipo koma kuti chifukwa mukhoza tingathe bwanji moni zikomo komanso chonde phunzira sukulu mwana ana nthawi kapena ngati amene izi izo ichi lero mawa dzulo pamene ndiye mphunzitsi wophunzira buku mabuku kuwerenga kulemba chomera madzi dzuwa mpweya thupi ntchito ndine iwe iye inu ife ali muli mwa zake mumatha timatha amatha anthu munthu zonse zina zambiri pang'ono chabwino pepani tsiku mlungu mwezi chaka akuti umenewu yanu wanu lanu zanu mukuti kwambiri bwino ayi inde".split(" "));
 function isChichewa(t){
@@ -1572,8 +1571,6 @@ function nyClean(t){
     .replace(/ph/gi,"p").replace(/th/gi,"t").replace(/kh/gi,"k")
     .replace(/\s{2,}/g," ");
 }
-function getNyChoice(){try{return localStorage.getItem("edu_ai_voice_ny")||"";}catch(e){return "";}}
-function setNyChoice(v){try{if(v)localStorage.setItem("edu_ai_voice_ny",v);else localStorage.removeItem("edu_ai_voice_ny");}catch(e){}}
 /* closest voices for Chichewa, best first: real Chichewa, then Swahili (same clear vowels), then Spanish/Italian/Portuguese */
 function nyCandidates(){
   const order=["ny","sw","it","es","pt"];
@@ -1581,49 +1578,45 @@ function nyCandidates(){
   order.forEach(pre=>cachedVoices.filter(v=>(v.lang||"").toLowerCase().replace("_","-").split("-")[0]===pre).sort((a,b)=>voiceScore(b)-voiceScore(a)).forEach(v=>out.push(v)));
   return out;
 }
-/* male / female choice: one setting used for BOTH English and Chichewa ("" = automatic) */
-function getGender(){try{const g=localStorage.getItem("edu_ai_gender");return g==="F"||g==="M"?g:"";}catch(e){return "";}}
-function setGender(g){try{if(g)localStorage.setItem("edu_ai_gender",g);else localStorage.removeItem("edu_ai_gender");}catch(e){}}
-/* best voices first, but voices of the wanted gender come before unknown ones, then the opposite gender */
-function orderForGender(list,g){
-  if(!g)return list;
-  return list.filter(v=>voiceGender(v)===g).concat(list.filter(v=>voiceGender(v)==="?"),list.filter(v=>voiceGender(v)!=="?"&&voiceGender(v)!==g));
+/* ---- Reading aloud is separate from the AI's written answer. The selected language picks the locale; the phone picks the voice. No male/female choice. ---- */
+const TTS_PREFIX={en:["en"],ny:["ny"],nya:["ny"],nya_mang:["ny"],tum:["tum"],yao:["yao"],lom:["lom","ngl"],seh:["seh"]};
+const TTS_LOCALE={ny:"ny-MW",nya:"ny-MW",nya_mang:"ny-MW",tum:"tum",yao:"yao",lom:"lom",seh:"seh"};
+const EN_WORDS=new Set("the and is are of to in that it for you with as on this be can what how was were have has your they from or an at by not but if then there when which".split(" "));
+function isEnglishText(t){
+  const w=String(t||"").toLowerCase().replace(/[^a-z'\s]/g," ").split(/\s+/).filter(Boolean);
+  if(w.length<4)return false;
+  let c=0;w.forEach(x=>{if(EN_WORDS.has(x))c++;});
+  return c/w.length>=0.2;
 }
-/* on automatic, Chichewa follows the gender of the English voice so the two always match */
-function wantedGender(){
-  const g=getGender();if(g)return g;
-  const e=pickCalmVoice(),eg=e?voiceGender(e):"?";
-  return eg==="?"?"":eg;
+function vPre(v){return (v.lang||"").toLowerCase().replace("_","-").split("-")[0];}
+/* "local" = the selected local language (or Chichewa text); "en" = English text */
+function ttsKindFor(text){
+  if(isChichewa(text))return "local";
+  if(LANG==="en"||isEnglishText(text))return "en";
+  return "local";
 }
-/* if the phone has no voice of the wanted gender, lower or raise the pitch so it still sounds male or female */
-function genderPitch(v,g){
-  if(!g)return 1;
-  if(!v)return g==="M"?0.78:1;
-  const vg=voiceGender(v);
-  if(vg===g||vg==="?")return 1;
-  return g==="M"?0.75:1.3;
+function ttsLocalCode(text){return isChichewa(text)?"ny":LANG;}
+/* a real voice for that language first, then the closest ones; null = let the phone decide */
+function ttsLocalVoice(code){
+  const pre=TTS_PREFIX[code]||[];
+  const exact=cachedVoices.filter(v=>pre.indexOf(vPre(v))>-1).sort((a,b)=>voiceScore(b)-voiceScore(a))[0];
+  if(exact)return {v:exact,exact:true};
+  return {v:nyCandidates()[0]||null,exact:false};
 }
-function ttsPitch(v,ny){
-  const p=V_STYLES[getVStyle()].p*genderPitch(v,ny?wantedGender():getGender());
-  return Math.min(2,Math.max(0.1,p));
+function ttsVoiceFor(kind,code){
+  if(kind==="en"){const v=pickCalmVoice();return {v:v,exact:!!v};}
+  return ttsLocalVoice(code);
 }
-function pickNyVoice(){
-  const c=getNyChoice(),g=getGender();
-  if(c){const v=cachedVoices.find(v=>voiceKey(v)===c);if(v&&(!g||voiceGender(v)===g||voiceGender(v)==="?"))return v;}
-  return orderForGender(nyCandidates(),wantedGender())[0]||null;
+function ttsApply(u,kind,code){
+  const st=V_STYLES[getVStyle()],loc=kind==="local";
+  u.rate=(loc?0.88:0.96)*st.r;u.pitch=Math.min(2,Math.max(0.1,st.p));u.volume=1;
+  const r=ttsVoiceFor(kind,code);
+  if(r.v){u.voice=r.v;u.lang=r.v.lang||u.lang;}
+  else if(!cachedVoices.length)u.lang=loc?(TTS_LOCALE[code]||"en"):"en";
+  return r;
 }
 
-/* voice gender is guessed from the voice's name; age is a style (pitch + speed) applied on top of any voice */
-const V_FEM=/female|woman|zira|samantha|karen|aria|jenny|libby|sonia|susan|hazel|serena|moira|tessa|fiona|victoria|allison|ava|emma|amy|joanna|salli|kimberly|kendra|ivy|nicole|olivia|natasha|michelle|clara|heather|catherine|linda|hedda|paulina|monica|elsa|isabella|sara|sarah|laura|lucia|helena|maria|kiswahili/i;
-const V_MAL=/\bmale\b|\bman\b|david|mark|daniel|alex|fred|george|guy|ryan|ethan|brian|james|liam|davis|christopher|eric|roger|steffan|rishi|thomas|oliver|arthur|aaron|gordon|rocko|tom|jorge|diego|carlos|pablo|luca|mattias|richard|stefan|william|henry/i;
-function voiceGender(v){
-  const n=(v.name||"")+" "+(v.voiceURI||"");
-  if(/female|woman/i.test(n))return "F";
-  if(/\bmale\b|\bman\b/i.test(n))return "M";
-  if(V_FEM.test(n))return "F";
-  if(V_MAL.test(n))return "M";
-  return "?";
-}
+/* voice style (child / young / adult / mature) changes pitch and speed only; it does not claim any gender */
 const V_STYLES={child:{l:"👧 Child",p:1.55,r:1.08},young:{l:"🧑 Young",p:1.2,r:1.03},adult:{l:"🧔 Adult",p:1,r:1},mature:{l:"👴 Mature",p:0.82,r:0.94}};
 function getVStyle(){try{const k=localStorage.getItem("edu_ai_vstyle");return V_STYLES[k]?k:"adult";}catch(e){return "adult";}}
 function setVStyle(k){try{localStorage.setItem("edu_ai_vstyle",k);}catch(e){}}
@@ -1636,19 +1629,14 @@ function voiceScore(v){
   if(/-x-.*-local|espeak|compact/i.test(n))sc-=4;
   if(/^en[-_](gb|za|us|au|ie)/.test(l))sc+=1;
   if(l.startsWith("en-gb"))sc+=1;
-  if(/female|samantha|karen|zira|aria|jenny|libby|sonia|serena|susan/i.test(n))sc+=1;
   return sc;
 }
 function voiceIsNatural(v){return voiceScore(v)>=5;}
 function pickCalmVoice(){
   if(!cachedVoices.length) return null;
-  const chosen=getVoiceChoice(),g=getGender();
-  if(chosen){const c=cachedVoices.find(v=>voiceKey(v)===chosen);if(c&&(!g||voiceGender(c)===g||voiceGender(c)==="?"))return c;}
-  const en=cachedVoices.filter(v=>/^en/i.test(v.lang||""));
-  const pool=(en.length?en:cachedVoices).slice().sort((a,b)=>voiceScore(b)-voiceScore(a));
-  return orderForGender(pool,g)[0]||null;
+  const en=cachedVoices.filter(v=>/^en/i.test(v.lang||"")).sort((a,b)=>voiceScore(b)-voiceScore(a));
+  return en[0]||null;
 }
-
 
 /* three-dot menu (top right of the AI chat) */
 function aiMenuClose(){const m=document.getElementById("aiMenu");if(m)m.remove();}
@@ -1656,7 +1644,7 @@ function aiMenuToggle(e){
   if(e)e.stopPropagation();
   if(document.getElementById("aiMenu")){aiMenuClose();return;}
   const m=document.createElement("div");m.id="aiMenu";m.className="aimenu";
-  m.innerHTML=`<div class="aimcard" role="menu"><div class="aimtitle">Edu AI Assistant</div><button type="button" role="menuitem" id="aiMenuVoice">${window.VOICE_ICON}<span>Choose AI voice</span></button></div>`;
+  m.innerHTML=`<div class="aimcard" role="menu"><div class="aimtitle">Edu AI Assistant</div><button type="button" role="menuitem" id="aiMenuVoice">${window.VOICE_ICON}<span>Read-aloud voice</span></button></div>`;
   m.onclick=ev=>{if(ev.target===m)aiMenuClose();};
   document.body.appendChild(m);
   m.querySelector("#aiMenuVoice").onclick=()=>{aiMenuClose();aiVoiceOpen();};
@@ -1665,72 +1653,49 @@ window.addEventListener("hashchange",aiMenuClose);
 /* ---- voice selector: every student picks the voice they like ---- */
 function aiVoiceOpen(){
   if(!("speechSynthesis" in window)){alert("This phone can't read aloud.");return;}
-  let showAll=false;
   const o=document.createElement("div");o.className="aimodal";
-  o.innerHTML=`<div class="card aiprof aivoice" role="dialog" aria-label="Choose a voice">
-    <h3>${window.VOICE_ICON}<span>Choose AI voice</span></h3>
-    <p class="hint">Tap a voice to hear it. Voices marked ✨ sound the most human. The voices you see depend on your phone.</p>
-    <div id="avList" class="avlist"></div>
-    <button type="button" class="lnk" id="avMore"></button>
+  o.innerHTML=`<div class="card aiprof aivoice" role="dialog" aria-label="Read-aloud voice">
+    <h3>${window.VOICE_ICON}<span>Read-aloud voice</span></h3>
+    <p class="hint">Edu AI reads answers in the language you chose, using a voice that is on your phone. Which voices exist depends on your phone.</p>
+    <div class="avh2">Voice style</div><div class="avtabs" id="avS"></div>
+    <p class="hint" id="avInfo" style="margin:10px 0"></p>
+    <button type="button" class="btn" id="avTest">Listen</button>
     <button type="button" class="btn green" id="avDone">Done</button>
   </div>`;
   document.body.appendChild(o);
-  const list=o.querySelector("#avList"),more=o.querySelector("#avMore");
   const close=()=>{ttsStop();o.remove();};
   o.onclick=e=>{if(e.target===o)close();};
   o.querySelector("#avDone").onclick=close;
-  const label=v=>String(v.name||"Voice").replace(/^(Microsoft|Google)\s+/i,"").replace(/\s*-\s*.*$/,"").trim()||"Voice";
-  const gtag=v=>({F:"Female",M:"Male","?":"Voice"}[voiceGender(v)]);
-  const row=(k,kind,sel,title,sub)=>`<button type="button" class="avrow${sel?" sel":""}" data-k="${esc(k)}" data-kind="${kind}"><span><b>${title}</b><small>${sub}</small></span><i>${sel?"✓":""}</i></button>`;
-  function say(ny){
+  const nm=v=>String(v.name||"voice").replace(/^(Microsoft|Google)\s+/i,"").replace(/\s*-\s*.*$/,"").trim()||"voice";
+  const isNy=()=>LANG==="ny"||LANG==="nya"||LANG==="nya_mang";
+  function infoText(){
+    try{cachedVoices=speechSynthesis.getVoices()||cachedVoices;}catch(_){}
+    const ln=langName();
+    if(!cachedVoices.length)return "Voices are still loading, or this phone has none installed. Answers are still written in "+ln+".";
+    if(LANG==="en"){const v=pickCalmVoice();return v?"English: your phone will use "+nm(v)+".":"English: your phone will choose its own voice.";}
+    const r=ttsLocalVoice(LANG);
+    if(r.exact)return ln+": your phone will use "+nm(r.v)+".";
+    if(r.v)return "Your phone has no "+ln+" voice. Answers stay written in "+ln+". The closest voice on your phone ("+nm(r.v)+", "+(r.v.lang||"")+") reads them aloud.";
+    return "Your phone has no "+ln+" voice. Answers stay written in "+ln+". Your phone's own voice reads them aloud.";
+  }
+  function say(){
     ttsStop();
-    const u=new SpeechSynthesisUtterance(ny?nyClean("Moni! Ndine Edu AI, mphunzitsi wanu wa pa sukulu."):"Hello! I am Edu AI, your study assistant.");
-    const st=V_STYLES[getVStyle()];u.rate=(ny?0.88:0.96)*st.r;u.pitch=st.p;
-    const v=ny?pickNyVoice():pickCalmVoice();if(v){u.voice=v;u.lang=v.lang||u.lang;}else if(ny)u.lang="sw-KE";u.pitch=ttsPitch(v,ny);
-    try{speechSynthesis.speak(u);}catch(_){}
+    try{
+      const kind=isNy()?"local":"en";
+      const u=new SpeechSynthesisUtterance(kind==="local"?nyClean("Moni! Ndine Edu AI, mphunzitsi wanu wa pa sukulu."):"Hello! I am Edu AI, your study assistant.");
+      ttsApply(u,kind,LANG);
+      speechSynthesis.speak(u);
+    }catch(_){}
   }
   function draw(){
-    cachedVoices=speechSynthesis.getVoices()||cachedVoices;
-    const cur=getVoiceChoice(),curNy=getNyChoice(),vs=getVStyle(),gf=getGender()||"all";
-    const byScore=(a,b)=>voiceScore(b)-voiceScore(a);
-    const okG=v=>gf==="all"||voiceGender(v)===gf;
-    const en=cachedVoices.filter(v=>/^en/i.test(v.lang||"")).sort(byScore);
-    const rest=cachedVoices.filter(v=>!/^en/i.test(v.lang||"")).sort(byScore);
-    const base=showAll?en.concat(rest):(en.length?en:cachedVoices);
-    const shown=base.filter(okG);
-    const nF=base.filter(v=>voiceGender(v)==="F").length,nM=base.filter(v=>voiceGender(v)==="M").length;
-    let h='<div class="avh2">Voice type</div><div class="avtabs" id="avG">'+
-      [["all","Auto"],["F","👩 Female ("+nF+")"],["M","👨 Male ("+nM+")"]].map(t=>`<button type="button" data-g="${t[0]}" class="${gf===t[0]?"sel":""}">${t[1]}</button>`).join("")+'</div>';
-    h+='<div class="avh2">Voice age</div><div class="avtabs" id="avS">'+Object.keys(V_STYLES).map(k=>`<button type="button" data-s="${k}" class="${vs===k?"sel":""}">${V_STYLES[k].l.replace(/^\S+\s/,m=>m)}</button>`).join("")+'</div>';
-    h+='<p class="hint" style="margin:0 0 10px">Age changes how high or deep the voice sounds and how fast it speaks. Male or Female is used for both English and Chichewa. Some phones do not say if a voice is male or female, so tap to listen. If the phone has no voice of that type, Edu AI makes the closest one sound deeper or higher.</p>';
-    h+=row("","en",!cur,"<b>Automatic</b>","Picks the most natural voice on your phone");
-    if(!cachedVoices.length)h+='<p class="hint" style="margin:10px 0">Loading voices… if none appear, your phone has no voices installed.</p>';
-    else if(!shown.length)h+='<p class="hint" style="margin:10px 0">No '+(gf==="F"?"female":"male")+' voice is marked on this phone, so Edu AI will use the closest voice and make it sound '+(gf==="F"?"higher":"deeper")+'.</p>';
-    shown.forEach(v=>{const k=voiceKey(v);h+=row(k,"en",cur===k,esc(label(v))+(voiceIsNatural(v)?" ✨":""),esc(gtag(v))+" · "+esc(v.lang||"")+(v.localService===false?" · online":"")+(voiceIsNatural(v)?" · sounds most human":""));});
-    const nyAll=nyCandidates(),ny=nyAll.filter(v=>gf==="all"||voiceGender(v)===gf||voiceGender(v)==="?");
-    h+='<h4 class="avh">🇲🇼 Voice for Chichewa</h4><p class="hint" style="margin:0 0 8px">Used when Edu AI reads an answer written in Chichewa. Chichewa has very few phone voices, so the closest clear voice is used.</p>';
-    h+=row("","ny",!curNy,"<b>Automatic</b>",ny.length?(gf==="all"?"Best match on your phone":"Closest "+(gf==="F"?"female":"male")+" voice on your phone"):(nyAll.length?"Closest voice, tone changed to sound "+(gf==="F"?"female":"male"):"No close voice found — the normal voice will be used"));
-    ny.forEach(v=>{const k=voiceKey(v);const l=(v.lang||"").toLowerCase();const tag=l.startsWith("ny")?"Chichewa":(l.startsWith("sw")?"Swahili · closest sound":"Similar sound");h+=row(k,"ny",curNy===k,esc(label(v)),esc(gtag(v))+" · "+esc(v.lang||"")+" · "+tag);});
-    list.innerHTML=h;
-    more.style.display=(en.length&&rest.length)?"":"none";
-    more.textContent=showAll?"Show English voices only":"Show voices in other languages";
-    const sc=list.scrollTop;
-    list.querySelectorAll("#avG button").forEach(b=>b.onclick=()=>{
-      const g=b.dataset.g==="all"?"":b.dataset.g;setGender(g);
-      if(g){[[getVoiceChoice,setVoiceChoice],[getNyChoice,setNyChoice]].forEach(pr=>{const k=pr[0](),vv=k&&cachedVoices.find(x=>voiceKey(x)===k);if(vv&&voiceGender(vv)!=="?"&&voiceGender(vv)!==g)pr[1]("");});}
-      const t=list.scrollTop;draw();list.scrollTop=t;say(false);
-    });
-    list.querySelectorAll("#avS button").forEach(b=>b.onclick=()=>{setVStyle(b.dataset.s);draw();say(false);});
-    list.querySelectorAll(".avrow").forEach(b=>b.onclick=()=>{
-      const ny=b.dataset.kind==="ny";
-      if(ny)setNyChoice(b.dataset.k);else setVoiceChoice(b.dataset.k);
-      const t=list.scrollTop;draw();list.scrollTop=t;say(ny);
-    });
-    list.scrollTop=sc;
+    const vs=getVStyle();
+    o.querySelector("#avS").innerHTML=Object.keys(V_STYLES).map(k=>`<button type="button" data-s="${k}" class="${vs===k?"sel":""}">${V_STYLES[k].l}</button>`).join("");
+    o.querySelectorAll("#avS button").forEach(b=>b.onclick=()=>{setVStyle(b.dataset.s);draw();say();});
+    o.querySelector("#avInfo").textContent=infoText();
   }
-  more.onclick=()=>{showAll=!showAll;draw();};
+  o.querySelector("#avTest").onclick=say;
   draw();
-  speechSynthesis.onvoiceschanged=()=>{loadVoices();if(document.body.contains(o))draw();};
+  try{speechSynthesis.onvoiceschanged=()=>{loadVoices();if(document.body.contains(o))draw();};}catch(_){}
 }
 let TTS={i:-1,chunks:[],pos:0,state:"idle",tok:0,u:null},TTS_AUD=null;
 const TTS_PLAY='<svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>';
@@ -1784,16 +1749,16 @@ function ttsNext(){
   if(TTS.state!=="playing")return;
   if(TTS.pos>=TTS.chunks.length){ttsEnd();return;}
   const my=++TTS.tok;
-  const ny=!!TTS.ny;
-  const u=new SpeechSynthesisUtterance(ny?nyClean(TTS.chunks[TTS.pos]):TTS.chunks[TTS.pos]);
-  {const st=V_STYLES[getVStyle()];u.rate=(ny?0.88:0.96)*st.r;u.pitch=st.p;u.volume=1;}
-  const v=ny?pickNyVoice():pickCalmVoice();
-  if(v){u.voice=v;u.lang=v.lang||u.lang;}else if(ny){u.lang="sw-KE";}
-  u.pitch=ttsPitch(v,ny);
+  const loc=TTS.kind==="local";
+  let u;
+  try{
+    u=new SpeechSynthesisUtterance(loc?nyClean(TTS.chunks[TTS.pos]):TTS.chunks[TTS.pos]);
+    ttsApply(u,TTS.kind,TTS.code);
+  }catch(_){ttsEnd();return;}
   u.onend=()=>{if(TTS.tok!==my||TTS.state!=="playing")return;TTS.pos++;ttsNext();};
   u.onerror=e=>{if(TTS.tok!==my||TTS.state!=="playing")return;if(e&&(e.error==="interrupted"||e.error==="canceled"))return;TTS.pos++;ttsNext();};
   TTS.u=u;
-  speechSynthesis.speak(u);
+  try{speechSynthesis.speak(u);}catch(_){ttsEnd();}
 }
 function ttsEnd(){TTS.state="idle";TTS.i=-1;TTS.chunks=[];TTS.pos=0;ttsBg(false);ttsUI();}
 function ttsStop(silent){
@@ -1810,7 +1775,7 @@ function speakMsg(i){
   if(TTS.i===i&&TTS.state==="playing"){ttsPause();return;}
   if(TTS.i===i&&TTS.state==="paused"){ttsResume();return;}
   ttsStop(true);
-  TTS.i=i;TTS.ny=isChichewa(chatTurns[i].content);TTS.chunks=ttsSplit(plainAI(chatTurns[i].content));TTS.pos=0;TTS.state="playing";
+  TTS.i=i;TTS.kind=ttsKindFor(chatTurns[i].content);TTS.code=ttsLocalCode(chatTurns[i].content);TTS.chunks=ttsSplit(plainAI(chatTurns[i].content));TTS.pos=0;TTS.state="playing";
   ttsBg(true);ttsUI();ttsNext();
 }
 /* audio keeps going if you switch apps; it stops when the app is closed */
@@ -1947,8 +1912,8 @@ function buildAppContext(){
   const who=(pr.name||pr.level||pr.cls)?`ABOUT THE STUDENT: ${pr.name?"name is "+pr.name+"; ":""}${pr.level&&LEVELS[pr.level]?"studies at "+LEVELS[pr.level].label+"; ":""}${pr.cls?(pr.level==="Tertiary"?"course area ":"class ")+pr.cls+". ":""}Use their name now and then, and explain at a level that suits their class.`:"";
   const ln=langName();
   const langLine=LANG==="en"
-    ?`LANGUAGE: the student's app language is English. Reply in English unless the student explicitly asks you to answer in another language (an explicit request wins for that reply).`
-    :`LANGUAGE: the student chose ${ln} as their app language. Reply in ${ln} by default, even when they write in English, unless they explicitly ask for another language for that reply (an explicit request always wins). Keep school and science terms accurate: where a term has no natural ${ln} word, keep the standard English term (for example Photosynthesis, DNA, ATP) and explain it simply in ${ln}. If you cannot write ${ln} reliably, still give your best complete answer in the closest language you can write well (such as Chichewa or simple English) and add one short sentence in English saying your ${ln} is limited. Never refuse or return an empty answer because of the language.`;
+    ?`LANGUAGE: the student's app language is English. Reply in English unless the student explicitly asks you to answer in another language (an explicit request wins for that reply). Reading aloud is handled separately by the student's phone.`
+    :`LANGUAGE: the student chose ${ln} as their app language. Reply in ${ln} by default, even when they write in English, unless they explicitly ask for another language for that reply (an explicit request always wins). Keep school and science terms accurate: where a term has no natural ${ln} word, keep the standard English term (for example Photosynthesis, DNA, ATP) and explain it simply in ${ln}. If you cannot write ${ln} reliably, still give your best complete answer in the closest language you can write well (such as Chichewa or simple English) and add one short sentence in English saying your ${ln} is limited. Never refuse or return an empty answer because of the language. Reading aloud is handled separately by the student's phone: never change the language of your written answer, or switch to English, because of voices or audio.`;
   return [
     langLine,
     who,
@@ -2352,7 +2317,7 @@ window.addEventListener("hashchange", render);
 </script>
 <script>
 /* ---------- Reading mode + Settings ---------- */
-const APP_VERSION="1.0.9"; // <- change this when you release a new version
+const APP_VERSION="1.0.11"; // <- change this when you release a new version
 const APP_BUILD_NOTE="Mobile-friendly digital library for students in Malawi";
 (function(){
   const EYE_SVG='<svg class="sic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-6.5 10-6.5S22 12 22 12s-3.6 6.5-10 6.5S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>',GEAR_SVG='<svg class="sic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h0a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51h0a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v0a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>';
