@@ -1887,8 +1887,8 @@ function ttsApply(u,kind,code){
 function voiceScore(v){
   const n=(v.name||"")+" "+(v.voiceURI||""),l=(v.lang||"").toLowerCase();
   let sc=0;
-  if(/natural|neural|wavenet|studio|premium|enhanced|online|siri/i.test(n))sc+=6;
-  if(v.localService===false)sc+=3;
+  if(/natural|neural|studio|premium|enhanced|siri/i.test(n))sc+=6;
+  if(v.localService===false||/online|wavenet|network/i.test(n))sc-=6;else sc+=2;
   if(/google/i.test(n))sc+=2;
   if(/-x-.*-local|espeak|compact/i.test(n))sc-=4;
   if(/^en[-_](gb|za|us|au|ie)/.test(l))sc+=1;
@@ -1913,6 +1913,7 @@ function ttsSplit(t){
   const out=[];let cur="";
   for(const p of parts){if(cur&&(cur+p).length>180){out.push(cur.trim());cur=p;}else cur+=p;}
   if(cur.trim())out.push(cur.trim());
+  if(out.length&&out[0].length>70){const f=out[0];let k=f.lastIndexOf(",",70);if(k<25)k=f.lastIndexOf(" ",70);if(k>=25){out.splice(0,1,f.slice(0,k+1).trim(),f.slice(k+1).trim());}}
   return out.filter(x=>/[\p{L}\p{N}]/u.test(x));
 }
 function ttsSilence(){
@@ -1969,7 +1970,7 @@ function ttsNext(){
 function ttsEnd(){TTS.state="idle";TTS.i=-1;TTS.chunks=[];TTS.pos=0;ttsBg(false);ttsUI();}
 function ttsStop(silent){
   TTS.tok++;
-  try{if("speechSynthesis" in window)speechSynthesis.cancel();}catch(_){}
+  try{if("speechSynthesis" in window&&(speechSynthesis.speaking||speechSynthesis.pending))speechSynthesis.cancel();}catch(_){}
   TTS.state="idle";TTS.i=-1;TTS.chunks=[];TTS.pos=0;
   ttsBg(false);
   if(!silent)ttsUI();
@@ -1983,7 +1984,7 @@ function speakMsg(i){
   ttsStop(true);
   try{
     TTS.i=i;TTS.kind=ttsKindFor(chatTurns[i].content);TTS.code=ttsLocalCode(chatTurns[i].content);TTS.chunks=ttsSplit(plainAI(chatTurns[i].content));TTS.pos=0;TTS.state="playing";
-    ttsBg(true);ttsUI();ttsNext();
+    ttsUI();ttsNext();setTimeout(()=>ttsBg(true),400);
   }catch(_){try{ttsEnd();}catch(__){}}
 }
 /* audio keeps going if you switch apps; it stops when the app is closed */
