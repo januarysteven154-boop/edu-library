@@ -574,6 +574,7 @@ body.landing .l2{height:100%;min-height:100%!important;overflow:hidden}
 .settingspage{padding-bottom:28px}
 .settingspage .setcard{max-width:none;margin:0;padding:18px}
 .settingspage .setsec{margin-top:18px}
+.setlist{padding:4px 14px}.setitem{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:14px 0;border-bottom:1px solid var(--line);color:var(--ink);text-decoration:none}.setitem:last-child{border-bottom:none}.setitem b{display:block;font-size:15.5px}.setitem small{display:block;color:var(--sub);font-size:12.5px;margin-top:2px}.setitem svg{flex:none;color:var(--sub)}
 .langgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .langgrid button{border:1px solid var(--line);border-radius:12px;background:rgba(127,127,127,.10);color:var(--ink);padding:11px 10px;text-align:left;font-weight:650}
 .langgrid button.sel{border-color:#1E7CF2;background:rgba(30,124,242,.14);color:#1E7CF2}
@@ -1281,7 +1282,7 @@ function route(){
   if(parts[0] === "start") return renderStart(app);
   if(parts[0] === "library") return renderLibrary(app);
   if(parts[0] === "search") return renderSearch(app, parts[1]);
-  if(parts[0] === "settings") return renderSettings(app);
+  if(parts[0] === "settings") return renderSettings(app, parts[1]);
   if(parts[0] === "ai") return renderAI(app);
   if(parts[0] === "admin" && parts[1] === "panel") return isAdmin() ? renderAdminPanel(app) : (location.hash="#/admin");
   if(parts[0] === "admin") return renderAdmin(app);
@@ -1399,23 +1400,40 @@ function renderClassBooks(app, level, cls, subj, tier){
   };
 }
 
-function renderSettings(app){
-  setHeader(`<button class="back" onclick="location.hash='#/home'">←</button><h2>Settings</h2>`);
+function renderSettings(app,sub){
+  const pages={reading:"Reading mode",language:"Language",about:"About app"};
+  if(!pages[sub])sub="";
+  const chev='<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg>';
   setActiveNav("settings");
-  const langButtons=LANGS.map(l=>`<button type="button" data-lang="${l[0]}" class="${LANG===l[0]?"sel":""}" onclick="eduSetLanguage('${l[0]}')">${LANG===l[0]?"✓ ":""}${esc(l[1])}</button>`).join("");
-  app.innerHTML=`<div class="settingspage">
-    <div class="pagehead"><h2>Settings</h2><p>Control your reading experience, language and app information.</p></div>
-    <div class="setsec">Reading mode</div>
-    <div class="setbox">
+  if(!sub){
+    setHeader(`<button class="back" onclick="location.hash='#/home'">←</button><h2>Settings</h2>`);
+    const item=(k,t,d)=>`<a class="setitem" href="#/settings/${k}"><span><b>${t}</b><small>${d}</small></span>${chev}</a>`;
+    app.innerHTML=`<div class="settingspage">
+      <div class="pagehead"><h2>Settings</h2></div>
+      <div class="setbox setlist">
+        ${item("reading","Reading mode","Warmer screen, colour and strength")}
+        ${item("language","Language","Choose your app language")}
+        ${item("about","About app","Version information and credentials")}
+      </div>
+    </div>`;
+    try{applyLang();}catch(e){}
+    return;
+  }
+  setHeader(`<button class="back" onclick="location.hash='#/settings'">←</button><h2>${pages[sub]}</h2>`);
+  let body="";
+  if(sub==="reading"){
+    body=`<div class="setbox">
       <div class="rmrow"><b>Reading mode</b><button type="button" class="rmsw" role="switch" aria-label="Reading mode"></button></div>
       <p class="rmdesc">Turn on a warmer screen for comfortable reading. Adjust the strength and choose colours here.</p>
       <div class="rmswatches">${Object.keys(window.eduReadingTints||{}).map(k=>{const t=window.eduReadingTints[k];return `<button type="button" data-t="${k}" style="background:rgb(${t[0]},${t[1]},${t[2]})">${t[3]}</button>`}).join("")}</div>
       <div class="rmadj" style="margin-top:16px">${window.eduEyeSvg||""}<span>Adjust</span></div>
       <input class="rmslider" type="range" min="0" max="100" step="1" aria-label="Adjust reading mode colour">
-    </div>
-    <div class="setsec">Language</div>
-    <div class="setbox"><div class="langgrid">${langButtons}</div></div>
-    <div class="setsec">About app</div>
+    </div>`;
+  }else if(sub==="language"){
+    const langButtons=LANGS.map(l=>`<button type="button" data-lang="${l[0]}" class="${LANG===l[0]?"sel":""}" onclick="eduSetLanguage('${l[0]}')">${LANG===l[0]?"✓ ":""}${esc(l[1])}</button>`).join("");
+    body=`<div class="setbox"><div class="langgrid">${langButtons}</div></div>`;
+  }else{
+    body=`<div class="setsec">About the app</div>
     <div class="setbox">
       <div class="aboutrow"><span>App</span><b>Edu Library</b></div>
       <p class="rmdesc" style="margin-top:10px">Mobile-first digital library and learning platform for students in Malawi, with books, exam papers and Edu AI study support.</p>
@@ -1433,9 +1451,10 @@ function renderSettings(app){
       <div class="aboutrow"><span>Expertise</span><b>Software &amp; Educational Technology</b></div>
       <div class="aboutrow"><span>Focus</span><b>Digital learning for Malawi</b></div>
       <p class="rmdesc" style="margin-top:10px">Steven January, known as Billz, is the founder and sole developer of Edu Library and the Edu AI study assistant. He designed and built the platform from the ground up with a focus on practical digital learning for Malawi.</p>
-    </div>
-  </div>`;
-  if(window.eduReadingBind)window.eduReadingBind(app);
+    </div>`;
+  }
+  app.innerHTML=`<div class="settingspage">${body}</div>`;
+  if(sub==="reading"&&window.eduReadingBind)window.eduReadingBind(app);
   try{applyLang();}catch(e){}
 }
 function renderSearch(app, initial){
@@ -1786,7 +1805,7 @@ function fmtAI(text){
   close();return out;
 }
 function plainAI(text){
-  return String(text||"").replace(/```/g,"").replace(/^#{1,6}\s*/gm,"").replace(/^\s*[-*•+]\s+/gm,"").replace(/[*_`#~@\\|]/g," ").replace(/\s{2,}/g," ").trim();
+  return String(text||"").replace(/```/g,"").replace(/^#{1,6}\s*/gm,"").replace(/^\s*[-*•+]\s+/gm,"").replace(/[*_`#~@\\|]/g," ").replace(/[\u{1F000}-\u{1FAFF}\u{2190}-\u{21FF}\u{2300}-\u{23FF}\u{2460}-\u{27BF}\u{2900}-\u{2BFF}\u{FE00}-\u{FE0F}\u{200D}\u{20E3}\u{E0020}-\u{E007F}]/gu," ").replace(/\s{2,}/g," ").trim();
 }
 function aiMsgHTML(t, i){
   const canSpeak = "speechSynthesis" in window;
@@ -1894,7 +1913,7 @@ function ttsSplit(t){
   const out=[];let cur="";
   for(const p of parts){if(cur&&(cur+p).length>180){out.push(cur.trim());cur=p;}else cur+=p;}
   if(cur.trim())out.push(cur.trim());
-  return out;
+  return out.filter(x=>/[\p{L}\p{N}]/u.test(x));
 }
 function ttsSilence(){
   const n=8000,b=new Uint8Array(44+n),d=new DataView(b.buffer);
@@ -2642,7 +2661,7 @@ const APP_BUILD_NOTE="Mobile-friendly digital library for students in Malawi —
   }
   function openSettings(){
     closePop();
-    location.hash="#/settings";
+    location.hash="#/settings/reading";
   }
   function init(){
     const eb=document.getElementById("rmBtn");
@@ -2657,7 +2676,7 @@ const APP_BUILD_NOTE="Mobile-friendly digital library for students in Malawi —
   window.addEventListener("hashchange",closePop);
   window.eduOpenSettings=openSettings;
   init();
-  if(location.hash==="#/settings")setTimeout(()=>route(),0);
+  if(location.hash.indexOf("#/settings")===0)setTimeout(()=>route(),0);
 })();
 </script>
 
@@ -2679,7 +2698,7 @@ window.eduSetLanguage=function(k){
   if(!LANGS.some(l=>l[0]===k))return;
   LANG=k;try{localStorage.setItem("edu_lang",LANG);}catch(e){}
   applyLang();
-  if(location.hash==="#/settings")route();
+  if(location.hash.indexOf("#/settings")===0)route();
 };
 /* ---------- Student accounts (username + PIN), required for Edu AI ---------- */
 (function(){
