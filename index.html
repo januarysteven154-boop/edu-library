@@ -1156,7 +1156,7 @@ function bookCard(b){
     <div class="acts">${ok?`<button class="open ib" type="button" aria-label="Preview" title="Preview" onclick="previewBook('${bkey(b)}')">${IC_EYE}</button><a class="open dl ib" aria-label="Save" title="Save" href="${esc(dlUrl(b))}">${IC_DL}</a>`:''}</div></div>`;
 }
 
-function setHeader(html,noAcct){ noAcct = noAcct || String(html).indexOf("aimore")<0; document.getElementById("topHeader").innerHTML = `<div class="topbar">${html}<button type="button" class="accttop"${noAcct?' style="display:none"':''} aria-label="My account" title="My account" onclick="eduOpenAccount()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="3.6"/><path d="M4.5 20c.8-3.7 3.8-5.8 7.5-5.8s6.7 2.1 7.5 5.8"/></svg></button></div>`; }
+function setHeader(html,noAcct){ document.getElementById("topHeader").innerHTML = `<div class="topbar">${html}<button type="button" class="accttop"${noAcct?' style="display:none"':''} aria-label="My account" title="My account" onclick="eduOpenAccount()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="3.6"/><path d="M4.5 20c.8-3.7 3.8-5.8 7.5-5.8s6.7 2.1 7.5 5.8"/></svg></button></div>`; }
 function setActiveNav(key){ document.querySelectorAll(".bottomnav a").forEach(a=>a.classList.toggle("active", a.dataset.r===key)); }
 
 function render(){
@@ -1167,7 +1167,7 @@ function render(){
 }
 function route(){
   const app = document.getElementById("app");
-  const isLand=(location.hash.slice(1)||"/")==="/";
+  const isLand=["/","/home"].indexOf(location.hash.slice(1)||"/")>-1;
   document.getElementById("topHeader").style.display = isLand ? "none" : "";
   document.querySelector(".bottomnav").style.display = isLand ? "none" : "";
   document.body.classList.toggle("landing",isLand);
@@ -2755,7 +2755,7 @@ window.eduSetLanguage=function(k){
       :'<p class="rmdesc" style="margin:0 0 10px">Edu AI needs a free account. Sign in with a username and PIN. No email or real name needed.</p><div class="acstack"><button type="button" class="btn green" data-a="in">Sign in</button><button type="button" class="btn" data-a="new">Create account</button></div>';
     else el.innerHTML=pr
       ?'<div class="acp"><b>Signed in as '+esc(acct.username)+'</b><div class="acr"><button type="button" data-a="my">My account</button><button type="button" data-a="out">Sign out</button></div></div>'
-      :'<div class="aboutrow"><span>Signed in as</span><b>'+esc(acct.username)+'</b></div><div class="acstack" style="margin-top:10px"><button type="button" class="btn" data-a="chats">Delete my chats</button><button type="button" class="btn danger" data-a="del">Delete my account and data</button><button type="button" class="btn" data-a="out">Sign out</button></div>';
+      :'<div class="aboutrow"><span>Signed in as</span><b>'+esc(acct.username)+'</b></div><div class="acstack" style="margin-top:10px">'+(/^#\/ai/.test(location.hash)?'<button type="button" class="btn" data-a="chats">Delete my chats</button>':'')+'<button type="button" class="btn danger" data-a="del">Delete my account and data</button><button type="button" class="btn" data-a="out">Sign out</button></div>';
   }
   function mount(target,kind){
     const el=typeof target==="string"?document.getElementById(target):target;
