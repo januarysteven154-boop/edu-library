@@ -2546,10 +2546,10 @@ const APP_BUILD_NOTE="Mobile-friendly digital library for students in Malawi —
     const sw=root.querySelector(".rmsw"),sl=root.querySelector(".rmslider");
     const sync=()=>{if(!root.isConnected){const i=subs.indexOf(sync);if(i>=0)subs.splice(i,1);return;}
       sw.classList.toggle("on",on);sw.setAttribute("aria-checked",on?"true":"false");
-      if(document.activeElement!==sl)sl.value=lvl;sl.style.setProperty("--v",lvl+"%");
+      if(sl){if(document.activeElement!==sl)sl.value=lvl;sl.style.setProperty("--v",lvl+"%");}
       root.querySelectorAll(".rmswatches button").forEach(b=>b.classList.toggle("sel",b.dataset.t===tint));};
     sw.onclick=()=>setOn(!on);
-    sl.oninput=()=>{if(!on)setOn(true);setLvl(+sl.value);};
+    if(sl)sl.oninput=()=>{if(!on)setOn(true);setLvl(+sl.value);};
     root.querySelectorAll(".rmswatches button").forEach(b=>b.onclick=()=>{if(!on)setOn(true);setTint(b.dataset.t);});
     subs.push(sync);sync();
   }
