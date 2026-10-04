@@ -578,6 +578,23 @@ body:has(.topbar .aimore) .topbar .hamb{margin-left:0!important;margin-right:0!i
 body:has(.topbar .aimore) .topbar h2{flex:1 1 auto;min-width:0;text-align:center;font-size:14px!important;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding-right:112px}
 body:has(.topbar .aimore) #ctl{left:auto!important;right:46px!important}
 body:has(.topbar .aimore) .aimore{right:118px!important}
+
+/* v1.1.3 landing page: fit any screen/language, Get Started always visible */
+body.landing .l2{height:100svh!important;min-height:0!important;overflow-x:hidden!important;overflow-y:auto!important;scrollbar-width:none;justify-content:flex-start!important}
+body.landing .l2::-webkit-scrollbar{display:none}
+body.landing .l2 .phw{flex:1 1 0;min-height:64px;max-height:215px}
+body.landing .l2 .phc{height:100%!important}
+body.landing .l2 .l2t{flex:none;margin-top:36px}
+body.landing .l2 .inside{flex:none}
+body.landing .l2 .go2{flex:none;position:sticky;bottom:10px;margin-top:auto!important;margin-bottom:10px!important}
+@media (max-height:720px){
+ body.landing .l2 .l2t{margin-top:34px}
+ body.landing .l2 .l2t h1{font-size:32px}
+ body.landing .l2 .inside{padding:8px 8px;margin-top:8px}
+ body.landing .l2 .fg3{gap:8px 6px}
+ body.landing .l2 .fg3 span{width:32px;height:32px;font-size:16px;margin-bottom:2px}
+ body.landing .l2 .insnote{margin-top:8px;padding-top:6px;font-size:11.5px}
+}
 </style>
 </head>
 <body>
@@ -2414,7 +2431,7 @@ window.addEventListener("hashchange", render);
 </script>
 <script>
 /* ---------- Reading mode + Settings ---------- */
-const APP_VERSION="1.1.2"; // <- change this when you release a new version
+const APP_VERSION="1.1.3"; // <- change this when you release a new version
 const APP_BUILD_NOTE="Mobile-friendly digital library for students in Malawi — navigation, Settings and account layout update";
 (function(){
   const EYE_SVG='<svg class="sic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-6.5 10-6.5S22 12 22 12s-3.6 6.5-10 6.5S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>',GEAR_SVG='<svg class="sic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h0a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51h0a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v0a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>';
