@@ -1104,7 +1104,7 @@ function route(){
   const hash = location.hash.slice(1) || "/";
   const parts = hash.split("/").filter(Boolean).map(decodeURIComponent);
   if(parts[0]!=="ai")aiReset=true;
-  document.getElementById("aiFab").style.display = !["ai","admin",undefined].includes(parts[0]) ? "flex" : "none";
+  document.getElementById("aiFab").style.display = (!["ai","admin",undefined].includes(parts[0]) && !(GATED.indexOf(parts[0])>-1 && !(window.EduAcct&&EduAcct.isIn()))) ? "flex" : "none";
 
   if(GATED.indexOf(parts[0])>-1 && !(window.EduAcct&&EduAcct.isIn())) return renderGate(app);
   if(parts[0] === "level" && parts[1] && LEVELS[parts[1]] && !parts[2]) return renderLevel(app, parts[1]);
@@ -1926,6 +1926,11 @@ function renderAIMessages(streamingText){
 }
 
 const GATED=["level","exams","start","library","search","ai"];
+window.eduGoSignIn=function(){
+  document.querySelectorAll(".aimodal,#acctTopModal,#acctModal").forEach(e=>e.remove());
+  try{toggleAIHist(false);}catch(e){}
+  if(location.hash==="#/library")route();else location.hash="#/library";
+};
 window.eduAcctChanged=function(){ const h=(location.hash.slice(1)||"/").split("/").filter(Boolean)[0]; if(GATED.indexOf(h)>-1){ route(); applyLang(); } };
 function renderGate(app){
   AI_PENDING=null;
@@ -2431,7 +2436,7 @@ window.addEventListener("hashchange", render);
 </script>
 <script>
 /* ---------- Reading mode + Settings ---------- */
-const APP_VERSION="1.1.3"; // <- change this when you release a new version
+const APP_VERSION="1.1.4"; // <- change this when you release a new version
 const APP_BUILD_NOTE="Mobile-friendly digital library for students in Malawi — navigation, Settings and account layout update";
 (function(){
   const EYE_SVG='<svg class="sic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-6.5 10-6.5S22 12 22 12s-3.6 6.5-10 6.5S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>',GEAR_SVG='<svg class="sic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h0a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51h0a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v0a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>';
@@ -2501,6 +2506,7 @@ const APP_BUILD_NOTE="Mobile-friendly digital library for students in Malawi —
 
 <script>
 function eduOpenAccount(){
+  if(window.EduAcct&&!EduAcct.isIn()){if(window.eduGoSignIn)eduGoSignIn();return;}
   const old=document.getElementById("acctTopModal");if(old)old.remove();
   const m=document.createElement("div");m.id="acctTopModal";m.className="aimodal";m.style.zIndex="170";
   m.innerHTML=`<div class="card aiprof setcard" role="dialog" aria-label="My account"><h3>👤 <span>My account</span></h3><div id="acctTopSet"></div><button type="button" class="btn" id="acctTopDone" style="margin-top:12px">Done</button></div>`;
@@ -2554,6 +2560,7 @@ window.eduSetLanguage=function(k){
     const a=acct;acct=null;sv(null);
     if(a&&!skip){try{fetch(a.url+"/auth/v1/logout?scope=local",{method:"POST",headers:{apikey:a.key,Authorization:"Bearer "+a.access_token}}).catch(()=>{});}catch(e){}}
     refresh();
+    if(typeof window.eduGoSignIn==="function")window.eduGoSignIn();
   }
   function close(){const m=document.getElementById("acctModal");if(m)m.remove();}
   const AG="edu_agree_v1";
