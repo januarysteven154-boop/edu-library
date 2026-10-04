@@ -1925,10 +1925,38 @@ function ttsSilence(){
   return URL.createObjectURL(new Blob([b],{type:"audio/wav"}));
 }
 /* keeps the page alive in the background and shows play/pause in the phone's media controls */
+let TTS_WL=null,TTS_KA=null;
+async function ttsWake(on){
+  try{
+    if(on){if("wakeLock" in navigator&&!TTS_WL){TTS_WL=await navigator.wakeLock.request("screen");TTS_WL.addEventListener("release",()=>{TTS_WL=null;});}}
+    else if(TTS_WL){const w=TTS_WL;TTS_WL=null;await w.release();}
+  }catch(_){TTS_WL=null;}
+}
+function ttsKeep(on){
+  if(TTS_KA){clearInterval(TTS_KA);TTS_KA=null;}
+  if(!on)return;
+  TTS_KA=setInterval(()=>{
+    if(TTS.state!=="playing"){return;}
+    try{
+      if(TTS_AUD&&TTS_AUD.paused){const p=TTS_AUD.play();if(p&&p.catch)p.catch(()=>{});}
+      if(speechSynthesis.speaking){speechSynthesis.resume();}
+      else if(!speechSynthesis.pending){ttsNext();}
+    }catch(_){}
+  },4000);
+}
+document.addEventListener("visibilitychange",()=>{
+  if(TTS.state!=="playing")return;
+  if(!document.hidden)ttsWake(true);
+  try{
+    if(TTS_AUD&&TTS_AUD.paused){const p=TTS_AUD.play();if(p&&p.catch)p.catch(()=>{});}
+    if(!speechSynthesis.speaking){try{speechSynthesis.cancel();}catch(_){}ttsNext();}
+  }catch(_){}
+});
 function ttsBg(on){
+  ttsKeep(on);ttsWake(on);
   try{
     if(on){
-      if(!TTS_AUD){TTS_AUD=new Audio(ttsSilence());TTS_AUD.loop=true;TTS_AUD.volume=.05;}
+      if(!TTS_AUD){TTS_AUD=new Audio(ttsSilence());TTS_AUD.loop=true;TTS_AUD.volume=.05;TTS_AUD.addEventListener("pause",()=>{if(TTS.state==="playing"){const p=TTS_AUD.play();if(p&&p.catch)p.catch(()=>{});}});}
       const p=TTS_AUD.play();if(p&&p.catch)p.catch(()=>{});
       if("mediaSession" in navigator){
         navigator.mediaSession.metadata=new MediaMetadata({title:"Edu AI",artist:"Edu Library"});
@@ -1988,7 +2016,7 @@ function speakMsg(i){
   }catch(_){try{ttsEnd();}catch(__){}}
 }
 /* audio keeps going if you switch apps; it stops when the app is closed */
-window.addEventListener("pagehide",()=>ttsStop(true));
+window.addEventListener("pagehide",e=>{if(!e.persisted&&document.visibilityState!=="hidden")ttsStop(true);});
 function getProfile(){try{return JSON.parse(localStorage.getItem("edu_profile")||"null")||{};}catch(_){return {};}}
 function saveProfile(p){try{localStorage.setItem("edu_profile",JSON.stringify(p));}catch(_){}}
 function aiHello(){const h=new Date().getHours();return h<12?"Good morning":(h<18?"Good afternoon":"Good evening");}
