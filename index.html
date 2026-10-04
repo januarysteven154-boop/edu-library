@@ -384,11 +384,6 @@ header,#topHeader,.bottomnav,.book,.badgecard,.feats div{backdrop-filter:none!im
 <style>#ctl{position:fixed;top:10px;right:8px;z-index:90;display:flex;flex-direction:column;gap:8px;align-items:flex-end}
 #ctl>button{width:36px;height:36px;border-radius:50%;border:1px solid rgba(255,255,255,.35);background:rgba(8,19,46,.72);color:#fff;font-size:16px;display:flex;align-items:center;justify-content:center;padding:0;flex-direction:column;line-height:1}
 #ctl small{font-size:8px;font-weight:800;margin-top:-1px}
-#lgSheet{width:200px;max-height:calc(100vh - 130px);overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;background:rgba(8,19,46,.96);border:1px solid var(--line);border-radius:14px;padding:8px;box-shadow:0 10px 30px rgba(0,0,0,.5)}
-#lgSheet[hidden]{display:none}
-#lgSheet h4{margin:4px 6px 8px;font-size:12px;color:#9fb3da}
-#lgSheet button{display:block;width:100%;min-height:40px;white-space:normal;overflow-wrap:anywhere;text-align:left;background:none;border:none;color:#fff;padding:9px 10px;border-radius:9px;font-size:14px}
-#lgSheet button.on{background:#1E7CF2}#lgSheet button:disabled{opacity:.45}#lgSheet em{font-size:10px;font-style:normal;color:#ffcf6b;margin-left:6px}
 #aiFab::after{content:var(--aiq)!important}
 body.light{--card:#fff;--ink:#0b1b3f;--sub:#4c5f8a;--line:rgba(30,70,160,.22);color:#0b1b3f;background:linear-gradient(180deg,#f4f8ff,#dbe7ff)!important;background-attachment:fixed!important}
 body.light header,body.light #topHeader{background:rgba(255,255,255,.88)!important}
@@ -495,8 +490,6 @@ body:not(.light) .aimenu .aimcard .vico{color:#b9c4e6}
 #ctl{flex-direction:row!important;gap:4px!important;align-items:center!important;right:8px!important;top:11px!important}
 #ctl>button{width:32px!important;height:32px!important}
 #ctl svg.sic{width:19px;height:19px;color:#fff}
-#lgSheet{position:absolute;top:44px;right:0}
-body:not(.landing) #lgBtn,body:not(.landing) #lgSheet{display:none!important}
 #rmBtn.on{background:rgba(255,140,40,.9)!important;border-color:#ffb066!important;box-shadow:0 0 12px rgba(255,140,40,.7)}
 .aimore{right:116px!important;width:32px!important;height:32px!important;top:12px!important}
 .topbar:has(.aimore) h2{font-size:14.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
@@ -547,85 +540,49 @@ body .lv-Tertiary .phero h2,body .lv-Tertiary .phero h2 i,body .lv-Tertiary .phe
 .aboutrow b{text-align:right}
 .insnote{margin:12px 4px 0;padding-top:10px;border-top:1px solid var(--line);text-align:center;font-size:12px;line-height:1.45;color:var(--sub)}.insnote b{font-weight:800}
 </style>
-<style id="mwtheme">
-/* ===== Malawian theme + new layout (v1.1.0) ===== */
-#mwStripe{position:fixed;top:0;left:0;right:0;height:4px;z-index:95;pointer-events:none;background:linear-gradient(90deg,#000 0 33.34%,#CE1126 33.34% 66.67%,#339E35 66.67%)}
-.mwflag{width:20px;height:13px;border-radius:2px;vertical-align:-2px;box-shadow:0 0 0 1px rgba(0,0,0,.25)}
-.mwchip{display:inline-flex;align-items:center;gap:7px;margin-top:8px;padding:5px 12px;border-radius:999px;font-size:12px;font-weight:700;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.28);color:#fff}
-body.light .mwchip{color:#1d2150;background:rgba(255,255,255,.8);border-color:rgba(0,0,0,.12)}
-/* top right: profile avatar replaces the gear */
-#ctl #stBtn{display:none!important}
-#ctl>#pfBtn{width:36px!important;height:36px!important;padding:0;border:2px solid #fff!important;background:linear-gradient(135deg,#CE1126,#E8A900)!important;color:#fff;font-weight:800;font-size:15px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.25)}
-#pfBtn svg{width:20px;height:20px}
-/* bottom bar: Home, Search, Library, Exams, Settings */
-.bottomnav{overflow:visible}
-.bottomnav::before{content:"";position:absolute;top:0;left:14px;right:14px;height:3px;border-radius:3px;background:linear-gradient(90deg,#000 0 33.34%,#CE1126 33.34% 66.67%,#339E35 66.67%)}
+
+<style>
+/* v1.1 navigation layout: reading/theme top-left, account top-right, five-tab bottom bar */
+#ctl{left:8px!important;right:auto!important;top:11px!important;flex-direction:row!important;gap:4px!important;align-items:center!important}
+#ctl>button{width:32px!important;height:32px!important}
+#ctl svg.sic{width:19px;height:19px;color:#fff}
+#ctl #rmBtn.on{background:rgba(255,140,40,.9)!important;border-color:#ffb066!important;box-shadow:0 0 12px rgba(255,140,40,.7)}
+.topbar{padding-left:88px!important;padding-right:62px!important}
+.accttop{margin-left:auto;flex:none;width:34px;height:34px;border-radius:50%;border:1px solid rgba(255,255,255,.35);background:rgba(255,255,255,.12);color:#fff;display:flex;align-items:center;justify-content:center;padding:0}
+.accttop svg{width:20px;height:20px}
+body.light .accttop{background:rgba(30,124,242,.10);border-color:rgba(30,124,242,.25);color:#1E7CF2}
+body.landing #ctl{display:flex!important}
+body.landing{overflow:hidden!important;height:100svh}
+body.landing #app{height:100%;overflow:hidden}
+body.landing .l2{height:100%;min-height:100%!important;overflow:hidden}
+/* Level/category screens use one flowing page; only the deeper class/book screens scroll naturally. */
+.lvlpg{height:auto!important;min-height:0!important;display:block!important;overflow:visible!important}
+.lvlpg .cgrid{overflow:visible!important;height:auto!important;max-height:none!important;touch-action:auto!important}
+/* Keep the category cards compact so the level menu feels like a single screen. */
+.lvlpg .cgrid .ct{min-height:0!important;padding:11px 10px!important}
+.lvlpg .cgrid.Secondary .ct{min-height:0!important;padding:12px 12px!important}
+/* Settings page */
+.settingspage{padding-bottom:28px}
+.settingspage .setcard{max-width:none;margin:0;padding:18px}
+.settingspage .setsec{margin-top:18px}
+.langgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.langgrid button{border:1px solid var(--line);border-radius:12px;background:rgba(127,127,127,.10);color:var(--ink);padding:11px 10px;text-align:left;font-weight:650}
+.langgrid button.sel{border-color:#1E7CF2;background:rgba(30,124,242,.14);color:#1E7CF2}
+body:not(.light) .langgrid button{color:#eef2ff}
+body:not(.light) .langgrid button.sel{color:#7fdfff;border-color:#00c2ff;background:rgba(0,194,255,.12)}
 .bottomnav a{min-width:0}
-body .bottomnav a.active,body.light .bottomnav a.active{color:#CE1126!important;text-shadow:none!important}
-body:not(.light) .bottomnav a.active{color:#ff6b80!important}
-/* floating Ask Edu AI, bottom right, just above the bar */
-#aiFab.aifab{right:14px!important;left:auto!important;bottom:calc(var(--navh,64px) + 12px)!important;width:auto!important;height:46px!important;padding:0 16px 0 12px!important;border:0!important;border-radius:999px!important;gap:7px;align-items:center;justify-content:center;font-size:14px!important;font-weight:800;white-space:nowrap;color:#fff!important;z-index:30!important;background:linear-gradient(135deg,#CE1126,#E8366B 62%,#E8A900)!important;box-shadow:0 8px 20px rgba(206,17,38,.4)!important;animation:mwpulse 2.8s ease-in-out infinite}
-#aiFab.aifab::after{content:none!important;display:none!important}
-#aiFab .mwtx{font-size:14px;font-weight:800;line-height:1}
-#aiFab .mwsp{font-size:18px;line-height:1}
-body.kbopen #aiFab{display:none!important}
-@keyframes mwpulse{0%,100%{transform:scale(1)}50%{transform:scale(1.045)}}
-@media (prefers-reduced-motion:reduce){#aiFab.aifab{animation:none}}
-/* Home dashboard */
-body.homepg{background:linear-gradient(180deg,#fcd5e1 0,#fff2f6 300px,#fff 520px) fixed!important}
-body.homepg:not(.light){background:linear-gradient(180deg,#34101f 0,#0b0f22 340px) fixed!important}
-body.homepg header.top{background:transparent!important;box-shadow:none!important;border:0!important}
-body.homepg .topbar{color:#1d2150!important}body.homepg:not(.light) .topbar{color:#fff!important}
-body.homepg .hmbrand{font-family:Georgia,'Times New Roman',serif!important;font-size:24px;font-weight:800;gap:8px;color:inherit;letter-spacing:0}
-body.homepg .hmbrand i{color:#E8366B}
-body.homepg.light #ctl>button:not(#pfBtn){background:rgba(255,255,255,.92)!important;border-color:rgba(0,0,0,.12)!important}
-body.homepg.light #ctl svg.sic{color:#1d2150!important}
-.hm{--hi:#1d2150;--hs:#5d6a8f;--hc:#fff;--hl:rgba(29,33,80,.1);padding-bottom:96px;color:var(--hi)}
-body:not(.light) .hm{--hi:#fff;--hs:#a9b6d8;--hc:rgba(255,255,255,.07);--hl:rgba(255,255,255,.14)}
-.hmban{position:relative;display:flex;align-items:center;justify-content:space-between;gap:6px;margin-top:6px;padding:20px 14px 24px 18px;min-height:150px;border-radius:22px;overflow:hidden;background:linear-gradient(120deg,#ffd6e2,#ffb4c9 55%,#ff9db9);box-shadow:0 8px 22px rgba(206,17,38,.18)}
-body:not(.light) .hmban{background:linear-gradient(120deg,#4a1226,#7a1a35 60%,#a3203f)}
-.hmban::after{content:"";position:absolute;left:0;right:0;bottom:0;height:8px;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='36' height='8'%3E%3Cpath d='M0 8 6 0l6 8z' fill='%23000'/%3E%3Cpath d='M12 8l6-8 6 8z' fill='%23CE1126'/%3E%3Cpath d='M24 8l6-8 6 8z' fill='%23339E35'/%3E%3C/svg%3E") repeat-x}
-.hmt{position:relative;z-index:1}
-.hmt h2{font-family:Georgia,'Times New Roman',serif!important;font-size:23px;line-height:1.15;margin:0 0 8px;color:var(--hi)}
-.hmt p{margin:0 0 12px;font-size:13.5px;line-height:1.35;color:var(--hs)!important;max-width:none}
-body:not(.light) .hmt p{color:#ffd6e2!important}
-.hmgo{width:32px;height:32px;border-radius:50%;background:#CE1126;color:#fff;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 10px rgba(206,17,38,.4)}
-.hmart{width:42%;max-width:170px;flex:none}
-.hmsearch{display:flex;gap:10px;margin:14px 0 0}
-.hmsb{position:relative;flex:1;display:block}
-.hmsb svg{position:absolute;left:14px;top:50%;transform:translateY(-50%);color:var(--hs)}
-.hmsb input{width:100%!important;height:48px!important;box-sizing:border-box;padding:0 14px 0 44px!important;border-radius:16px!important;border:1px solid var(--hl)!important;background:var(--hc)!important;color:var(--hi)!important;font-size:14px!important;box-shadow:0 2px 8px rgba(0,0,0,.05)!important;background-image:none!important;-webkit-appearance:none;appearance:none}
-.hmsb input::placeholder{color:var(--hs)}
-.hmfil{width:48px;height:48px;border-radius:16px;background:var(--hc);border:1px solid var(--hl);display:flex;align-items:center;justify-content:center;color:#CE1126;flex:none}
-.hmh{font-family:Georgia,'Times New Roman',serif!important;font-size:20px;margin:20px 0 10px;color:var(--hi)!important;text-shadow:none!important}
-.hmlv{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
-.hmlc{position:relative;display:flex;flex-direction:column;align-items:center;text-align:center;gap:3px;padding:14px 6px 12px;border-radius:18px;border:1px solid var(--hl);color:var(--hi);min-width:0}
-.hmlc b{font-size:15px;margin-top:6px;color:var(--hi)}.hmlc small{font-size:11.5px;color:var(--hs);font-weight:600}
-.hmi{width:46px;height:46px;border-radius:14px;display:flex;align-items:center;justify-content:center;color:#fff;box-shadow:0 5px 12px rgba(0,0,0,.18)}
-.hmlc.hp{background:rgba(27,138,58,.14)}.hmlc.hp .hmi{background:#1B8A3A}
-.hmlc.hs{background:rgba(206,17,38,.12)}.hmlc.hs .hmi{background:#CE1126}
-.hmlc.ht{background:rgba(20,20,20,.1)}.hmlc.ht .hmi{background:#161616;box-shadow:0 5px 12px rgba(0,0,0,.18),inset 0 0 0 2px #E8A900}
-body:not(.light) .hmlc.ht{background:rgba(255,255,255,.1)}
-.hmar{width:26px;height:26px;border-radius:50%;margin-top:6px;display:flex;align-items:center;justify-content:center;background:rgba(127,127,127,.2);color:var(--hi)}
-.hmqa{display:grid;grid-template-columns:repeat(4,1fr);gap:9px}
-.hmqa a{display:flex;flex-direction:column;align-items:center;gap:7px;padding:12px 4px;border-radius:16px;background:var(--hc);border:1px solid var(--hl);min-width:0}
-.hmqa b{font-size:11.5px;color:var(--hi);text-align:center}
-.hmqa .hmi{width:42px;height:42px;border-radius:13px}
-.hmrow{display:flex;align-items:baseline;justify-content:space-between}.hmrow a{font-size:13px;font-weight:700;color:#CE1126}
-.hmbooks .empty{padding:18px;text-align:center;color:var(--hs)}
 </style>
 </head>
 <body>
-<div id="mwStripe"></div>
 <header class="top" id="topHeader"></header>
 <main class="wrap" id="app"></main>
-<button class="aifab" id="aiFab" onclick="location.hash='#/ai'" title="Ask Edu AI" aria-label="Ask Edu AI"><span class="mwsp">✨</span><span class="mwtx">Ask Edu AI</span></button>
+<button class="aifab" id="aiFab" onclick="location.hash='#/ai'" title="Edu AI Assistant">🤖</button>
 <nav class="bottomnav">
-  <a href="#/home" data-r="home"><span class="ic"><svg class="nic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 10.2V20h13v-9.8"/><path d="M10 20v-5.5h4V20"/></svg></span>Home</a>
+  <a href="#/" data-r="/"><span class="ic"><svg class="nic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 10.2V20h13v-9.8"/><path d="M10 20v-5.5h4V20"/></svg></span>Home</a>
   <a href="#/search" data-r="search"><span class="ic"><svg class="nic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4.5 4.5"/></svg></span>Search</a>
   <a href="#/library" data-r="library"><span class="ic"><svg class="nic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="4" width="4.6" height="16" rx="1"/><rect x="9.6" y="4" width="4.6" height="16" rx="1"/><path d="m16.2 5.6 3.7-1 3 14.6-3.7 1z" transform="translate(-1.6 0)"/></svg></span>Library</a>
-  <a href="#/exams" data-r="exams" id="navX" data-mode="exam"><span class="ic"><svg class="nic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6.5 3h8l4 4v14h-12z"/><path d="M14.5 3v4h4"/><path d="M9.5 12h6M9.5 16h6"/></svg></span>Exams</a>
-  <a href="#/settings" id="navSet" data-r="settings"><span class="ic"><svg class="nic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h0a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51h0a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v0a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></span>Settings</a>
+  <a href="#/exams" data-r="exams"><span class="ic"><svg class="nic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6.5 3h8l4 4v14h-12z"/><path d="M14.5 3v4h4"/><path d="M9.5 12h6M9.5 16h6"/></svg></span>Exams</a>
+  <a href="#/settings" data-r="settings" id="navX" data-mode="settings"><span class="ic"><svg class="nic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-.33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h0a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51h0a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v0a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></span>Settings</a>
 </nav>
 
 <script>
@@ -643,14 +600,14 @@ const TIERS=[
 function clsOf(b){return String(b.class||"").split(TIER_SEP)[0];}
 const IC_EYE='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z"/><circle cx="12" cy="12" r="3"/></svg>';
 const IC_DL='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11"/><path d="m7 11 5 5 5-5"/><path d="M5 20h14"/></svg>';
-/* Bottom-right slot: shows Exams (paper icon). Two quick swipes to the right turn it into Admin, and again back to Exams. */
+/* Settings slot: two quick swipes to the right turn Settings into Admin, and again back to Settings. */
 const NAV_MODES={
-  exam:{href:"#/exams",r:"exams",label:"Exams",svg:'<svg class="nic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6.5 3h8l4 4v14h-12z"/><path d="M14.5 3v4h4"/><path d="M9.5 12h6M9.5 16h6"/></svg>'},
+  settings:{href:"#/settings",r:"settings",label:"Settings",svg:'<svg class="nic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 .33-1.82V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51h0a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l.06.06a1.65 1.65 0 0 0 .33 1.82v0a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>'},
   admin:{href:"#/admin",r:"admin",label:"Admin",svg:'<svg class="nic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="3.8"/><path d="M4.5 20c.7-3.700 3.900-5.800 7.500-5.800s6.800 2.100 7.500 5.800"/></svg>'}
 };
 function setNavMode(m){
   const a=document.getElementById("navX");if(!a)return;
-  if(!NAV_MODES[m])m="exam";
+  if(!NAV_MODES[m])m="settings";
   const c=NAV_MODES[m];
   a.setAttribute("href",c.href);a.dataset.r=c.r;a.dataset.mode=m;
   a.innerHTML='<span class="ic">'+c.svg+'</span>'+c.label;
@@ -660,7 +617,7 @@ function setNavMode(m){
 }
 (function(){
   const a=document.getElementById("navX");if(!a)return;
-  let saved="exam";try{saved=sessionStorage.getItem("edu_navmode")||"exam";}catch(e){}
+  let saved="settings";try{saved=sessionStorage.getItem("edu_navmode")||"settings";}catch(e){}
   setNavMode(saved);
   let sx=0,sy=0,st=0,down=false,last=0,block=0;
   a.addEventListener("pointerdown",e=>{down=true;sx=e.clientX;sy=e.clientY;st=Date.now();try{a.setPointerCapture(e.pointerId);}catch(_){}});
@@ -671,7 +628,7 @@ function setNavMode(m){
       block=now+500;
       if(now-last<1600){
         last=0;
-        setNavMode(a.dataset.mode==="admin"?"exam":"admin");
+        setNavMode(a.dataset.mode==="admin"?"settings":"admin");
         try{if(navigator.vibrate)navigator.vibrate(25);}catch(_){}
       }else last=now;
     }
@@ -769,30 +726,24 @@ const LANGS=[["en","English"],["ny","Chichewa"],["tum","Chitumbuka"],["yao","Chi
 const AIQ_X={tum:"✦ Fumbani chilichose chakukhwaskana na sukulu",yao:"✦ Mundite nduna ya chonse chakusukulu",lom:"✦ Funsani chilichonse chokhudza sukulu",seh:"✦ Funsani cinthu ciri conse cakusukulu"};
 Object.assign(AIQ,AIQ_X);
 function langName(){const l=LANGS.find(x=>x[0]===LANG);return l?l[1]:"English";}
-let LANG=(function(){let v=null;try{v=localStorage.getItem("edu_lang");}catch(e){}return LANGS.some(l=>l[0]===v)?v:"en";})(),THEME=localStorage.getItem("edu_theme")||"light";
+let LANG=(function(){let v=null;try{v=localStorage.getItem("edu_lang");}catch(e){}return LANGS.some(l=>l[0]===v)?v:"en";})(),THEME=localStorage.getItem("edu_theme")||"dark";
 function trq(t){const d=I18N[LANG];return (d&&d[t])||t;}
 function applyLang(){
   const d=I18N[LANG]||null;document.documentElement.lang=({ny:"ny",nya:"ny",nya_mang:"ny",tum:"tum",yao:"yao",seh:"seh",tog:"tog"})[LANG]||"en";
   document.documentElement.style.setProperty("--aiq",'"'+(AIQ[LANG]||AIQ.en)+'"');
   document.querySelectorAll("[data-whole]").forEach(el=>{const w=((d&&d[el.dataset.whole])||el.dataset.whole).split(" ");el.innerHTML=w[0]+" <i>"+w.slice(1).join(" ")+"</i>";});
-  [document.getElementById("app"),document.querySelector(".bottomnav"),document.querySelector(".pv"),document.getElementById("lgSheet")].concat(Array.from(document.querySelectorAll(".aimodal"))).forEach(r=>{if(!r)return;
+  [document.getElementById("app"),document.querySelector(".bottomnav"),document.querySelector(".pv"),null].concat(Array.from(document.querySelectorAll(".aimodal"))).forEach(r=>{if(!r)return;
     const tw=document.createTreeWalker(r,NodeFilter.SHOW_TEXT);let n;
     while(n=tw.nextNode()){if(n._o===undefined)n._o=n.nodeValue;const k=n._o.trim();if(!k)continue;const t=d&&d[k];n.nodeValue=t?n._o.replace(k,t):n._o;}});
-  const lb=document.getElementById("lgCode");if(lb)lb.textContent=LANG.toUpperCase().slice(0,2);
 }
 const TH_SUN='<svg class="sic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2.5v2.2M12 19.3v2.2M2.5 12h2.2M19.3 12h2.2M5.3 5.3l1.6 1.6M17.1 17.1l1.6 1.6M18.7 5.3l-1.6 1.6M6.9 17.1l-1.6 1.6"/></svg>';
 const TH_MOON='<svg class="sic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.5 14.2A8.5 8.5 0 0 1 9.8 3.5a8.5 8.5 0 1 0 10.7 10.7z"/></svg>';
 function applyTheme(){document.body.classList.toggle("light",THEME==="light");const b=document.getElementById("thBtn");if(b){const l=THEME==="light";b.innerHTML=l?TH_MOON:TH_SUN;const t=l?"Switch to dark theme":"Switch to light theme";b.setAttribute("aria-label",t);b.title=t;}}
 (function(){
   const c=document.createElement("div");c.id="ctl";
-  c.innerHTML=`<button id="lgBtn" aria-label="Language">🌐<small id="lgCode"></small></button><button id="rmBtn" aria-label="Reading mode" aria-pressed="false"><svg class="sic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-6.5 10-6.5S22 12 22 12s-3.6 6.5-10 6.5S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg></button><button id="thBtn" aria-label="Theme"></button><button id="stBtn" aria-label="Settings"><svg class="sic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h0a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51h0a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v0a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></button><button id="pfBtn" aria-label="Profile"></button><div id="lgSheet" hidden></div>`;
+  c.innerHTML=`<button id="rmBtn" aria-label="Reading mode" aria-pressed="false"><svg class="sic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-6.5 10-6.5S22 12 22 12s-3.6 6.5-10 6.5S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg></button><button id="thBtn" aria-label="Theme"></button>`;
   document.body.appendChild(c);
-  const sh=c.querySelector("#lgSheet");
-  const draw=()=>{sh.innerHTML=`<h4>🌐 ${esc(trq("Language"))}</h4>`+LANGS.map(l=>`<button type="button" data-l="${l[0]}" class="${LANG===l[0]?"on":""}" aria-pressed="${LANG===l[0]}">${LANG===l[0]?"✓ ":""}${esc(l[1])}</button>`).join("");};
-  draw();
   c.querySelector("#thBtn").onclick=()=>{THEME=THEME==="light"?"dark":"light";localStorage.setItem("edu_theme",THEME);applyTheme();};
-  c.querySelector("#lgBtn").onclick=()=>{sh.hidden=!sh.hidden;};
-  sh.onclick=e=>{const b=e.target.closest("button[data-l]");if(!b)return;if(!LANGS.some(l=>l[0]===b.dataset.l))return;LANG=b.dataset.l;try{localStorage.setItem("edu_lang",LANG);}catch(_){}draw();applyLang();sh.hidden=true;};
   applyTheme();
 })();
 const QUOTES=["Education changes lives","Dream big. Study hard. Rise higher.","Every page you read builds your future","Malawi's future starts with you"];let qi=0;
@@ -1097,7 +1048,7 @@ function findBook(k){return booksCache.find(x=>bkey(x)===String(k))||booksCache.
 function loadBooks(){ return booksCache.filter(b=>!isExam(b)); }
 function loadExams(){ return booksCache.filter(isExam); }
 function isAdmin(){ return sessionStorage.getItem("edu_admin")==="1"; }
-function adminLogout(){ sessionStorage.removeItem("edu_admin"); appwriteLogout(); if(sb){sb.auth.signOut().catch(()=>{});} setNavMode("exam"); location.hash="#/"; }
+function adminLogout(){ sessionStorage.removeItem("edu_admin"); appwriteLogout(); if(sb){sb.auth.signOut().catch(()=>{});} setNavMode("settings"); location.hash="#/"; }
 function esc(s){ return String(s||"").replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 
 function dlUrl(b){
@@ -1111,7 +1062,7 @@ function bookCard(b){
     <div class="acts">${ok?`<button class="open ib" type="button" aria-label="Preview" title="Preview" onclick="previewBook('${bkey(b)}')">${IC_EYE}</button><a class="open dl ib" aria-label="Save" title="Save" href="${esc(dlUrl(b))}">${IC_DL}</a>`:''}</div></div>`;
 }
 
-function setHeader(html){ document.getElementById("topHeader").innerHTML = `<div class="topbar">${html}</div>`; }
+function setHeader(html){ document.getElementById("topHeader").innerHTML = `<div class="topbar">${html}<button type="button" class="accttop" aria-label="My account" title="My account" onclick="eduOpenAccount()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="3.6"/><path d="M4.5 20c.8-3.7 3.8-5.8 7.5-5.8s6.7 2.1 7.5 5.8"/></svg></button></div>`; }
 function setActiveNav(key){ document.querySelectorAll(".bottomnav a").forEach(a=>a.classList.toggle("active", a.dataset.r===key)); }
 
 function render(){
@@ -1129,7 +1080,6 @@ function route(){
   const hash = location.hash.slice(1) || "/";
   const parts = hash.split("/").filter(Boolean).map(decodeURIComponent);
   if(parts[0]!=="ai")aiReset=true;
-  document.body.classList.toggle("homepg",parts[0]==="home");
   document.getElementById("aiFab").style.display = !["ai","admin",undefined].includes(parts[0]) ? "flex" : "none";
 
   if(GATED.indexOf(parts[0])>-1 && !(window.EduAcct&&EduAcct.isIn())) return renderGate(app);
@@ -1142,10 +1092,10 @@ function route(){
     return parts[3] ? renderClassBooks(app, parts[1], parts[2], parts[3]) : renderClass(app, parts[1], parts[2]);
   }
   if(parts[0] === "exams") return renderExams(app, parts[1], parts[2]);
-  if(parts[0] === "home") return renderHome2(app);
   if(parts[0] === "start") return renderStart(app);
   if(parts[0] === "library") return renderLibrary(app);
   if(parts[0] === "search") return renderSearch(app, parts[1]);
+  if(parts[0] === "settings") return renderSettings(app);
   if(parts[0] === "ai") return renderAI(app);
   if(parts[0] === "admin" && parts[1] === "panel") return isAdmin() ? renderAdminPanel(app) : (location.hash="#/admin");
   if(parts[0] === "admin") return renderAdmin(app);
@@ -1156,41 +1106,9 @@ function renderHome(app){
   setHeader(""); setActiveNav("/");
   const F=[["📖","Books","#12A05C"],["🔍","Smart Search","#E0316E"],["🧠","Edu AI","#6B3FE0"],["🛡️","Safe & Secure","#F59E0B"],["☁️","Online Library","#1E7CF2"],["📱","Mobile Friendly","#0FB5B5"]];
   app.innerHTML=`<div class="l2"><div class="phw"><div class="phc"><div class="ph wel">${flag()}</div></div><div class="logo">📖</div></div>
-   <div class="l2t"><small>Welcome to</small><h1>Edu <i>Library</i></h1><p class="tl">Learn • Grow • Build Your Future</p><p class="ds">Your all-in-one digital learning platform for Primary, Secondary and Tertiary education.</p><p class="mot" id="mot">✨ Education changes lives</p><span class="mwchip">${MWFLAG} Proudly made for Malawi</span></div>
+   <div class="l2t"><small>Welcome to</small><h1>Edu <i>Library</i></h1><p class="tl">Learn • Grow • Build Your Future</p><p class="ds">Your all-in-one digital learning platform for Primary, Secondary and Tertiary education.</p><p class="mot" id="mot">✨ Education changes lives</p></div>
    <div class="inside"><div class="fg3">${F.map(f=>`<div><span style="background:${f[2]}">${f[0]}</span><b>${f[1]}</b></div>`).join("")}</div><p class="insnote">These icons are just a preview. Tap <b>Get Started</b> and you will find all these features inside.</p></div>
-   <a class="go2" href="#/home">Get Started →</a></div>`;
-}
-
-const MWFLAG='<svg class="mwflag" viewBox="0 0 30 20" aria-hidden="true"><rect width="30" height="6.7" fill="#000"/><rect y="6.7" width="30" height="6.6" fill="#CE1126"/><rect y="13.3" width="30" height="6.7" fill="#339E35"/><path d="M10.5 6.7a4.5 4.5 0 0 1 9 0z" fill="#CE1126"/><g stroke="#CE1126" stroke-width=".7" stroke-linecap="round"><path d="M15 1v1.4M9.6 2.6l1 1M20.4 2.6l-1 1M7.4 5.6h1.4M21.2 5.6h1.4"/></g></svg>';
-const HM_IC={
- cap:'<path d="M2 9l10-5 10 5-10 5z"/><path d="M6 11.5V16c0 1.5 3 3 6 3s6-1.5 6-3v-4.5"/><path d="M22 9v6"/>',
- book:'<path d="M12 6c-2-1.5-5-2-8-2v13c3 0 6 .5 8 2 2-1.5 5-2 8-2V4c-3 0-6 .5-8 2z"/><path d="M12 6v13"/>',
- bank:'<path d="M3 21h18"/><path d="M5 21V11M9.5 21V11M14.5 21V11M19 21V11"/><path d="M12 3 3 9h18z"/>',
- shelf:'<rect x="3.5" y="4" width="4.6" height="16" rx="1"/><rect x="9.7" y="4" width="4.6" height="16" rx="1"/><path d="m16.2 6.5 3.9-1 3 12.7-3.9 1z" transform="translate(-1.6 0)"/>',
- doc:'<path d="M6.5 3h8l4 4v14h-12z"/><path d="M14.5 3v4h4"/><path d="M9 12h6M9 16h6"/>',
- spark:'<path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z"/><path d="M19 15l.7 1.8 1.8.7-1.8.7L19 20l-.7-1.8-1.8-.7 1.8-.7z"/>',
- search:'<circle cx="11" cy="11" r="6.5"/><path d="m16 16 4 4"/>',
- filter:'<path d="M4 7h10M18 7h2M4 17h2M10 17h10"/><circle cx="16" cy="7" r="2"/><circle cx="8" cy="17" r="2"/>',
- arrow:'<path d="M5 12h14M13 6l6 6-6 6"/>'
-};
-function hmSvg(k,w){return '<svg viewBox="0 0 24 24" width="'+(w||24)+'" height="'+(w||24)+'" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+HM_IC[k]+'</svg>';}
-function renderHome2(app){
-  setActiveNav("home");
-  setHeader('<div class="brand hmbrand"><svg viewBox="0 0 40 32" width="34" height="28" aria-hidden="true"><path d="M20 7C16 3.5 9 3 3 3v22c6 0 13 .5 17 4 4-3.500 11-4 17-4V3c-6 0-13 .5-17 4z" fill="#E8366B"/><path d="M20 7v22" stroke="#fff" stroke-width="1.6"/><path d="M20 7C16 3.5 9 3 3 3v22c6 0 13 .5 17 4z" fill="#FF6E97"/></svg><span>Edu <i>Library</i></span></div>');
-  const LV=[["Primary","Standard 1 - 8","cap","hp"],["Secondary","Form 1 - 4","book","hs"],["Tertiary","College &amp; Uni","bank","ht"]];
-  const QA=[["Subjects","#/search","book","#1B8A3A"],["Books","#/library","shelf","#E8A900"],["Exam Papers","#/exams","doc","#111"],["Edu AI","#/ai","spark","#CE1126"]];
-  const bs=loadBooks().slice(0,4);
-  app.innerHTML=`<div class="hm">
-   <div class="hmban"><div class="hmt"><h2>Learn Today<br>Build Tomorrow</h2><p>Quality education<br>for a brighter Malawi</p><a class="hmgo" href="#/library" aria-label="Choose your level">${hmSvg("arrow",18)}</a></div>
-    <svg class="hmart" viewBox="0 0 160 130" aria-hidden="true"><g stroke="#F2A900" stroke-width="3.2" stroke-linecap="round"><path d="M80 34V16M50 44 38 32M110 44l12-12M34 66H16M126 66h18"/></g><path d="M52 82a28 28 0 0 1 56 0z" fill="#CE1126"/><rect x="26" y="100" width="108" height="16" rx="3" fill="#2E9B43"/><rect x="34" y="84" width="92" height="16" rx="3" fill="#111"/><rect x="40" y="68" width="78" height="16" rx="3" fill="#CE1126" opacity="0"/><rect x="30" y="104" width="70" height="3" rx="1.5" fill="#fff" opacity=".55"/><rect x="38" y="88" width="56" height="3" rx="1.5" fill="#fff" opacity=".4"/></svg></div>
-   <div class="hmsearch"><label class="hmsb">${hmSvg("search",20)}<input id="hmq" type="search" placeholder="Search books, subjects, exams..." enterkeyhint="search" onkeydown="if(event.key==='Enter'){location.hash='#/search/'+encodeURIComponent(this.value.trim());}"></label><a class="hmfil" href="#/search" aria-label="Search and filters">${hmSvg("filter",22)}</a></div>
-   <h3 class="hmh">Education Levels</h3>
-   <div class="hmlv">${LV.map(([k,sub,ic,c])=>`<a class="hmlc ${c}" href="#/level/${k}"><span class="hmi">${hmSvg(ic,26)}</span><b>${k}</b><small>${sub}</small><span class="hmar">${hmSvg("arrow",14)}</span></a>`).join("")}</div>
-   <h3 class="hmh">Quick Access</h3>
-   <div class="hmqa">${QA.map(([n,h,ic,c])=>`<a href="${h}"><span class="hmi" style="background:${c}">${hmSvg(ic,24)}</span><b>${n}</b></a>`).join("")}</div>
-   <div class="hmrow"><h3 class="hmh">Popular Books</h3><a href="#/library">See all ›</a></div>
-   <div class="hmbooks">${bs.length?bs.map(bookCard).join(""):'<div class="empty">Books will appear here soon.</div>'}</div>
-  </div>`;
+   <a class="go2" href="#/library">Get Started →</a></div>`;
 }
 function renderStart(app){ renderLibrary(app); }
 function renderExams(app, level, cls){
@@ -1295,6 +1213,45 @@ function renderClassBooks(app, level, cls, subj, tier){
   };
 }
 
+function renderSettings(app){
+  setHeader(`<button class="back" onclick="location.hash='#/home'">←</button><h2>Settings</h2>`);
+  setActiveNav("settings");
+  const langButtons=LANGS.map(l=>`<button type="button" data-lang="${l[0]}" class="${LANG===l[0]?"sel":""}" onclick="eduSetLanguage('${l[0]}')">${LANG===l[0]?"✓ ":""}${esc(l[1])}</button>`).join("");
+  app.innerHTML=`<div class="settingspage">
+    <div class="pagehead"><h2>Settings</h2><p>Control your reading experience, language and app information.</p></div>
+    <div class="setsec">Reading mode</div>
+    <div class="setbox">
+      <div class="rmrow"><b>Reading mode</b><button type="button" class="rmsw" role="switch" aria-label="Reading mode"></button></div>
+      <p class="rmdesc">Turn on a warmer screen for comfortable reading. Adjust the strength and choose colours here.</p>
+      <div class="rmswatches">${Object.keys(window.eduReadingTints||{}).map(k=>{const t=window.eduReadingTints[k];return `<button type="button" data-t="${k}" style="background:rgb(${t[0]},${t[1]},${t[2]})">${t[3]}</button>`}).join("")}</div>
+      <div class="rmadj" style="margin-top:16px">${window.eduEyeSvg||""}<span>Adjust</span></div>
+      <input class="rmslider" type="range" min="0" max="100" step="1" aria-label="Adjust reading mode colour">
+    </div>
+    <div class="setsec">Language</div>
+    <div class="setbox"><div class="langgrid">${langButtons}</div></div>
+    <div class="setsec">About app</div>
+    <div class="setbox">
+      <div class="aboutrow"><span>App</span><b>Edu Library</b></div>
+      <p class="rmdesc" style="margin-top:10px">Mobile-first digital library and learning platform for students in Malawi, with books, exam papers and Edu AI study support.</p>
+    </div>
+    <div class="setsec">Version information</div>
+    <div class="setbox">
+      <div class="aboutrow"><span>Version</span><b>${APP_VERSION}</b></div>
+      <div class="aboutrow"><span>Build</span><b>Navigation &amp; Settings</b></div>
+      <div class="aboutrow"><span>Made for</span><b>Students in Malawi</b></div>
+    </div>
+    <div class="setsec">My credentials</div>
+    <div class="setbox">
+      <div class="aboutrow"><span>Name</span><b>Steven January (Billz)</b></div>
+      <div class="aboutrow"><span>Role</span><b>Founder &amp; Lead Developer</b></div>
+      <div class="aboutrow"><span>Expertise</span><b>Software &amp; Educational Technology</b></div>
+      <div class="aboutrow"><span>Focus</span><b>Digital learning for Malawi</b></div>
+      <p class="rmdesc" style="margin-top:10px">Steven January, known as Billz, is the founder and sole developer of Edu Library and the Edu AI study assistant. He designed and built the platform from the ground up with a focus on practical digital learning for Malawi.</p>
+    </div>
+  </div>`;
+  if(window.eduReadingBind)window.eduReadingBind(app);
+  try{applyLang();}catch(e){}
+}
 function renderSearch(app, initial){
   setHeader(`<div class="brand"><span class="mark">🔍</span>Search Books</div>`);
   setActiveNav("search");
@@ -1792,7 +1749,6 @@ function aiVoiceOpen(){
     o.querySelector("#avInfo").textContent=infoText();
   }
   o.querySelector("#avTest").onclick=say;
-  draw();
   try{speechSynthesis.onvoiceschanged=()=>{loadVoices();if(document.body.contains(o))draw();};}catch(_){}
 }
 let TTS={i:-1,chunks:[],pos:0,state:"idle",tok:0,u:null},TTS_AUD=null;
@@ -1945,7 +1901,7 @@ function renderAIMessages(streamingText){
   const sc=document.getElementById("aiScroll");if(sc)sc.scrollTop=sc.scrollHeight;
 }
 
-const GATED=["home","level","exams","start","library","search","ai"];
+const GATED=["level","exams","start","library","search","ai"];
 window.eduAcctChanged=function(){ const h=(location.hash.slice(1)||"/").split("/").filter(Boolean)[0]; if(GATED.indexOf(h)>-1){ route(); applyLang(); } };
 function renderGate(app){
   AI_PENDING=null;
@@ -2018,7 +1974,7 @@ function buildAppContext(){
     langLine,
     who,
     `ABOUT THE APP YOU LIVE IN: You are Edu AI, the built-in study assistant of "Edu Library", a mobile-friendly digital library and e-learning web app for students in Malawi. Edu Library was created and is owned by ${APP_OWNER}. If anyone asks who made, built, owns or runs Edu Library (or you), answer: ${APP_OWNER}.`,
-    `How the app works: the first screen has a "Get Started" button that opens the Home screen (banner, search bar, Education Levels, Quick Access and Popular Books); the bottom bar has Home, Search, Library, Exams and Settings (shown with symbol icons); the profile picture at the top right opens Settings or sign-in; and the floating "Ask Edu AI" button above the bottom bar opens you. The Exams tab (paper icon) holds exam papers grouped by education level and then by class or course category, with a search box inside each class. At the top right of every screen there is an eye button for Reading mode (a warm orange screen tint that is easier on the eyes; tapping it turns it on and shows a slider to make the colour stronger or lighter), a sun/moon button for light and dark theme, and a profile button (Settings with screen colour choices and About with the app version are also in the bottom bar). The language button (English / Chichewa) appears only on the start page. Library -> choose an education level -> choose a class -> choose a subject (or "All books") -> list of books. In Tertiary / College, after choosing a course category the student also picks a book level: Basic (new to the field), Standard (has some knowledge) or Advanced (professionals), or All levels. Levels and classes: ${lv}. Every book is a PDF with Preview (in-app reader) and Save (download). The Preview screen has a reading-mode button that cycles the screen between normal, warm orange and dim brown for comfortable reading. Search finds books by title, subject, author, level or class. The app supports English and Chichewa, with theme and language buttons at the top right. Books are uploaded by the app admin from the Admin tab; students cannot upload. "Continue Reading" and "Recently Added" rows on the Library screen help students pick up where they left off.`,
+    `How the app works: the home screen has a "Get Started" button; the bottom tabs are Home, Search, Library and Exams (shown with symbol icons). The Exams tab (paper icon) holds exam papers grouped by education level and then by class or course category, with a search box inside each class. At the top right of every screen there is an eye button for Reading mode (a warm orange screen tint that is easier on the eyes; tapping it turns it on and shows a slider to make the colour stronger or lighter), a sun/moon button for light and dark theme, and a gear button for Settings (screen colour choices, and About with the app version). Language is selected from Settings after sign-in; it is not a permanent top-bar control. Library -> choose an education level -> choose a class -> choose a subject (or "All books") -> list of books. In Tertiary / College, after choosing a course category the student also picks a book level: Basic (new to the field), Standard (has some knowledge) or Advanced (professionals), or All levels. Levels and classes: ${lv}. Every book is a PDF with Preview (in-app reader) and Save (download). The Preview screen has a reading-mode button that cycles the screen between normal, warm orange and dim brown for comfortable reading. Search finds books by title, subject, author, level or class. The app supports English and Chichewa, with theme and language buttons at the top right. Books are uploaded by the app admin from the Admin tab; students cannot upload. "Continue Reading" and "Recently Added" rows on the Library screen help students pick up where they left off.`,
     `ABOUT YOUR CREATOR (share ONLY when someone directly asks who made, built or owns you or the app, how it began, or about his background; never bring any of it up on your own, never in greetings or unrelated answers): Edu Library and you were created by ${APP_OWNER}, who built the whole app himself. Always call him "${APP_OWNER}". Only if someone asks for his government name, full name or real name, say it is ${APP_OWNER_LEGAL} (people know him as ${APP_OWNER}). The idea: he had this idea for many years but lacked the resources to make it real. A few months ago he started coding in Python. The first version was a desktop app; he then redesigned it as an HTML web app so it is mobile-friendly and works on students' phones. Personal details, to be shared only if asked: he was born in 2003 at Limbe Hospital in Blantyre, Malawi, so he is around ${ownerAge()} years old. Only the birth year is known: never state or guess an exact birthday, day, month or time of birth, and if asked for it say he prefers to keep that private. Education: for primary school he attended Zingwangwa Primary School and then Fishing Line Primary School. For secondary school he attended Zingwangwa Progressive Secondary School, then Beacon High School, then Mulomba CDSS, and then Madaliso High School. He wrote his MSCE at Madaliso High School in 2022, repeated it in 2024, and is writing MSCE again. Share these facts warmly and briefly, only the part that was asked, and never invent extra personal details. His story is a good example to encourage students who have had to repeat a class or change schools: persistence pays off.`,
     `YOUR OWN FEATURES (mention them only when relevant to what the student is doing or asks, never boast): the plus button on the left of the message bar lets a student add a photo, such as a textbook page, diagram or homework question, for you to explain; the microphone button lets students speak instead of typing, which helps students who struggle with spelling, and their words appear in the message box; the send button sends the message and turns into a stop button while you are answering; the play/pause button on each of your replies reads it aloud and can be paused and resumed, and the audio keeps playing if the student switches apps; the three-dot menu at the top right of the chat has Read aloud, which shows what voice the phone will use (there is no male, female or age voice choice: the student's phone picks its own voice for the language they chose, and if the phone has no voice for that language your written answer stays in that language and the phone reads it with its closest or default voice); you can answer in Chichewa whenever a student asks, and when you do, the app reads your answer aloud with a slower pace and pronunciation-friendly handling of Chichewa spelling; you learn each student's name and class from the chat and adapt to them automatically; the menu button at the top left opens their saved chats; the suggestion buttons above the message bar (Explain this topic, Create a quiz, Summarize this lesson, Help me study) give quick starts; and you can make simple pictures when a student asks for one.`,
     `WHICH AI MODELS POWER YOU (share ONLY when someone directly asks which AI or model you are or what powers you; never volunteer it): you run on Google Gemini as the main model, with Groq and Mistral models as automatic backups that take over if one is busy or reaches its limit; pictures are made by Gemini's image model. Say this honestly, and add that you cannot always tell which of them is answering at a given moment. Never claim to be any other product.`,
@@ -2418,7 +2374,7 @@ window.addEventListener("hashchange", render);
 <script>
 /* ---------- Reading mode + Settings ---------- */
 const APP_VERSION="1.1.0"; // <- change this when you release a new version
-const APP_BUILD_NOTE="Mobile-friendly digital library for students in Malawi";
+const APP_BUILD_NOTE="Mobile-friendly digital library for students in Malawi — navigation, Settings and account layout update";
 (function(){
   const EYE_SVG='<svg class="sic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-6.5 10-6.5S22 12 22 12s-3.6 6.5-10 6.5S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>',GEAR_SVG='<svg class="sic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h0a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51h0a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v0a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>';
   const TINTS={orange:[255,138,38,"Orange"],amber:[255,192,72,"Amber"],sepia:[222,178,120,"Sepia"],rose:[255,150,160,"Rose"]};
@@ -2437,6 +2393,8 @@ const APP_BUILD_NOTE="Mobile-friendly digital library for students in Malawi";
   function setOn(v){on=!!v;sv("edu_rm_on",on?"1":"0");apply();}
   function setLvl(v){lvl=Math.min(100,Math.max(0,v|0));sv("edu_rm_lvl",String(lvl));apply();}
   function setTint(k){tint=k;sv("edu_rm_tint",k);apply();}
+  window.eduReadingTints=TINTS;window.eduEyeSvg=EYE_SVG;
+  window.eduReadingBind=function(root){bind(root);};
   function bind(root){
     const sw=root.querySelector(".rmsw"),sl=root.querySelector(".rmslider");
     const sync=()=>{if(!root.isConnected){const i=subs.indexOf(sync);if(i>=0)subs.splice(i,1);return;}
@@ -2456,70 +2414,52 @@ const APP_BUILD_NOTE="Mobile-friendly digital library for students in Malawi";
       <div class="rmrow"><b>Reading mode</b><button type="button" class="rmsw" role="switch" aria-label="Reading mode"></button></div>
       <p class="rmdesc">Reading mode makes the colours of your display warmer, allowing your eyes to relax.</p>
       <div class="rmhr"></div>
-      <div class="rmadj">${EYE_SVG}<span>Adjust</span></div>
-      <input class="rmslider" type="range" min="0" max="100" step="1" aria-label="Adjust reading mode colour">
-      <button type="button" class="rmlink" id="rmMore">More colours in Settings</button></div>`;
+      <p class="rmdesc">To change the colour or strength, open <b>Settings</b>. The quick control here only turns Reading Mode on or off.</p>
+      <button type="button" class="rmlink" id="rmMore">Open Reading Mode Settings</button></div>`;
     m.onclick=e=>{if(e.target===m)closePop();};
     document.body.appendChild(m);bind(m);
     m.querySelector("#rmMore").onclick=()=>{closePop();openSettings();};
   }
   function openSettings(){
     closePop();
-    const o=document.createElement("div");o.className="aimodal";
-    o.innerHTML=`<div class="card aiprof setcard" role="dialog" aria-label="Settings">
-      <h3>${GEAR_SVG}<span>Settings</span></h3>
-      <div class="setsec">Screen colour</div>
-      <div class="setbox">
-        <div class="rmrow"><b>Reading mode</b><button type="button" class="rmsw" role="switch" aria-label="Reading mode"></button></div>
-        <p class="rmdesc">A warm tint that is easier on your eyes. Choose the colour you like and how strong it is.</p>
-        <div class="rmswatches">${Object.keys(TINTS).map(k=>`<button type="button" data-t="${k}" style="background:rgb(${TINTS[k][0]},${TINTS[k][1]},${TINTS[k][2]})">${TINTS[k][3]}</button>`).join("")}</div>
-        <div class="rmadj" style="margin-top:16px">${EYE_SVG}<span>Adjust</span></div>
-        <input class="rmslider" type="range" min="0" max="100" step="1" aria-label="Adjust reading mode colour">
-      </div>
-      <div class="setsec">My account</div>
-      <div class="setbox" id="acctSet"></div>
-      <div class="setsec">About</div>
-      <div class="setbox">
-        <div class="aboutrow"><span>App</span><b>Edu Library</b></div>
-        <div class="aboutrow"><span>Version</span><b>${APP_VERSION}</b></div>
-        <div class="aboutrow"><span>Made for</span><b>Students in Malawi</b></div>
-        <p class="rmdesc" style="margin-top:10px">${APP_BUILD_NOTE}. Includes the Edu AI study assistant.</p>
-      </div>
-      <div class="setsec">Creator</div>
-      <div class="setbox">
-        <div class="aboutrow"><span>Name</span><b>Steven January (Billz)</b></div>
-        <div class="aboutrow"><span>Role</span><b>Founder &amp; Lead Developer</b></div>
-        <div class="aboutrow"><span>Expertise</span><b>Software &amp; Educational Technology</b></div>
-        <div class="aboutrow"><span>Focus</span><b>Digital learning for Malawi</b></div>
-        <p class="rmdesc" style="margin-top:10px">Steven January, known as Billz, is the founder and sole developer of Edu Library and the Edu AI study assistant. A Malawian self-taught software developer, he designed, programmed and launched the platform end to end, from a Python desktop prototype to the mobile-first web app students use today. His mission is to give every student in Malawi free, reliable access to books, exam papers and AI-powered study support on the device they already own.</p>
-      </div>
-      <button type="button" class="btn green" id="stDone" style="margin-top:16px">Done</button>
-    </div>`;
-    document.body.appendChild(o);
-    if(window.EduAcct)EduAcct.mount(o.querySelector("#acctSet"),"settings");
-    const close=()=>o.remove();
-    o.onclick=e=>{if(e.target===o)close();};
-    o.querySelector("#stDone").onclick=close;
-    bind(o);try{applyLang();}catch(e){}
+    location.hash="#/settings";
   }
   function init(){
-    const eb=document.getElementById("rmBtn"),sb=document.getElementById("stBtn");
-    if(!eb||!sb){return setTimeout(init,50);}
+    const eb=document.getElementById("rmBtn");
+    if(!eb){return setTimeout(init,50);}
     eb.onclick=()=>{
       if(document.getElementById("rmPop")){closePop();return;}
       if(!on)setOn(true);
       openPanel();
     };
-    sb.onclick=openSettings;
     apply();
   }
   window.addEventListener("hashchange",closePop);
   window.eduOpenSettings=openSettings;
   init();
+  if(location.hash==="#/settings")setTimeout(()=>route(),0);
 })();
 </script>
 
 <script>
+function eduOpenAccount(){
+  const old=document.getElementById("acctTopModal");if(old)old.remove();
+  const m=document.createElement("div");m.id="acctTopModal";m.className="aimodal";m.style.zIndex="170";
+  m.innerHTML=`<div class="card aiprof setcard" role="dialog" aria-label="My account"><h3>👤 <span>My account</span></h3><div id="acctTopSet"></div><button type="button" class="btn" id="acctTopDone" style="margin-top:12px">Done</button></div>`;
+  document.body.appendChild(m);
+  m.onclick=e=>{if(e.target===m)m.remove();};
+  m.querySelector("#acctTopDone").onclick=()=>m.remove();
+  if(window.EduAcct)EduAcct.mount(m.querySelector("#acctTopSet"),"settings");
+  try{applyLang();}catch(e){}
+}
+window.eduOpenAccount=eduOpenAccount;
+
+window.eduSetLanguage=function(k){
+  if(!LANGS.some(l=>l[0]===k))return;
+  LANG=k;try{localStorage.setItem("edu_lang",LANG);}catch(e){}
+  applyLang();
+  if(location.hash==="#/settings")route();
+};
 /* ---------- Student accounts (username + PIN), required for Edu AI ---------- */
 (function(){
   const KEY="edu_acct";
@@ -2696,369 +2636,8 @@ const APP_BUILD_NOTE="Mobile-friendly digital library for students in Malawi";
     for(let i=mounts.length-1;i>=0;i--){const x=mounts[i];if(!x.el.isConnected){mounts.splice(i,1);continue;}draw(x.el,x.kind);}
     if(typeof window.eduAcctChanged==="function")window.eduAcctChanged();
   }
-  window.EduAcct={mount,refresh,user:()=>acct?acct.username:"",isIn:()=>!!acct,token:freshToken,expired:()=>signOut(true),open:k=>agree(k==="new"?signupView:loginView)};
+  window.EduAcct={mount,refresh,isIn:()=>!!acct,token:freshToken,expired:()=>signOut(true),open:k=>agree(k==="new"?signupView:loginView)};
   try{if(typeof window.eduAcctChanged==="function")window.eduAcctChanged();}catch(e){}
-})();
-</script>
-
-<script>
-/* ---------- v1.1.0: profile avatar, Settings tab, nav height ---------- */
-(function(){
-  const pf=document.getElementById("pfBtn"),ns=document.getElementById("navSet");
-  const PERSON='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="3.8"/><path d="M4.5 20c.7-4 3.7-6 7.5-6s6.8 2 7.5 6"/></svg>';
-  function pfUpdate(){
-    if(!pf)return;
-    const u=(window.EduAcct&&EduAcct.isIn()&&EduAcct.user&&EduAcct.user())||"";
-    pf.innerHTML=u?esc(u.charAt(0).toUpperCase()):PERSON;
-    pf.title=u?("Signed in as "+u):"Sign in";
-  }
-  if(pf)pf.onclick=()=>{
-    if(window.EduAcct&&EduAcct.isIn()){const b=document.getElementById("stBtn");if(b)b.click();}
-    else if(window.EduAcct)EduAcct.open("login");
-  };
-  if(ns)ns.addEventListener("click",e=>{e.preventDefault();const b=document.getElementById("stBtn");if(b)b.click();});
-  const old=window.eduAcctChanged;
-  window.eduAcctChanged=function(){try{if(old)old();}finally{pfUpdate();}};
-  function navH(){const n=document.querySelector(".bottomnav");document.documentElement.style.setProperty("--navh",((n&&n.offsetHeight)||64)+"px");}
-  window.addEventListener("hashchange",()=>setTimeout(navH,60));
-  window.addEventListener("resize",navH);
-  const ASK={en:"Ask Edu AI",ny:"Funsani Edu AI",tum:"Fumbani Edu AI",yao:"Mundite Edu AI",lom:"Funsani Edu AI",seh:"Funsani Edu AI"};
-  function askTxt(){const e=document.querySelector("#aiFab .mwtx");if(e)e.textContent=ASK[LANG]||ASK.en;}
-  const oldLang=window.applyLang;
-  window.applyLang=function(){try{return oldLang.apply(this,arguments);}finally{askTxt();}};
-  askTxt();
-  pfUpdate();navH();setTimeout(navH,400);
-})();
-</script>
-
-<style id="v12css">
-/* ===== v1.2.0 ===== */
-#ctl{left:8px!important;right:auto!important;top:12px!important;flex-direction:row!important;gap:6px!important}
-#ctl #lgSheet{left:0!important;right:auto!important}
-#ctl #pfBtn,#ctl #stBtn{display:none!important}
-#ctr{position:fixed;top:10px;right:8px;z-index:90}
-#ctr #pfBtn{display:flex;align-items:center;justify-content:center;width:36px;height:36px;padding:0;border-radius:50%;border:2px solid #fff;background:linear-gradient(135deg,#CE1126,#E8A900);color:#fff;font-weight:800;font-size:15px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.25)}
-#ctr #pfBtn svg{width:20px;height:20px}
-body.landing #ctr{display:none}
-header.top .topbar{padding-left:84px!important;padding-right:54px!important}
-header.top .topbar:has(.aimore){padding-right:96px!important}
-.aimore{right:52px!important}
-body.homepg .topbar .back{color:inherit}
-#navSet,#navX{touch-action:pan-y;user-select:none;-webkit-user-select:none}
-.hmban{cursor:pointer}
-/* ---- pink theme shared by Home, Library, Classes, Exams, Search ---- */
-body.homepg{--hi:#1d2150;--hs:#5d6a8f;--hc:#fff;--hl:rgba(29,33,80,.1)}
-body.homepg:not(.light){--hi:#fff;--hs:#a9b6d8;--hc:rgba(255,255,255,.07);--hl:rgba(255,255,255,.14)}
-body.homepg .pagehead h2,body.homepg .chooser h3,body.homepg .hd,body.homepg .sec{color:var(--hi)!important;font-family:Georgia,'Times New Roman',serif!important}
-body.homepg .pagehead p,body.homepg .sub{color:var(--hs)!important}
-body.homepg .phero{background:linear-gradient(120deg,#ffd6e2,#ffb4c9 55%,#ff9db9)!important;border:0!important;border-radius:22px!important;margin:6px 0 0!important;box-shadow:0 8px 22px rgba(206,17,38,.18);min-height:130px!important}
-body.homepg:not(.light) .phero{background:linear-gradient(120deg,#4a1226,#7a1a35 60%,#a3203f)!important}
-body.homepg .phero .ph{display:none!important}
-body.homepg .phero::after{content:"📖";position:absolute;right:16px;bottom:8px;font-size:78px;line-height:1;z-index:1}
-body.homepg .lv-Primary .phero::after{content:"📚"}
-body.homepg .lv-Secondary .phero::after{content:"🎓"}
-body.homepg .lv-Tertiary .phero::after{content:"🏛️"}
-body.homepg .phero .pt h2,body.homepg .phero .pt h3,body.homepg .phero .pt p,body.homepg .phero .brandline,body.homepg .phero .brandline b{color:#1d2150!important;text-shadow:none!important;font-family:Georgia,'Times New Roman',serif!important}
-body.homepg:not(.light) .phero .pt h2,body.homepg:not(.light) .phero .pt h3,body.homepg:not(.light) .phero .pt p,body.homepg:not(.light) .phero .brandline,body.homepg:not(.light) .phero .brandline b{color:#fff!important}
-body.homepg .phero .pt h2 i,body.homepg .phero .brandline i{color:#CE1126!important;text-shadow:none!important}
-body.homepg .ct{background:var(--hc)!important;color:var(--hi);border:1px solid var(--hl);box-shadow:0 4px 14px rgba(29,33,80,.08)}
-body.homepg .ct .cx b{color:var(--hi)}body.homepg .ct .cx p,body.homepg .sp{color:var(--hs);border-color:var(--hl)}
-body.homepg .ct>i{color:var(--hi)}
-body.homepg .ct .co{color:#fff;background:#1B8A3A}
-body.homepg .ct:nth-child(4n+2) .co{background:#CE1126}
-body.homepg .ct:nth-child(4n+3) .co{background:#161616;box-shadow:inset 0 0 0 2px #E8A900}
-body.homepg .ct:nth-child(4n+4) .co{background:#E8A900}
-body.homepg .subrow{background:var(--hc)!important;color:var(--hi);border-color:var(--hl)!important}
-body.homepg .banner{background:linear-gradient(120deg,#ffd6e2,#ff9db9)!important;color:#1d2150}
-body.homepg:not(.light) .banner{background:linear-gradient(120deg,#4a1226,#a3203f)!important;color:#fff}
-body.homepg .lvl-list::after{display:none}
-/* ---- Home + Classes: page itself never scrolls ---- */
-body.fixpg{overflow:hidden!important;height:100dvh;padding-bottom:0!important}
-body.fixpg .lvlpg{height:calc(100dvh - 56px - var(--navh,64px) - 2*env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px) - 8px)}
-
-/* ===== Picture 1: landing ===== */
-.s1{margin:0 -18px;min-height:100dvh;padding:56px 20px 0;display:flex;flex-direction:column;background:radial-gradient(circle at 10% 0,#efe6ff,transparent 45%),radial-gradient(circle at 100% 30%,#dfe9ff,transparent 45%),#fbfaff;color:#14163f;overflow:hidden}
-.s1 *{box-sizing:border-box}
-.s1 .s1b{display:flex;align-items:center;gap:10px}
-.s1 .s1b b{display:block;font-size:30px;line-height:1;font-weight:800;color:#14163f;font-family:Inter,sans-serif}
-.s1 .s1b b i,.s1 h1 i{background:linear-gradient(90deg,#6a3df0,#c13cf0);-webkit-background-clip:text;background-clip:text;color:transparent}
-.s1 .s1b small{display:block;font-size:12.5px;color:#5d6a8f;margin-top:3px}
-.s1 .s1top{display:flex;gap:4px;position:relative;margin-top:14px}
-.s1 .s1t{flex:1 1 58%;position:relative;z-index:2}
-.s1 h1{font-size:34px;line-height:1.12;margin:6px 0 10px;color:#14163f;font-family:Inter,sans-serif;font-weight:800}
-.s1 .s1t p{font-size:14px;line-height:1.5;color:#4b5578;margin:0}
-.s1 .s1a{flex:0 0 44%;margin-right:-8px;position:relative;display:flex;align-items:flex-end;justify-content:center}
-.s1 .s1blob{position:absolute;inset:6% -6% 0 4%;border-radius:46% 54% 40% 60%;background:linear-gradient(160deg,#a4c8ff,#7a5cff 70%)}
-.s1 .s1a img,.s1 .s1em{position:relative;max-width:100%;max-height:230px}
-.s1 .s1em{font-size:120px;line-height:1;margin-bottom:-6px}
-.s1 .s1f{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:16px;position:relative;z-index:3}
-.s1 .s1f div{border-radius:20px;padding:14px 8px;text-align:center;border:1px solid rgba(255,255,255,.8);box-shadow:0 6px 16px rgba(80,70,180,.1)}
-.s1 .s1f span{font-size:30px;display:block;margin-bottom:6px}
-.s1 .s1f b{display:block;font-size:13px;line-height:1.2;color:#14163f}
-.s1 .s1f p{margin:4px 0 0;font-size:10.5px;line-height:1.35;color:#5d6a8f}
-.s1 .s1f .f1{background:#fbdff0}.s1 .s1f .f2{background:#dbeaff}.s1 .s1f .f3{background:#d6f5e6}
-.s1 .s1d{margin:18px -20px 0;flex:1;min-height:250px;padding:34px 24px 20px;text-align:center;color:#fff;background:linear-gradient(180deg,#1a1760,#0f0c3d);border-radius:46% 46% 0 0/34px 34px 0 0}
-.s1 .s1d em{display:block;font-family:'Segoe Script','Brush Script MT','Comic Sans MS',cursive;font-style:italic;font-size:26px;font-weight:700;color:#fff;border-bottom:3px solid #19a8ff;width:max-content;margin:0 auto 12px;padding:0 6px 2px}
-.s1 .s1d p{margin:0 0 18px;font-size:14px;color:#dcd8ff}
-.s1 .s1go{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;max-width:340px;margin:0 auto;padding:16px;border-radius:40px;background:linear-gradient(90deg,#7a3df0,#1E9CF2);color:#fff;font-weight:800;font-size:18px;box-shadow:0 10px 24px rgba(60,80,240,.45)}
-.s1 .s1in{margin-top:16px;font-size:13.5px;color:#a9a6d8}
-.s1 .s1in a,.s1 .s1in button{background:none;border:none;color:#19c6ff;font-weight:700;font-size:13.5px;padding:0}
-body:not(.light) .s1{background:#0a1233;color:#fff}body:not(.light) .s1 h1,body:not(.light) .s1 .s1b b{color:#fff}body:not(.light) .s1 .s1t p,body:not(.light) .s1 .s1b small{color:#b9c3e6}
-body:not(.light) .s1 .s1f div{background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.14)}body:not(.light) .s1 .s1f b{color:#fff}body:not(.light) .s1 .s1f p{color:#b9c3e6}
-/* ===== Picture 2: home ===== */
-.s2{display:flex;flex-direction:column;color:var(--hi);padding-bottom:12px}
-.s2 h3{font-family:Georgia,'Times New Roman',serif!important;font-size:19px;margin:14px 0 8px;color:var(--hi)!important}
-.s2ban{position:relative;display:flex;align-items:center;justify-content:space-between;gap:6px;margin-top:4px;padding:14px 12px 16px 18px;min-height:128px;border-radius:22px;overflow:hidden;background:linear-gradient(120deg,#ffd0de,#ffb3c8 60%,#ff9db9);box-shadow:0 8px 22px rgba(206,17,38,.14)}
-body:not(.light) .s2ban{background:linear-gradient(120deg,#4a1226,#a3203f)}
-.s2ban h2{font-family:Georgia,'Times New Roman',serif!important;font-size:22px;line-height:1.15;margin:0 0 6px;color:#1d2150}
-body:not(.light) .s2ban h2{color:#fff}
-.s2ban p{margin:0 0 10px;font-size:13px;line-height:1.35;color:#4b5578}
-body:not(.light) .s2ban p{color:#ffd6e2}
-.s2go{width:30px;height:30px;border-radius:50%;background:#e8366b;color:#fff;display:flex;align-items:center;justify-content:center}
-.s2art{width:44%;max-width:165px;flex:none}
-.s2sr{display:flex;gap:10px;margin-top:12px}
-.s2sb{position:relative;flex:1;display:block}
-.s2sb svg{position:absolute;left:14px;top:50%;transform:translateY(-50%);color:var(--hs)}
-body .s2 .s2sb input{width:100%;height:46px;padding:0 12px 0 44px;border-radius:16px!important;border:1px solid var(--hl)!important;background:var(--hc)!important;color:var(--hi)!important;font-size:14px}
-.s2fl{width:46px;height:46px;border-radius:16px;background:var(--hc);border:1px solid var(--hl);display:flex;align-items:center;justify-content:center;color:#6a3df0;flex:none}
-.s2lv{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
-.s2lv a{display:flex;flex-direction:column;align-items:center;text-align:center;gap:2px;padding:14px 4px 10px;border-radius:20px;border:1px solid var(--hl);min-width:0}
-.s2lv .l1{background:#d9f6e8}.s2lv .l2{background:#dcebfd}.s2lv .l3{background:#e8dcfa}
-body:not(.light) .s2lv a{background:rgba(255,255,255,.08)}
-.s2ic{width:46px;height:46px;border-radius:15px;display:flex;align-items:center;justify-content:center;color:#fff;box-shadow:0 5px 12px rgba(0,0,0,.16)}
-.s2lv b{font-size:15px;margin-top:6px;color:var(--hi)}.s2lv small{font-size:11px;color:var(--hs);font-weight:600}
-.s2ar{width:24px;height:24px;border-radius:50%;margin-top:6px;display:flex;align-items:center;justify-content:center;color:#fff}
-.s2qa{display:grid;grid-template-columns:repeat(4,1fr);gap:9px}
-.s2qa a{display:flex;flex-direction:column;align-items:center;gap:6px;padding:11px 2px;border-radius:18px;border:1px solid var(--hl);min-width:0}
-.s2qa .q1{background:#d9f6e8}.s2qa .q2{background:#dcebfd}.s2qa .q3{background:#e8dcfa}.s2qa .q4{background:#ffdce6}
-body:not(.light) .s2qa a{background:rgba(255,255,255,.08)}
-.s2qa .s2ic{width:40px;height:40px;border-radius:13px}.s2qa b{font-size:11px;color:var(--hi);text-align:center}
-.s2row{display:flex;align-items:baseline;justify-content:space-between}.s2row a{font-size:13px;font-weight:700;color:#e8366b}
-.s2bk{display:flex;flex-direction:column;gap:8px}
-.s2bk .s2r{display:flex;align-items:center;gap:12px;padding:8px 10px;border-radius:16px;background:var(--hc);border:1px solid var(--hl);cursor:pointer}
-.s2bk .thumb{width:46px;height:60px;border-radius:7px}
-.s2bk .s2m{flex:1;min-width:0}.s2bk .s2m b{display:block;font-size:14px;color:var(--hi);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.s2bk .s2m span{font-size:12px;color:var(--hs)}
-.s2dl{width:38px;height:38px;border-radius:50%;background:#ffe1ea;color:#e8366b;display:flex;align-items:center;justify-content:center;flex:none}
-.s2dl svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
-body.fixpg .s2{height:calc(100dvh - 56px - var(--navh,64px) - 22px);overflow:hidden}
-body.fixpg .s2>*{flex:none}
-body.fixpg .s2>.s2bk{flex:1 1 auto;min-height:0;overflow:hidden;-webkit-mask-image:linear-gradient(#000 82%,transparent);mask-image:linear-gradient(#000 82%,transparent)}
-body.fixpg .s2 h3{margin:10px 0 6px}
-body.fixpg .s2ban{min-height:112px;padding:10px 10px 12px 16px}
-@media(max-height:700px){body.fixpg .s2qa b{font-size:10px}body.fixpg .s2ban{min-height:96px}}
-/* ===== Picture 3: Edu AI ===== */
-body.aipg{background:linear-gradient(180deg,#d6e6ff 0,#ece6ff 38%,#fbfaff 80%) fixed!important}
-body.aipg:not(.light){background:linear-gradient(180deg,#0d1f55,#0a1233 45%,#060b22) fixed!important}
-body.aipg header.top{background:transparent!important;border:0!important;box-shadow:none!important}
-body.aipg .topbar,body.aipg .topbar h2,body.aipg .topbar .back{color:var(--ink)!important}
-body.aipg .topbar h2{font-size:21px!important;display:flex;align-items:center;gap:8px;font-family:Inter,sans-serif;font-weight:800}
-body.aipg .topbar h2 i{background:linear-gradient(90deg,#6a3df0,#c13cf0);-webkit-background-clip:text;background-clip:text;color:transparent}
-body.aipg::after{content:"";position:fixed;top:0;right:0;width:150px;height:96px;z-index:2;pointer-events:none;background:linear-gradient(225deg,transparent 0 22%,#000 22% 31%,#CE1126 31% 40%,#339E35 40% 49%,transparent 49%)}
-.aihero{position:relative;display:flex;align-items:center;justify-content:space-between;gap:6px;padding:2px 0 4px}
-.aihero h1{font-size:54px;line-height:1;margin:0 0 6px;color:var(--ink);font-family:Inter,sans-serif;font-weight:800}
-.aihero h1 i{background:linear-gradient(90deg,#4a2fe0,#b43cf0);-webkit-background-clip:text;background-clip:text;color:transparent}
-.aihero b{display:block;font-size:17px;color:var(--ink);margin-bottom:6px}
-.aihero p{margin:0;font-size:13.5px;line-height:1.45;color:var(--sub);max-width:215px}
-.aiorbw{position:relative;width:132px;height:132px;flex:none}
-.aiorb{position:absolute;inset:14px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:62px;background:radial-gradient(circle at 35% 30%,#d3ecff,#6a5cff 75%);box-shadow:0 0 34px rgba(106,92,255,.55)}
-.aiorbw u{position:absolute;width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:15px;text-decoration:none;background:#4a7cff;box-shadow:0 3px 8px rgba(0,0,0,.2)}
-.aiorbw u:nth-of-type(1){top:0;left:6px}.aiorbw u:nth-of-type(2){top:4px;right:0;background:#6a3df0}.aiorbw u:nth-of-type(3){bottom:6px;right:-2px;background:#7a4df0}
-body .aigreet{display:flex!important;align-items:center;gap:10px;background:linear-gradient(135deg,rgba(255,255,255,.95),rgba(240,228,255,.95))!important;color:#1d2150!important;border:1px solid rgba(106,92,255,.18);border-radius:20px!important;padding:14px 14px!important;line-height:1.4;box-shadow:0 8px 20px rgba(106,92,255,.12)}
-body:not(.light) .aigreet{background:rgba(255,255,255,.08)!important;color:#fff!important}
-.aigreet .aiw{font-size:34px;flex:none}.aigreet .aigt{flex:1;min-width:0;font-size:13.5px}.aigreet .aigt b{display:block;font-size:20px;margin-bottom:2px}
-.aigreet .aisig{flex:none;font-family:'Segoe Script','Brush Script MT','Comic Sans MS',cursive;font-size:12.5px;line-height:1.15;font-weight:700;color:#4b2fd0;transform:rotate(-8deg);text-align:left}
-.aiprompts h4,.aisubj h4{margin:14px 0 8px;font-size:16px;color:var(--ink);font-family:Inter,sans-serif}
-.aipgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.aipgrid button{display:flex;align-items:center;gap:8px;text-align:left;padding:10px;border-radius:16px;border:1px solid rgba(106,92,255,.16);background:rgba(240,235,255,.85);color:#1d2150;font-weight:600;font-size:13.5px}
-body:not(.light) .aipgrid button{background:rgba(255,255,255,.08);color:#fff}
-.aipgrid .pi{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;flex:none;font-size:15px;font-weight:800}
-.aipgrid em{margin-left:auto;font-style:normal;color:#6a5cff;font-size:17px}
-.aisubj{flex:none}
-.aisubjrow{display:flex;gap:6px;overflow-x:auto;padding:2px 2px 8px;scrollbar-width:none}.aisubjrow::-webkit-scrollbar{display:none}
-.aisubjrow button{flex:none;display:flex;flex-direction:column;align-items:center;gap:4px;width:74px;padding:6px 2px;border-radius:16px;border:1.5px solid transparent;background:transparent;color:var(--ink);font-size:11px;font-weight:600}
-.aisubjrow button.sel{border-color:#8b7cff;background:rgba(255,255,255,.7)}
-.aisubjrow .si{width:46px;height:46px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:21px;color:#fff}
-.aisubjrow button.sel .si{border-radius:16px}
-.aisafe2{flex:none;align-self:center;margin:6px 0 4px;padding:8px 18px;border-radius:20px;background:#1a1760;color:#fff;font-size:11.5px;font-weight:600}
-.aiwrap.has-chat .aihero,.aiwrap.has-chat .aiprompts{display:none}
-.aiwrap #aiChips{display:none!important}
-body.kbopen .aisubj,body.kbopen .aisafe2{display:none}
-.aibar .aipill{border-radius:22px;border:1px solid rgba(106,92,255,.25);background:rgba(255,255,255,.9)}
-body:not(.light) .aibar .aipill{background:rgba(255,255,255,.08)}
-.aibar .aipillrow{flex-wrap:wrap;align-items:center}
-.aibar .aipill textarea{order:-1;flex:1 0 100%;min-height:44px}
-.aibar .aiic.plus,.aibar #aiMic{width:auto!important;height:34px!important;margin:0!important;padding:0 10px 0 6px!important;border-radius:18px!important;gap:6px;font-size:13px;font-weight:600;background:transparent!important;color:#5d6a8f!important}
-.aibar .aiic.plus svg,.aibar #aiMic svg{width:20px;height:20px;color:#6a5cff}
-.aibar .aiic.plus::after{content:"Attach File"}
-.aibar #aiMic::after{content:"Voice Input"}
-.aibar #aiMic{margin-left:6px!important;border-left:1px solid var(--line)!important;border-radius:0 18px 18px 0!important}
-html body.aipg .aibar .aisend,html body.aipg .aibar .aisend.arrow{width:56px;height:56px;background:linear-gradient(135deg,#6a3df0,#3b7cf0)!important;box-shadow:0 8px 18px rgba(80,70,240,.4)!important}
-</style>
-<script>
-(function(){
-const V="1.2.0";
-const $=s=>document.querySelector(s);
-const ls=k=>{try{return localStorage.getItem(k);}catch(e){return null;}},sv=(k,v)=>{try{localStorage.setItem(k,v);}catch(e){}};
-const TINTS={orange:[255,138,38,"Orange"],amber:[255,192,72,"Amber"],sepia:[222,178,120,"Sepia"],rose:[255,150,160,"Rose"]};
-const EYE='<svg class="sic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.6-6.5 10-6.5S22 12 22 12s-3.6 6.5-10 6.5S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
-const CLIP='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5l-8.6 8.6a5.5 5.5 0 0 1-7.8-7.8l8.6-8.6a3.7 3.7 0 0 1 5.2 5.2l-8.6 8.6a1.8 1.8 0 0 1-2.6-2.6l8-8"/></svg>';
-function rmGet(){const t=ls("edu_rm_tint");return{on:ls("edu_rm_on")==="1",lvl:Math.min(100,Math.max(0,parseInt(ls("edu_rm_lvl")||"50",10)||0)),tint:TINTS[t]?t:"orange"};}
-function rmApply(){const s=rmGet(),o=document.getElementById("rmOverlay"),t=TINTS[s.tint];
-  if(o){o.style.background="rgb("+t[0]+","+t[1]+","+t[2]+")";o.style.opacity=s.on?(0.06+s.lvl/100*0.52).toFixed(3):"0";}
-  const b=$("#rmBtn");if(b){b.classList.toggle("on",s.on);b.setAttribute("aria-pressed",s.on?"true":"false");}}
-/* top-left: reading mode icon only switches on/off. Adjusting lives in Settings. */
-const rb=$("#rmBtn");if(rb){const nb=rb.cloneNode(true);rb.replaceWith(nb);nb.onclick=()=>{sv("edu_rm_on",rmGet().on?"0":"1");rmApply();};}
-/* top-right: account button */
-const pf=$("#pfBtn");const ctr=document.createElement("div");ctr.id="ctr";document.body.appendChild(ctr);
-if(pf){ctr.appendChild(pf);pf.onclick=openAccount;}
-function modal(inner){const o=document.createElement("div");o.className="aimodal";o.innerHTML='<div class="card aiprof setcard" role="dialog">'+inner+'</div>';document.body.appendChild(o);o.onclick=e=>{if(e.target===o)o.remove();};return o;}
-function openAccount(){
-  const o=modal('<h3>👤 <span>My account</span></h3><div class="setbox" id="acctSet"></div><div class="setsec">Study profile</div><div class="setbox"><p class="rmdesc" style="margin:0 0 10px">Your name and class help Edu AI greet you and explain things at your level.</p><button type="button" class="btn" id="acProf">Edit name &amp; class</button></div><button type="button" class="btn green" id="acDone" style="margin-top:16px">Done</button>');
-  if(window.EduAcct)EduAcct.mount(o.querySelector("#acctSet"),"settings");
-  o.querySelector("#acDone").onclick=()=>o.remove();
-  o.querySelector("#acProf").onclick=()=>{o.remove();aiProfileOpen();};
-  try{applyLang();}catch(e){}
-}
-window.eduOpenSettings=openAccount;
-const stb=$("#stBtn");if(stb)stb.onclick=openSettings;
-function openSettings(){
-  const s=rmGet();
-  const o=modal('<h3>⚙️ <span>Settings</span></h3>'+
-  '<div class="setsec">Reading mode</div><div class="setbox"><div class="rmrow"><b>Reading mode</b><button type="button" class="rmsw" role="switch" id="sRm"></button></div>'+
-  '<p class="rmdesc">A warm tint that is easier on your eyes. Choose the colour you like and how strong it is.</p>'+
-  '<div class="rmswatches">'+Object.keys(TINTS).map(k=>'<button type="button" data-t="'+k+'" style="background:rgb('+TINTS[k][0]+','+TINTS[k][1]+','+TINTS[k][2]+')">'+TINTS[k][3]+'</button>').join("")+'</div>'+
-  '<div class="rmadj" style="margin-top:16px">'+EYE+'<span>Adjust</span></div><input class="rmslider" id="sRl" type="range" min="0" max="100" step="1" aria-label="Adjust reading mode colour"></div>'+
-  '<div class="setsec">Language</div><div class="setbox" id="sLg"></div>'+
-  '<div class="setsec">About app</div><div class="setbox"><div class="avh2" style="margin-top:0">Version information</div>'+
-  '<div class="aboutrow"><span>App</span><b>Edu Library</b></div><div class="aboutrow"><span>Version</span><b>'+V+'</b></div><div class="aboutrow"><span>Made for</span><b>Students in Malawi</b></div>'+
-  '<p class="rmdesc" style="margin-top:8px">Mobile-friendly digital library for students in Malawi. Includes the Edu AI study assistant.</p>'+
-  '<div class="avh2">Credentials</div><div class="aboutrow"><span>Name</span><b>Steven January (Billz)</b></div><div class="aboutrow"><span>Role</span><b>Founder &amp; Lead Developer</b></div><div class="aboutrow"><span>Expertise</span><b>Software &amp; Educational Technology</b></div><div class="aboutrow"><span>Focus</span><b>Digital learning for Malawi</b></div>'+
-  '<p class="rmdesc" style="margin-top:10px">Steven January, known as Billz, is the founder and sole developer of Edu Library and the Edu AI study assistant. A Malawian self-taught software developer, he designed, programmed and launched the platform end to end. His mission is to give every student in Malawi free, reliable access to books, exam papers and AI-powered study support on the device they already own.</p></div>'+
-  '<button type="button" class="btn green" id="stDone" style="margin-top:16px">Done</button>');
-  const sw=o.querySelector("#sRm"),sl=o.querySelector("#sRl");
-  const sync=()=>{const r=rmGet();sw.classList.toggle("on",r.on);sw.setAttribute("aria-checked",r.on?"true":"false");if(document.activeElement!==sl)sl.value=r.lvl;sl.style.setProperty("--v",r.lvl+"%");o.querySelectorAll(".rmswatches button").forEach(b=>b.classList.toggle("sel",b.dataset.t===r.tint));rmApply();};
-  sw.onclick=()=>{sv("edu_rm_on",rmGet().on?"0":"1");sync();};
-  sl.oninput=()=>{sv("edu_rm_on","1");sv("edu_rm_lvl",sl.value);sync();};
-  o.querySelectorAll(".rmswatches button").forEach(b=>b.onclick=()=>{sv("edu_rm_on","1");sv("edu_rm_tint",b.dataset.t);sync();});
-  sync();
-  const lg=o.querySelector("#sLg");
-  const drawLg=()=>{lg.innerHTML=LANGS.map(l=>'<button type="button" class="avrow'+(LANG===l[0]?' sel':'')+'" data-l="'+l[0]+'">'+esc(l[1])+(LANG===l[0]?'<i>✓</i>':'')+'</button>').join("");try{applyLang();}catch(e){}};
-  lg.onclick=e=>{const b=e.target.closest("button[data-l]");if(!b)return;LANG=b.dataset.l;sv("edu_lang",LANG);drawLg();};
-  drawLg();
-  o.querySelector("#stDone").onclick=()=>o.remove();
-  try{applyLang();}catch(e){}
-}
-/* ---------- bottom bar: Exams is fixed, Settings swaps with Admin (two swipes right) ---------- */
-(function(){
-  const nx0=$("#navX");if(nx0){const nx=nx0.cloneNode(true);nx0.replaceWith(nx);nx.setAttribute("href","#/exams");nx.dataset.r="exams";nx.dataset.mode="exam";nx.innerHTML='<span class="ic">'+NAV_MODES.exam.svg+'</span>Exams';try{sessionStorage.removeItem("edu_navmode");}catch(e){}}
-  const n0=$("#navSet");if(!n0)return;const ns=n0.cloneNode(true);n0.replaceWith(ns);const SET_HTML=ns.innerHTML;ns.dataset.mode="settings";
-  function slot(m){
-    if(m==="admin"){ns.setAttribute("href","#/admin");ns.dataset.r="admin";ns.innerHTML='<span class="ic">'+NAV_MODES.admin.svg+'</span>Admin';}
-    else{m="settings";ns.setAttribute("href","#/settings");ns.dataset.r="settings";ns.innerHTML=SET_HTML;}
-    ns.dataset.mode=m;
-    const first=(location.hash.replace(/^#\/?/,"").split("/")[0])||"/";ns.classList.toggle("active",m==="admin"&&first==="admin");
-    try{sessionStorage.setItem("edu_navmode2",m);}catch(e){}
-  }
-  window.setNavMode=function(m){slot(m==="admin"?"admin":"settings");};
-  let saved="settings";try{saved=sessionStorage.getItem("edu_navmode2")||"settings";}catch(e){}
-  slot(saved==="admin"&&isAdmin()?"admin":"settings");
-  let sx=0,sy=0,st=0,down=false,last=0,block=0;
-  ns.addEventListener("pointerdown",e=>{down=true;sx=e.clientX;sy=e.clientY;st=Date.now();});
-  ns.addEventListener("pointerup",e=>{if(!down)return;down=false;const dx=e.clientX-sx,dy=e.clientY-sy,now=Date.now();
-    if(dx>=40&&Math.abs(dy)<Math.max(30,dx*0.6)&&now-st<700){block=now+500;
-      if(now-last<1600){last=0;slot(ns.dataset.mode==="admin"?"settings":"admin");try{if(navigator.vibrate)navigator.vibrate(25);}catch(_){}}else last=now;}});
-  ns.addEventListener("pointercancel",()=>{down=false;});
-  ns.addEventListener("click",e=>{if(Date.now()<block){e.preventDefault();e.stopPropagation();return;}if(ns.dataset.mode==="settings"){e.preventDefault();openSettings();}},true);
-})();
-/* ---------- routing: themes, fixed pages, back buttons ---------- */
-const _route=window.route;
-window.route=function(){
-  _route.apply(this,arguments);
-  try{
-    const p=(location.hash.slice(1)||"/").split("/").filter(Boolean).map(decodeURIComponent),k=p[0]||"";
-    if(k==="settings"){location.replace("#/home");openSettings();return;}
-    const b=document.body.classList;
-    b.toggle("homepg",["home","library","level","exams","search","start"].includes(k));
-    b.toggle("aipg",k==="ai");
-    b.toggle("fixpg",k==="home"||(k==="level"&&!!p[1]&&!p[2]));
-    const tb=$("#topHeader .topbar");
-    if(tb&&k&&k!=="ai"&&!tb.querySelector(".back")){const bk=document.createElement("button");bk.className="back";bk.setAttribute("aria-label","Back");bk.textContent="←";bk.onclick=()=>{location.hash=k==="home"?"#/":"#/home";};tb.insertBefore(bk,tb.firstChild);}
-  }catch(e){console.error(e);}
-};
-document.addEventListener("click",e=>{
-  if(e.target.closest("button,a,input"))return;
-  if(e.target.closest("#topHeader .brandline,#topHeader .brand")&&(location.hash||"#/")!=="#/home"){location.hash="#/home";return;}
-  if(e.target.closest(".hmban"))location.hash="#/library";
-});
-/* ---------- floating "✨ Edu AI" label ---------- */
-const _al=window.applyLang;
-window.applyLang=function(){try{return _al.apply(this,arguments);}finally{const t=$("#aiFab .mwtx");if(t)t.textContent="Edu AI";}};
-/* ---------- Edu AI chat panel ---------- */
-window.AI_SUBJ="All Subjects";
-window.aiGreeting=function(){const n=(getProfile().name||"").trim();
-  return n?'<b style="font-size:17px">👋 Hello, '+esc(n)+'!</b><br>I\'m <b>Edu AI</b>, your friendly learning assistant. How can I help you today?'
-          :'<b style="font-size:17px">👋 Hello there!</b><br>I\'m <b>Edu AI</b>, your friendly learning assistant. How can I help you today? Tell me your name and class and I will personalise your help.';};
-const _ram=window.renderAIMessages;
-window.renderAIMessages=function(){const r=_ram.apply(this,arguments);const w=$(".aiwrap");if(w)w.classList.toggle("has-chat",chatTurns.length>0);return r;};
-const _bac=window.buildAppContext;
-window.buildAppContext=function(){let c=_bac.apply(this,arguments);
-  c="UI NOTE: the profile picture at the top right opens My account only. The Settings tab in the bottom bar holds Reading mode, Language and About app (version and credentials). The theme and reading-mode icons are at the top left.\n"+(AI_SUBJ!=="All Subjects"?"FOCUS SUBJECT: the student picked "+AI_SUBJ+" in the chat. Keep answers on this subject unless they ask otherwise.\n":"")+c;return c;};
-
-const PROMPTS=[["📖","#6a3df0","Explain this topic","Explain this topic: "],["?","#1E7CF2","Solve a question","Solve this question step by step: "],["📄","#6a3df0","Summarize my notes","Summarize my notes: "],["🎓","#1E7CF2","Help me study","Help me study "]];
-const SUBJ=[["📖","#6a5cff","All Subjects"],["🧮","#1fa971","Mathematics"],["🔤","#e8456b","English"],["🧪","#7b4de0","Science"],["🌍","#f28a30","Social Studies"],["🧬","#12a5a5","Biology"],["⚗️","#3b6cf0","Chemistry"],["⚛️","#8b5cf6","Physics"],["🗺️","#c9892b","Geography"],["🏛️","#a35a3a","History"]];
-const LOGO='<svg viewBox="0 0 40 32" width="30" height="24" aria-hidden="true"><defs><linearGradient id="lgg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#2f6cf0"/><stop offset="1" stop-color="#c13cf0"/></linearGradient></defs><path d="M20 7C16 3.5 9 3 3 3v22c6 0 13 .5 17 4 4-3.5 11-4 17-4V3c-6 0-13 .5-17 4z" fill="url(#lgg)"/><path d="M20 7v22" stroke="#fff" stroke-width="1.6"/></svg>';
-function uname(){return (getProfile().name||"").trim()||((window.EduAcct&&EduAcct.isIn()&&EduAcct.user())||"");}
-window.aiGreeting=function(){const n=uname();
-  return '<span class="aiw">👋</span><div class="aigt"><b>'+(n?'Hello, '+esc(n)+'!':'Hello there!')+'</b>I\'m <b style="display:inline;font-size:inherit">Edu AI</b>, your friendly learning assistant. How can I help you today?</div><div class="aisig">Better<br>Students<br>Brighter<br>Malawi</div>';};
-const _rai=window.renderAI;
-window.renderAI=function(){
-  _rai.apply(this,arguments);
-  try{
-    const w=$(".aiwrap");if(!w)return;
-    const h2=$("#topHeader .topbar h2");if(h2)h2.innerHTML=LOGO+'<span>Edu <i>Library</i></span>';
-    const sc=w.querySelector("#aiScroll"),ph=sc.querySelector(".pagehead");if(ph)ph.remove();
-    sc.insertAdjacentHTML("afterbegin",'<div class="aihero"><div><h1>Edu <i>AI</i></h1><b>Your personal learning assistant</b><p>Ask questions, get instant help, and learn smarter — anytime, anywhere.</p></div><div class="aiorbw"><div class="aiorb">🤖</div><u>💡</u><u>🎓</u><u>📖</u></div></div>');
-    sc.querySelector("#aiMsgs").insertAdjacentHTML("afterend",'<div class="aiprompts"><h4>✦ Try These Prompts</h4><div class="aipgrid">'+PROMPTS.map((q,i)=>'<button type="button" data-i="'+i+'"><span class="pi" style="background:'+q[1]+'">'+q[0]+'</span>'+q[2]+'<em>→</em></button>').join("")+'</div></div>');
-    sc.querySelector(".aipgrid").onclick=e=>{const b=e.target.closest("button[data-i]");if(!b)return;const t=$("#aiInput");if(!t)return;t.value=PROMPTS[+b.dataset.i][3];aiGrow(t);t.focus();};
-    const ch=w.querySelector("#aiChips");
-    ch.insertAdjacentHTML("beforebegin",'<div class="aisubj"><h4>◈ Select Subject</h4><div class="aisubjrow">'+SUBJ.map(s=>'<button type="button" data-s="'+s[2]+'" class="'+(AI_SUBJ===s[2]?"sel":"")+'"><span class="si" style="background:'+s[1]+'">'+s[0]+'</span>'+s[2]+'</button>').join("")+'</div></div>');
-    w.querySelector(".aisubjrow").onclick=e=>{const b=e.target.closest("button[data-s]");if(!b)return;AI_SUBJ=b.dataset.s;w.querySelectorAll(".aisubjrow button").forEach(x=>x.classList.toggle("sel",x===b));};
-    w.insertAdjacentHTML("beforeend",'<div class="aisafe2">🛡️ Secure · Safe · For Malawi Students</div>');
-    const pl=w.querySelector(".aiic.plus");if(pl)pl.innerHTML=CLIP;
-    const ti=$("#aiInput");if(ti)ti.placeholder="Type your message here...";
-    w.classList.toggle("has-chat",chatTurns.length>0);
-    try{applyLang();}catch(e){}
-    aiFit();
-  }catch(e){console.error(e);}
-};
-/* ---------- Picture 1: Get Started page ---------- */
-window.renderHome=function(app){
-  setHeader("");setActiveNav("/");
-  app.innerHTML='<div class="s1"><div class="s1b">'+LOGO.replace('width="30" height="24"','width="46" height="38"')+'<div><b>Edu <i>Library</i></b><small>Learn &nbsp;•&nbsp; Explore &nbsp;•&nbsp; Grow</small></div></div>'+
-  '<div class="s1top"><div class="s1t"><h1>Your Future Starts with <i>Knowledge</i></h1><p>Access quality books, study materials and resources anytime, anywhere. Learn at your own pace and reach your goals.</p></div>'+
-  '<div class="s1a"><div class="s1blob"></div><img src="hero.png" alt="" onerror="this.outerHTML=\'<div class=&quot;s1em&quot;>🧑🏿‍🎓</div>\'"></div></div>'+
-  '<div class="s1f"><div class="f1"><span>📚</span><b>Wide Range of Books</b><p>Explore thousands of books and study materials.</p></div><div class="f2"><span>▶️</span><b>Interactive Learning</b><p>Videos, notes, and quizzes to boost your skills.</p></div><div class="f3"><span>🎯</span><b>Achieve Your Goals</b><p>Track your progress and stay motivated every day.</p></div></div>'+
-  '<div class="s1d"><em>Ready to learn?</em><p>Join thousands of students and start your learning journey today.</p><a class="s1go" href="#/home">Get Started <span>→</span></a><div class="s1in">Already have an account? <button type="button" onclick="EduAcct.open(\'in\')">Sign In</button></div></div></div>';
-};
-/* ---------- Picture 2: Home ---------- */
-const _rh2=window.renderHome2;
-const BANART=(function(){try{return (_rh2.toString().match(/<svg class="hmart"[\s\S]*?<\/svg>/)||[""])[0].replace("hmart","s2art");}catch(e){return "";}})();
-window.renderHome2=function(app){
-  _rh2.call(this,app);
-  try{
-    const L=[["Primary","Grades 1 - 8","cap","#1fb877","l1"],["Secondary","Form 1 - 4","book","#2f86f0","l2"],["Tertiary","College &amp; Uni","bank","#8a4fd0","l3"]];
-    const Q=[["Subjects","#/search","book","#1fb877","q1"],["Books","#/library","doc","#2f86f0","q2"],["Exam Papers","#/exams","doc","#8a4fd0","q3"],["Edu AI","#/ai","spark","#e8366b","q4"]];
-    const bs=loadBooks().slice(0,6);
-    const row=b=>'<div class="s2r" onclick="previewBook(\''+bkey(b)+'\')"><div class="thumb" '+(b.file_path?'data-src="'+esc(b.file_path)+'"':'')+'>📄</div><div class="s2m"><b>'+esc(b.title)+'</b><span>PDF • '+esc(clsOf(b)||b.level)+'</span></div>'+(b.file_path?'<a class="s2dl" aria-label="Save" href="'+esc(dlUrl(b))+'" onclick="event.stopPropagation()">'+IC_DL+'</a>':'')+'</div>';
-    app.innerHTML='<div class="s2"><div class="s2ban" onclick="location.hash=\'#/library\'"><div><h2>Learn Today<br>Build Tomorrow</h2><p>Quality education<br>for a brighter Malawi</p><span class="s2go">'+hmSvg("arrow",16)+'</span></div>'+(BANART||'<div class="s2art" style="font-size:80px;text-align:center">🎓</div>')+'</div>'+
-    '<div class="s2sr"><label class="s2sb">'+hmSvg("search",20)+'<input id="hmq" type="search" placeholder="Search books, subjects, exams..." enterkeyhint="search" onkeydown="if(event.key===\'Enter\'){location.hash=\'#/search/\'+encodeURIComponent(this.value.trim());}"></label><a class="s2fl" href="#/search" aria-label="Search and filters">'+hmSvg("filter",22)+'</a></div>'+
-    '<h3>Education Levels</h3><div class="s2lv">'+L.map(x=>'<a class="'+x[4]+'" href="#/level/'+x[0]+'"><span class="s2ic" style="background:'+x[3]+'">'+hmSvg(x[2],26)+'</span><b>'+x[0]+'</b><small>'+x[1]+'</small><span class="s2ar" style="background:'+x[3]+'">'+hmSvg("arrow",13)+'</span></a>').join("")+'</div>'+
-    '<h3>Quick Access</h3><div class="s2qa">'+Q.map(x=>'<a class="'+x[4]+'" href="'+x[1]+'"><span class="s2ic" style="background:'+x[3]+'">'+hmSvg(x[2],22)+'</span><b>'+x[0]+'</b></a>').join("")+'</div>'+
-    '<div class="s2row"><h3>Popular Books</h3><a href="#/library">See all ›</a></div><div class="s2bk">'+(bs.length?bs.map(row).join(""):'<div class="empty">Books will appear here soon.</div>')+'</div></div>';
-  }catch(e){console.error(e);}
-};
-rmApply();
-try{route();applyLang();}catch(e){console.error(e);}
 })();
 </script>
 
