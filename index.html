@@ -2731,5 +2731,336 @@ const APP_BUILD_NOTE="Mobile-friendly digital library for students in Malawi";
 })();
 </script>
 
+<style id="v12css">
+/* ===== v1.2.0 ===== */
+#ctl{left:8px!important;right:auto!important;top:12px!important;flex-direction:row!important;gap:6px!important}
+#ctl #lgSheet{left:0!important;right:auto!important}
+#ctl #pfBtn,#ctl #stBtn{display:none!important}
+#ctr{position:fixed;top:10px;right:8px;z-index:90}
+#ctr #pfBtn{display:flex;align-items:center;justify-content:center;width:36px;height:36px;padding:0;border-radius:50%;border:2px solid #fff;background:linear-gradient(135deg,#CE1126,#E8A900);color:#fff;font-weight:800;font-size:15px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.25)}
+#ctr #pfBtn svg{width:20px;height:20px}
+body.landing #ctr{display:none}
+header.top .topbar{padding-left:84px!important;padding-right:54px!important}
+header.top .topbar:has(.aimore){padding-right:96px!important}
+.aimore{right:52px!important}
+body.homepg .topbar .back{color:inherit}
+#navSet,#navX{touch-action:pan-y;user-select:none;-webkit-user-select:none}
+.hmban{cursor:pointer}
+/* ---- pink theme shared by Home, Library, Classes, Exams, Search ---- */
+body.homepg{--hi:#1d2150;--hs:#5d6a8f;--hc:#fff;--hl:rgba(29,33,80,.1)}
+body.homepg:not(.light){--hi:#fff;--hs:#a9b6d8;--hc:rgba(255,255,255,.07);--hl:rgba(255,255,255,.14)}
+body.homepg .pagehead h2,body.homepg .chooser h3,body.homepg .hd,body.homepg .sec{color:var(--hi)!important;font-family:Georgia,'Times New Roman',serif!important}
+body.homepg .pagehead p,body.homepg .sub{color:var(--hs)!important}
+body.homepg .phero{background:linear-gradient(120deg,#ffd6e2,#ffb4c9 55%,#ff9db9)!important;border:0!important;border-radius:22px!important;margin:6px 0 0!important;box-shadow:0 8px 22px rgba(206,17,38,.18);min-height:130px!important}
+body.homepg:not(.light) .phero{background:linear-gradient(120deg,#4a1226,#7a1a35 60%,#a3203f)!important}
+body.homepg .phero .ph{display:none!important}
+body.homepg .phero::after{content:"📖";position:absolute;right:16px;bottom:8px;font-size:78px;line-height:1;z-index:1}
+body.homepg .lv-Primary .phero::after{content:"📚"}
+body.homepg .lv-Secondary .phero::after{content:"🎓"}
+body.homepg .lv-Tertiary .phero::after{content:"🏛️"}
+body.homepg .phero .pt h2,body.homepg .phero .pt h3,body.homepg .phero .pt p,body.homepg .phero .brandline,body.homepg .phero .brandline b{color:#1d2150!important;text-shadow:none!important;font-family:Georgia,'Times New Roman',serif!important}
+body.homepg:not(.light) .phero .pt h2,body.homepg:not(.light) .phero .pt h3,body.homepg:not(.light) .phero .pt p,body.homepg:not(.light) .phero .brandline,body.homepg:not(.light) .phero .brandline b{color:#fff!important}
+body.homepg .phero .pt h2 i,body.homepg .phero .brandline i{color:#CE1126!important;text-shadow:none!important}
+body.homepg .ct{background:var(--hc)!important;color:var(--hi);border:1px solid var(--hl);box-shadow:0 4px 14px rgba(29,33,80,.08)}
+body.homepg .ct .cx b{color:var(--hi)}body.homepg .ct .cx p,body.homepg .sp{color:var(--hs);border-color:var(--hl)}
+body.homepg .ct>i{color:var(--hi)}
+body.homepg .ct .co{color:#fff;background:#1B8A3A}
+body.homepg .ct:nth-child(4n+2) .co{background:#CE1126}
+body.homepg .ct:nth-child(4n+3) .co{background:#161616;box-shadow:inset 0 0 0 2px #E8A900}
+body.homepg .ct:nth-child(4n+4) .co{background:#E8A900}
+body.homepg .subrow{background:var(--hc)!important;color:var(--hi);border-color:var(--hl)!important}
+body.homepg .banner{background:linear-gradient(120deg,#ffd6e2,#ff9db9)!important;color:#1d2150}
+body.homepg:not(.light) .banner{background:linear-gradient(120deg,#4a1226,#a3203f)!important;color:#fff}
+body.homepg .lvl-list::after{display:none}
+/* ---- Home + Classes: page itself never scrolls ---- */
+body.fixpg{overflow:hidden!important;height:100dvh;padding-bottom:0!important}
+body.fixpg .lvlpg{height:calc(100dvh - 56px - var(--navh,64px) - 2*env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px) - 8px)}
+
+/* ===== Picture 1: landing ===== */
+.s1{margin:0 -18px;min-height:100dvh;padding:56px 20px 0;display:flex;flex-direction:column;background:radial-gradient(circle at 10% 0,#efe6ff,transparent 45%),radial-gradient(circle at 100% 30%,#dfe9ff,transparent 45%),#fbfaff;color:#14163f;overflow:hidden}
+.s1 *{box-sizing:border-box}
+.s1 .s1b{display:flex;align-items:center;gap:10px}
+.s1 .s1b b{display:block;font-size:30px;line-height:1;font-weight:800;color:#14163f;font-family:Inter,sans-serif}
+.s1 .s1b b i,.s1 h1 i{background:linear-gradient(90deg,#6a3df0,#c13cf0);-webkit-background-clip:text;background-clip:text;color:transparent}
+.s1 .s1b small{display:block;font-size:12.5px;color:#5d6a8f;margin-top:3px}
+.s1 .s1top{display:flex;gap:4px;position:relative;margin-top:14px}
+.s1 .s1t{flex:1 1 58%;position:relative;z-index:2}
+.s1 h1{font-size:34px;line-height:1.12;margin:6px 0 10px;color:#14163f;font-family:Inter,sans-serif;font-weight:800}
+.s1 .s1t p{font-size:14px;line-height:1.5;color:#4b5578;margin:0}
+.s1 .s1a{flex:0 0 44%;margin-right:-8px;position:relative;display:flex;align-items:flex-end;justify-content:center}
+.s1 .s1blob{position:absolute;inset:6% -6% 0 4%;border-radius:46% 54% 40% 60%;background:linear-gradient(160deg,#a4c8ff,#7a5cff 70%)}
+.s1 .s1a img,.s1 .s1em{position:relative;max-width:100%;max-height:230px}
+.s1 .s1em{font-size:120px;line-height:1;margin-bottom:-6px}
+.s1 .s1f{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:16px;position:relative;z-index:3}
+.s1 .s1f div{border-radius:20px;padding:14px 8px;text-align:center;border:1px solid rgba(255,255,255,.8);box-shadow:0 6px 16px rgba(80,70,180,.1)}
+.s1 .s1f span{font-size:30px;display:block;margin-bottom:6px}
+.s1 .s1f b{display:block;font-size:13px;line-height:1.2;color:#14163f}
+.s1 .s1f p{margin:4px 0 0;font-size:10.5px;line-height:1.35;color:#5d6a8f}
+.s1 .s1f .f1{background:#fbdff0}.s1 .s1f .f2{background:#dbeaff}.s1 .s1f .f3{background:#d6f5e6}
+.s1 .s1d{margin:18px -20px 0;flex:1;min-height:250px;padding:34px 24px 20px;text-align:center;color:#fff;background:linear-gradient(180deg,#1a1760,#0f0c3d);border-radius:46% 46% 0 0/34px 34px 0 0}
+.s1 .s1d em{display:block;font-family:'Segoe Script','Brush Script MT','Comic Sans MS',cursive;font-style:italic;font-size:26px;font-weight:700;color:#fff;border-bottom:3px solid #19a8ff;width:max-content;margin:0 auto 12px;padding:0 6px 2px}
+.s1 .s1d p{margin:0 0 18px;font-size:14px;color:#dcd8ff}
+.s1 .s1go{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;max-width:340px;margin:0 auto;padding:16px;border-radius:40px;background:linear-gradient(90deg,#7a3df0,#1E9CF2);color:#fff;font-weight:800;font-size:18px;box-shadow:0 10px 24px rgba(60,80,240,.45)}
+.s1 .s1in{margin-top:16px;font-size:13.5px;color:#a9a6d8}
+.s1 .s1in a,.s1 .s1in button{background:none;border:none;color:#19c6ff;font-weight:700;font-size:13.5px;padding:0}
+body:not(.light) .s1{background:#0a1233;color:#fff}body:not(.light) .s1 h1,body:not(.light) .s1 .s1b b{color:#fff}body:not(.light) .s1 .s1t p,body:not(.light) .s1 .s1b small{color:#b9c3e6}
+body:not(.light) .s1 .s1f div{background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.14)}body:not(.light) .s1 .s1f b{color:#fff}body:not(.light) .s1 .s1f p{color:#b9c3e6}
+/* ===== Picture 2: home ===== */
+.s2{display:flex;flex-direction:column;color:var(--hi);padding-bottom:12px}
+.s2 h3{font-family:Georgia,'Times New Roman',serif!important;font-size:19px;margin:14px 0 8px;color:var(--hi)!important}
+.s2ban{position:relative;display:flex;align-items:center;justify-content:space-between;gap:6px;margin-top:4px;padding:14px 12px 16px 18px;min-height:128px;border-radius:22px;overflow:hidden;background:linear-gradient(120deg,#ffd0de,#ffb3c8 60%,#ff9db9);box-shadow:0 8px 22px rgba(206,17,38,.14)}
+body:not(.light) .s2ban{background:linear-gradient(120deg,#4a1226,#a3203f)}
+.s2ban h2{font-family:Georgia,'Times New Roman',serif!important;font-size:22px;line-height:1.15;margin:0 0 6px;color:#1d2150}
+body:not(.light) .s2ban h2{color:#fff}
+.s2ban p{margin:0 0 10px;font-size:13px;line-height:1.35;color:#4b5578}
+body:not(.light) .s2ban p{color:#ffd6e2}
+.s2go{width:30px;height:30px;border-radius:50%;background:#e8366b;color:#fff;display:flex;align-items:center;justify-content:center}
+.s2art{width:44%;max-width:165px;flex:none}
+.s2sr{display:flex;gap:10px;margin-top:12px}
+.s2sb{position:relative;flex:1;display:block}
+.s2sb svg{position:absolute;left:14px;top:50%;transform:translateY(-50%);color:var(--hs)}
+body .s2 .s2sb input{width:100%;height:46px;padding:0 12px 0 44px;border-radius:16px!important;border:1px solid var(--hl)!important;background:var(--hc)!important;color:var(--hi)!important;font-size:14px}
+.s2fl{width:46px;height:46px;border-radius:16px;background:var(--hc);border:1px solid var(--hl);display:flex;align-items:center;justify-content:center;color:#6a3df0;flex:none}
+.s2lv{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.s2lv a{display:flex;flex-direction:column;align-items:center;text-align:center;gap:2px;padding:14px 4px 10px;border-radius:20px;border:1px solid var(--hl);min-width:0}
+.s2lv .l1{background:#d9f6e8}.s2lv .l2{background:#dcebfd}.s2lv .l3{background:#e8dcfa}
+body:not(.light) .s2lv a{background:rgba(255,255,255,.08)}
+.s2ic{width:46px;height:46px;border-radius:15px;display:flex;align-items:center;justify-content:center;color:#fff;box-shadow:0 5px 12px rgba(0,0,0,.16)}
+.s2lv b{font-size:15px;margin-top:6px;color:var(--hi)}.s2lv small{font-size:11px;color:var(--hs);font-weight:600}
+.s2ar{width:24px;height:24px;border-radius:50%;margin-top:6px;display:flex;align-items:center;justify-content:center;color:#fff}
+.s2qa{display:grid;grid-template-columns:repeat(4,1fr);gap:9px}
+.s2qa a{display:flex;flex-direction:column;align-items:center;gap:6px;padding:11px 2px;border-radius:18px;border:1px solid var(--hl);min-width:0}
+.s2qa .q1{background:#d9f6e8}.s2qa .q2{background:#dcebfd}.s2qa .q3{background:#e8dcfa}.s2qa .q4{background:#ffdce6}
+body:not(.light) .s2qa a{background:rgba(255,255,255,.08)}
+.s2qa .s2ic{width:40px;height:40px;border-radius:13px}.s2qa b{font-size:11px;color:var(--hi);text-align:center}
+.s2row{display:flex;align-items:baseline;justify-content:space-between}.s2row a{font-size:13px;font-weight:700;color:#e8366b}
+.s2bk{display:flex;flex-direction:column;gap:8px}
+.s2bk .s2r{display:flex;align-items:center;gap:12px;padding:8px 10px;border-radius:16px;background:var(--hc);border:1px solid var(--hl);cursor:pointer}
+.s2bk .thumb{width:46px;height:60px;border-radius:7px}
+.s2bk .s2m{flex:1;min-width:0}.s2bk .s2m b{display:block;font-size:14px;color:var(--hi);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.s2bk .s2m span{font-size:12px;color:var(--hs)}
+.s2dl{width:38px;height:38px;border-radius:50%;background:#ffe1ea;color:#e8366b;display:flex;align-items:center;justify-content:center;flex:none}
+.s2dl svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+body.fixpg .s2{height:calc(100dvh - 56px - var(--navh,64px) - 22px);overflow:hidden}
+body.fixpg .s2>*{flex:none}
+body.fixpg .s2>.s2bk{flex:1 1 auto;min-height:0;overflow:hidden;-webkit-mask-image:linear-gradient(#000 82%,transparent);mask-image:linear-gradient(#000 82%,transparent)}
+body.fixpg .s2 h3{margin:10px 0 6px}
+body.fixpg .s2ban{min-height:112px;padding:10px 10px 12px 16px}
+@media(max-height:700px){body.fixpg .s2qa b{font-size:10px}body.fixpg .s2ban{min-height:96px}}
+/* ===== Picture 3: Edu AI ===== */
+body.aipg{background:linear-gradient(180deg,#d6e6ff 0,#ece6ff 38%,#fbfaff 80%) fixed!important}
+body.aipg:not(.light){background:linear-gradient(180deg,#0d1f55,#0a1233 45%,#060b22) fixed!important}
+body.aipg header.top{background:transparent!important;border:0!important;box-shadow:none!important}
+body.aipg .topbar,body.aipg .topbar h2,body.aipg .topbar .back{color:var(--ink)!important}
+body.aipg .topbar h2{font-size:21px!important;display:flex;align-items:center;gap:8px;font-family:Inter,sans-serif;font-weight:800}
+body.aipg .topbar h2 i{background:linear-gradient(90deg,#6a3df0,#c13cf0);-webkit-background-clip:text;background-clip:text;color:transparent}
+body.aipg::after{content:"";position:fixed;top:0;right:0;width:150px;height:96px;z-index:2;pointer-events:none;background:linear-gradient(225deg,transparent 0 22%,#000 22% 31%,#CE1126 31% 40%,#339E35 40% 49%,transparent 49%)}
+.aihero{position:relative;display:flex;align-items:center;justify-content:space-between;gap:6px;padding:2px 0 4px}
+.aihero h1{font-size:54px;line-height:1;margin:0 0 6px;color:var(--ink);font-family:Inter,sans-serif;font-weight:800}
+.aihero h1 i{background:linear-gradient(90deg,#4a2fe0,#b43cf0);-webkit-background-clip:text;background-clip:text;color:transparent}
+.aihero b{display:block;font-size:17px;color:var(--ink);margin-bottom:6px}
+.aihero p{margin:0;font-size:13.5px;line-height:1.45;color:var(--sub);max-width:215px}
+.aiorbw{position:relative;width:132px;height:132px;flex:none}
+.aiorb{position:absolute;inset:14px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:62px;background:radial-gradient(circle at 35% 30%,#d3ecff,#6a5cff 75%);box-shadow:0 0 34px rgba(106,92,255,.55)}
+.aiorbw u{position:absolute;width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:15px;text-decoration:none;background:#4a7cff;box-shadow:0 3px 8px rgba(0,0,0,.2)}
+.aiorbw u:nth-of-type(1){top:0;left:6px}.aiorbw u:nth-of-type(2){top:4px;right:0;background:#6a3df0}.aiorbw u:nth-of-type(3){bottom:6px;right:-2px;background:#7a4df0}
+body .aigreet{display:flex!important;align-items:center;gap:10px;background:linear-gradient(135deg,rgba(255,255,255,.95),rgba(240,228,255,.95))!important;color:#1d2150!important;border:1px solid rgba(106,92,255,.18);border-radius:20px!important;padding:14px 14px!important;line-height:1.4;box-shadow:0 8px 20px rgba(106,92,255,.12)}
+body:not(.light) .aigreet{background:rgba(255,255,255,.08)!important;color:#fff!important}
+.aigreet .aiw{font-size:34px;flex:none}.aigreet .aigt{flex:1;min-width:0;font-size:13.5px}.aigreet .aigt b{display:block;font-size:20px;margin-bottom:2px}
+.aigreet .aisig{flex:none;font-family:'Segoe Script','Brush Script MT','Comic Sans MS',cursive;font-size:12.5px;line-height:1.15;font-weight:700;color:#4b2fd0;transform:rotate(-8deg);text-align:left}
+.aiprompts h4,.aisubj h4{margin:14px 0 8px;font-size:16px;color:var(--ink);font-family:Inter,sans-serif}
+.aipgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.aipgrid button{display:flex;align-items:center;gap:8px;text-align:left;padding:10px;border-radius:16px;border:1px solid rgba(106,92,255,.16);background:rgba(240,235,255,.85);color:#1d2150;font-weight:600;font-size:13.5px}
+body:not(.light) .aipgrid button{background:rgba(255,255,255,.08);color:#fff}
+.aipgrid .pi{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;flex:none;font-size:15px;font-weight:800}
+.aipgrid em{margin-left:auto;font-style:normal;color:#6a5cff;font-size:17px}
+.aisubj{flex:none}
+.aisubjrow{display:flex;gap:6px;overflow-x:auto;padding:2px 2px 8px;scrollbar-width:none}.aisubjrow::-webkit-scrollbar{display:none}
+.aisubjrow button{flex:none;display:flex;flex-direction:column;align-items:center;gap:4px;width:74px;padding:6px 2px;border-radius:16px;border:1.5px solid transparent;background:transparent;color:var(--ink);font-size:11px;font-weight:600}
+.aisubjrow button.sel{border-color:#8b7cff;background:rgba(255,255,255,.7)}
+.aisubjrow .si{width:46px;height:46px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:21px;color:#fff}
+.aisubjrow button.sel .si{border-radius:16px}
+.aisafe2{flex:none;align-self:center;margin:6px 0 4px;padding:8px 18px;border-radius:20px;background:#1a1760;color:#fff;font-size:11.5px;font-weight:600}
+.aiwrap.has-chat .aihero,.aiwrap.has-chat .aiprompts{display:none}
+.aiwrap #aiChips{display:none!important}
+body.kbopen .aisubj,body.kbopen .aisafe2{display:none}
+.aibar .aipill{border-radius:22px;border:1px solid rgba(106,92,255,.25);background:rgba(255,255,255,.9)}
+body:not(.light) .aibar .aipill{background:rgba(255,255,255,.08)}
+.aibar .aipillrow{flex-wrap:wrap;align-items:center}
+.aibar .aipill textarea{order:-1;flex:1 0 100%;min-height:44px}
+.aibar .aiic.plus,.aibar #aiMic{width:auto!important;height:34px!important;margin:0!important;padding:0 10px 0 6px!important;border-radius:18px!important;gap:6px;font-size:13px;font-weight:600;background:transparent!important;color:#5d6a8f!important}
+.aibar .aiic.plus svg,.aibar #aiMic svg{width:20px;height:20px;color:#6a5cff}
+.aibar .aiic.plus::after{content:"Attach File"}
+.aibar #aiMic::after{content:"Voice Input"}
+.aibar #aiMic{margin-left:6px!important;border-left:1px solid var(--line)!important;border-radius:0 18px 18px 0!important}
+html body.aipg .aibar .aisend,html body.aipg .aibar .aisend.arrow{width:56px;height:56px;background:linear-gradient(135deg,#6a3df0,#3b7cf0)!important;box-shadow:0 8px 18px rgba(80,70,240,.4)!important}
+</style>
+<script>
+(function(){
+const V="1.2.0";
+const $=s=>document.querySelector(s);
+const ls=k=>{try{return localStorage.getItem(k);}catch(e){return null;}},sv=(k,v)=>{try{localStorage.setItem(k,v);}catch(e){}};
+const TINTS={orange:[255,138,38,"Orange"],amber:[255,192,72,"Amber"],sepia:[222,178,120,"Sepia"],rose:[255,150,160,"Rose"]};
+const EYE='<svg class="sic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.6-6.5 10-6.5S22 12 22 12s-3.6 6.5-10 6.5S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
+const CLIP='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5l-8.6 8.6a5.5 5.5 0 0 1-7.8-7.8l8.6-8.6a3.7 3.7 0 0 1 5.2 5.2l-8.6 8.6a1.8 1.8 0 0 1-2.6-2.6l8-8"/></svg>';
+function rmGet(){const t=ls("edu_rm_tint");return{on:ls("edu_rm_on")==="1",lvl:Math.min(100,Math.max(0,parseInt(ls("edu_rm_lvl")||"50",10)||0)),tint:TINTS[t]?t:"orange"};}
+function rmApply(){const s=rmGet(),o=document.getElementById("rmOverlay"),t=TINTS[s.tint];
+  if(o){o.style.background="rgb("+t[0]+","+t[1]+","+t[2]+")";o.style.opacity=s.on?(0.06+s.lvl/100*0.52).toFixed(3):"0";}
+  const b=$("#rmBtn");if(b){b.classList.toggle("on",s.on);b.setAttribute("aria-pressed",s.on?"true":"false");}}
+/* top-left: reading mode icon only switches on/off. Adjusting lives in Settings. */
+const rb=$("#rmBtn");if(rb){const nb=rb.cloneNode(true);rb.replaceWith(nb);nb.onclick=()=>{sv("edu_rm_on",rmGet().on?"0":"1");rmApply();};}
+/* top-right: account button */
+const pf=$("#pfBtn");const ctr=document.createElement("div");ctr.id="ctr";document.body.appendChild(ctr);
+if(pf){ctr.appendChild(pf);pf.onclick=openAccount;}
+function modal(inner){const o=document.createElement("div");o.className="aimodal";o.innerHTML='<div class="card aiprof setcard" role="dialog">'+inner+'</div>';document.body.appendChild(o);o.onclick=e=>{if(e.target===o)o.remove();};return o;}
+function openAccount(){
+  const o=modal('<h3>👤 <span>My account</span></h3><div class="setbox" id="acctSet"></div><div class="setsec">Study profile</div><div class="setbox"><p class="rmdesc" style="margin:0 0 10px">Your name and class help Edu AI greet you and explain things at your level.</p><button type="button" class="btn" id="acProf">Edit name &amp; class</button></div><button type="button" class="btn green" id="acDone" style="margin-top:16px">Done</button>');
+  if(window.EduAcct)EduAcct.mount(o.querySelector("#acctSet"),"settings");
+  o.querySelector("#acDone").onclick=()=>o.remove();
+  o.querySelector("#acProf").onclick=()=>{o.remove();aiProfileOpen();};
+  try{applyLang();}catch(e){}
+}
+window.eduOpenSettings=openAccount;
+const stb=$("#stBtn");if(stb)stb.onclick=openSettings;
+function openSettings(){
+  const s=rmGet();
+  const o=modal('<h3>⚙️ <span>Settings</span></h3>'+
+  '<div class="setsec">Reading mode</div><div class="setbox"><div class="rmrow"><b>Reading mode</b><button type="button" class="rmsw" role="switch" id="sRm"></button></div>'+
+  '<p class="rmdesc">A warm tint that is easier on your eyes. Choose the colour you like and how strong it is.</p>'+
+  '<div class="rmswatches">'+Object.keys(TINTS).map(k=>'<button type="button" data-t="'+k+'" style="background:rgb('+TINTS[k][0]+','+TINTS[k][1]+','+TINTS[k][2]+')">'+TINTS[k][3]+'</button>').join("")+'</div>'+
+  '<div class="rmadj" style="margin-top:16px">'+EYE+'<span>Adjust</span></div><input class="rmslider" id="sRl" type="range" min="0" max="100" step="1" aria-label="Adjust reading mode colour"></div>'+
+  '<div class="setsec">Language</div><div class="setbox" id="sLg"></div>'+
+  '<div class="setsec">About app</div><div class="setbox"><div class="avh2" style="margin-top:0">Version information</div>'+
+  '<div class="aboutrow"><span>App</span><b>Edu Library</b></div><div class="aboutrow"><span>Version</span><b>'+V+'</b></div><div class="aboutrow"><span>Made for</span><b>Students in Malawi</b></div>'+
+  '<p class="rmdesc" style="margin-top:8px">Mobile-friendly digital library for students in Malawi. Includes the Edu AI study assistant.</p>'+
+  '<div class="avh2">Credentials</div><div class="aboutrow"><span>Name</span><b>Steven January (Billz)</b></div><div class="aboutrow"><span>Role</span><b>Founder &amp; Lead Developer</b></div><div class="aboutrow"><span>Expertise</span><b>Software &amp; Educational Technology</b></div><div class="aboutrow"><span>Focus</span><b>Digital learning for Malawi</b></div>'+
+  '<p class="rmdesc" style="margin-top:10px">Steven January, known as Billz, is the founder and sole developer of Edu Library and the Edu AI study assistant. A Malawian self-taught software developer, he designed, programmed and launched the platform end to end. His mission is to give every student in Malawi free, reliable access to books, exam papers and AI-powered study support on the device they already own.</p></div>'+
+  '<button type="button" class="btn green" id="stDone" style="margin-top:16px">Done</button>');
+  const sw=o.querySelector("#sRm"),sl=o.querySelector("#sRl");
+  const sync=()=>{const r=rmGet();sw.classList.toggle("on",r.on);sw.setAttribute("aria-checked",r.on?"true":"false");if(document.activeElement!==sl)sl.value=r.lvl;sl.style.setProperty("--v",r.lvl+"%");o.querySelectorAll(".rmswatches button").forEach(b=>b.classList.toggle("sel",b.dataset.t===r.tint));rmApply();};
+  sw.onclick=()=>{sv("edu_rm_on",rmGet().on?"0":"1");sync();};
+  sl.oninput=()=>{sv("edu_rm_on","1");sv("edu_rm_lvl",sl.value);sync();};
+  o.querySelectorAll(".rmswatches button").forEach(b=>b.onclick=()=>{sv("edu_rm_on","1");sv("edu_rm_tint",b.dataset.t);sync();});
+  sync();
+  const lg=o.querySelector("#sLg");
+  const drawLg=()=>{lg.innerHTML=LANGS.map(l=>'<button type="button" class="avrow'+(LANG===l[0]?' sel':'')+'" data-l="'+l[0]+'">'+esc(l[1])+(LANG===l[0]?'<i>✓</i>':'')+'</button>').join("");try{applyLang();}catch(e){}};
+  lg.onclick=e=>{const b=e.target.closest("button[data-l]");if(!b)return;LANG=b.dataset.l;sv("edu_lang",LANG);drawLg();};
+  drawLg();
+  o.querySelector("#stDone").onclick=()=>o.remove();
+  try{applyLang();}catch(e){}
+}
+/* ---------- bottom bar: Exams is fixed, Settings swaps with Admin (two swipes right) ---------- */
+(function(){
+  const nx0=$("#navX");if(nx0){const nx=nx0.cloneNode(true);nx0.replaceWith(nx);nx.setAttribute("href","#/exams");nx.dataset.r="exams";nx.dataset.mode="exam";nx.innerHTML='<span class="ic">'+NAV_MODES.exam.svg+'</span>Exams';try{sessionStorage.removeItem("edu_navmode");}catch(e){}}
+  const n0=$("#navSet");if(!n0)return;const ns=n0.cloneNode(true);n0.replaceWith(ns);const SET_HTML=ns.innerHTML;ns.dataset.mode="settings";
+  function slot(m){
+    if(m==="admin"){ns.setAttribute("href","#/admin");ns.dataset.r="admin";ns.innerHTML='<span class="ic">'+NAV_MODES.admin.svg+'</span>Admin';}
+    else{m="settings";ns.setAttribute("href","#/settings");ns.dataset.r="settings";ns.innerHTML=SET_HTML;}
+    ns.dataset.mode=m;
+    const first=(location.hash.replace(/^#\/?/,"").split("/")[0])||"/";ns.classList.toggle("active",m==="admin"&&first==="admin");
+    try{sessionStorage.setItem("edu_navmode2",m);}catch(e){}
+  }
+  window.setNavMode=function(m){slot(m==="admin"?"admin":"settings");};
+  let saved="settings";try{saved=sessionStorage.getItem("edu_navmode2")||"settings";}catch(e){}
+  slot(saved==="admin"&&isAdmin()?"admin":"settings");
+  let sx=0,sy=0,st=0,down=false,last=0,block=0;
+  ns.addEventListener("pointerdown",e=>{down=true;sx=e.clientX;sy=e.clientY;st=Date.now();});
+  ns.addEventListener("pointerup",e=>{if(!down)return;down=false;const dx=e.clientX-sx,dy=e.clientY-sy,now=Date.now();
+    if(dx>=40&&Math.abs(dy)<Math.max(30,dx*0.6)&&now-st<700){block=now+500;
+      if(now-last<1600){last=0;slot(ns.dataset.mode==="admin"?"settings":"admin");try{if(navigator.vibrate)navigator.vibrate(25);}catch(_){}}else last=now;}});
+  ns.addEventListener("pointercancel",()=>{down=false;});
+  ns.addEventListener("click",e=>{if(Date.now()<block){e.preventDefault();e.stopPropagation();return;}if(ns.dataset.mode==="settings"){e.preventDefault();openSettings();}},true);
+})();
+/* ---------- routing: themes, fixed pages, back buttons ---------- */
+const _route=window.route;
+window.route=function(){
+  _route.apply(this,arguments);
+  try{
+    const p=(location.hash.slice(1)||"/").split("/").filter(Boolean).map(decodeURIComponent),k=p[0]||"";
+    if(k==="settings"){location.replace("#/home");openSettings();return;}
+    const b=document.body.classList;
+    b.toggle("homepg",["home","library","level","exams","search","start"].includes(k));
+    b.toggle("aipg",k==="ai");
+    b.toggle("fixpg",k==="home"||(k==="level"&&!!p[1]&&!p[2]));
+    const tb=$("#topHeader .topbar");
+    if(tb&&k&&k!=="ai"&&!tb.querySelector(".back")){const bk=document.createElement("button");bk.className="back";bk.setAttribute("aria-label","Back");bk.textContent="←";bk.onclick=()=>{location.hash=k==="home"?"#/":"#/home";};tb.insertBefore(bk,tb.firstChild);}
+  }catch(e){console.error(e);}
+};
+document.addEventListener("click",e=>{
+  if(e.target.closest("button,a,input"))return;
+  if(e.target.closest("#topHeader .brandline,#topHeader .brand")&&(location.hash||"#/")!=="#/home"){location.hash="#/home";return;}
+  if(e.target.closest(".hmban"))location.hash="#/library";
+});
+/* ---------- floating "✨ Edu AI" label ---------- */
+const _al=window.applyLang;
+window.applyLang=function(){try{return _al.apply(this,arguments);}finally{const t=$("#aiFab .mwtx");if(t)t.textContent="Edu AI";}};
+/* ---------- Edu AI chat panel ---------- */
+window.AI_SUBJ="All Subjects";
+window.aiGreeting=function(){const n=(getProfile().name||"").trim();
+  return n?'<b style="font-size:17px">👋 Hello, '+esc(n)+'!</b><br>I\'m <b>Edu AI</b>, your friendly learning assistant. How can I help you today?'
+          :'<b style="font-size:17px">👋 Hello there!</b><br>I\'m <b>Edu AI</b>, your friendly learning assistant. How can I help you today? Tell me your name and class and I will personalise your help.';};
+const _ram=window.renderAIMessages;
+window.renderAIMessages=function(){const r=_ram.apply(this,arguments);const w=$(".aiwrap");if(w)w.classList.toggle("has-chat",chatTurns.length>0);return r;};
+const _bac=window.buildAppContext;
+window.buildAppContext=function(){let c=_bac.apply(this,arguments);
+  c="UI NOTE: the profile picture at the top right opens My account only. The Settings tab in the bottom bar holds Reading mode, Language and About app (version and credentials). The theme and reading-mode icons are at the top left.\n"+(AI_SUBJ!=="All Subjects"?"FOCUS SUBJECT: the student picked "+AI_SUBJ+" in the chat. Keep answers on this subject unless they ask otherwise.\n":"")+c;return c;};
+
+const PROMPTS=[["📖","#6a3df0","Explain this topic","Explain this topic: "],["?","#1E7CF2","Solve a question","Solve this question step by step: "],["📄","#6a3df0","Summarize my notes","Summarize my notes: "],["🎓","#1E7CF2","Help me study","Help me study "]];
+const SUBJ=[["📖","#6a5cff","All Subjects"],["🧮","#1fa971","Mathematics"],["🔤","#e8456b","English"],["🧪","#7b4de0","Science"],["🌍","#f28a30","Social Studies"],["🧬","#12a5a5","Biology"],["⚗️","#3b6cf0","Chemistry"],["⚛️","#8b5cf6","Physics"],["🗺️","#c9892b","Geography"],["🏛️","#a35a3a","History"]];
+const LOGO='<svg viewBox="0 0 40 32" width="30" height="24" aria-hidden="true"><defs><linearGradient id="lgg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#2f6cf0"/><stop offset="1" stop-color="#c13cf0"/></linearGradient></defs><path d="M20 7C16 3.5 9 3 3 3v22c6 0 13 .5 17 4 4-3.5 11-4 17-4V3c-6 0-13 .5-17 4z" fill="url(#lgg)"/><path d="M20 7v22" stroke="#fff" stroke-width="1.6"/></svg>';
+function uname(){return (getProfile().name||"").trim()||((window.EduAcct&&EduAcct.isIn()&&EduAcct.user())||"");}
+window.aiGreeting=function(){const n=uname();
+  return '<span class="aiw">👋</span><div class="aigt"><b>'+(n?'Hello, '+esc(n)+'!':'Hello there!')+'</b>I\'m <b style="display:inline;font-size:inherit">Edu AI</b>, your friendly learning assistant. How can I help you today?</div><div class="aisig">Better<br>Students<br>Brighter<br>Malawi</div>';};
+const _rai=window.renderAI;
+window.renderAI=function(){
+  _rai.apply(this,arguments);
+  try{
+    const w=$(".aiwrap");if(!w)return;
+    const h2=$("#topHeader .topbar h2");if(h2)h2.innerHTML=LOGO+'<span>Edu <i>Library</i></span>';
+    const sc=w.querySelector("#aiScroll"),ph=sc.querySelector(".pagehead");if(ph)ph.remove();
+    sc.insertAdjacentHTML("afterbegin",'<div class="aihero"><div><h1>Edu <i>AI</i></h1><b>Your personal learning assistant</b><p>Ask questions, get instant help, and learn smarter — anytime, anywhere.</p></div><div class="aiorbw"><div class="aiorb">🤖</div><u>💡</u><u>🎓</u><u>📖</u></div></div>');
+    sc.querySelector("#aiMsgs").insertAdjacentHTML("afterend",'<div class="aiprompts"><h4>✦ Try These Prompts</h4><div class="aipgrid">'+PROMPTS.map((q,i)=>'<button type="button" data-i="'+i+'"><span class="pi" style="background:'+q[1]+'">'+q[0]+'</span>'+q[2]+'<em>→</em></button>').join("")+'</div></div>');
+    sc.querySelector(".aipgrid").onclick=e=>{const b=e.target.closest("button[data-i]");if(!b)return;const t=$("#aiInput");if(!t)return;t.value=PROMPTS[+b.dataset.i][3];aiGrow(t);t.focus();};
+    const ch=w.querySelector("#aiChips");
+    ch.insertAdjacentHTML("beforebegin",'<div class="aisubj"><h4>◈ Select Subject</h4><div class="aisubjrow">'+SUBJ.map(s=>'<button type="button" data-s="'+s[2]+'" class="'+(AI_SUBJ===s[2]?"sel":"")+'"><span class="si" style="background:'+s[1]+'">'+s[0]+'</span>'+s[2]+'</button>').join("")+'</div></div>');
+    w.querySelector(".aisubjrow").onclick=e=>{const b=e.target.closest("button[data-s]");if(!b)return;AI_SUBJ=b.dataset.s;w.querySelectorAll(".aisubjrow button").forEach(x=>x.classList.toggle("sel",x===b));};
+    w.insertAdjacentHTML("beforeend",'<div class="aisafe2">🛡️ Secure · Safe · For Malawi Students</div>');
+    const pl=w.querySelector(".aiic.plus");if(pl)pl.innerHTML=CLIP;
+    const ti=$("#aiInput");if(ti)ti.placeholder="Type your message here...";
+    w.classList.toggle("has-chat",chatTurns.length>0);
+    try{applyLang();}catch(e){}
+    aiFit();
+  }catch(e){console.error(e);}
+};
+/* ---------- Picture 1: Get Started page ---------- */
+window.renderHome=function(app){
+  setHeader("");setActiveNav("/");
+  app.innerHTML='<div class="s1"><div class="s1b">'+LOGO.replace('width="30" height="24"','width="46" height="38"')+'<div><b>Edu <i>Library</i></b><small>Learn &nbsp;•&nbsp; Explore &nbsp;•&nbsp; Grow</small></div></div>'+
+  '<div class="s1top"><div class="s1t"><h1>Your Future Starts with <i>Knowledge</i></h1><p>Access quality books, study materials and resources anytime, anywhere. Learn at your own pace and reach your goals.</p></div>'+
+  '<div class="s1a"><div class="s1blob"></div><img src="hero.png" alt="" onerror="this.outerHTML=\'<div class=&quot;s1em&quot;>🧑🏿‍🎓</div>\'"></div></div>'+
+  '<div class="s1f"><div class="f1"><span>📚</span><b>Wide Range of Books</b><p>Explore thousands of books and study materials.</p></div><div class="f2"><span>▶️</span><b>Interactive Learning</b><p>Videos, notes, and quizzes to boost your skills.</p></div><div class="f3"><span>🎯</span><b>Achieve Your Goals</b><p>Track your progress and stay motivated every day.</p></div></div>'+
+  '<div class="s1d"><em>Ready to learn?</em><p>Join thousands of students and start your learning journey today.</p><a class="s1go" href="#/home">Get Started <span>→</span></a><div class="s1in">Already have an account? <button type="button" onclick="EduAcct.open(\'in\')">Sign In</button></div></div></div>';
+};
+/* ---------- Picture 2: Home ---------- */
+const _rh2=window.renderHome2;
+const BANART=(function(){try{return (_rh2.toString().match(/<svg class="hmart"[\s\S]*?<\/svg>/)||[""])[0].replace("hmart","s2art");}catch(e){return "";}})();
+window.renderHome2=function(app){
+  _rh2.call(this,app);
+  try{
+    const L=[["Primary","Grades 1 - 8","cap","#1fb877","l1"],["Secondary","Form 1 - 4","book","#2f86f0","l2"],["Tertiary","College &amp; Uni","bank","#8a4fd0","l3"]];
+    const Q=[["Subjects","#/search","book","#1fb877","q1"],["Books","#/library","doc","#2f86f0","q2"],["Exam Papers","#/exams","doc","#8a4fd0","q3"],["Edu AI","#/ai","spark","#e8366b","q4"]];
+    const bs=loadBooks().slice(0,6);
+    const row=b=>'<div class="s2r" onclick="previewBook(\''+bkey(b)+'\')"><div class="thumb" '+(b.file_path?'data-src="'+esc(b.file_path)+'"':'')+'>📄</div><div class="s2m"><b>'+esc(b.title)+'</b><span>PDF • '+esc(clsOf(b)||b.level)+'</span></div>'+(b.file_path?'<a class="s2dl" aria-label="Save" href="'+esc(dlUrl(b))+'" onclick="event.stopPropagation()">'+IC_DL+'</a>':'')+'</div>';
+    app.innerHTML='<div class="s2"><div class="s2ban" onclick="location.hash=\'#/library\'"><div><h2>Learn Today<br>Build Tomorrow</h2><p>Quality education<br>for a brighter Malawi</p><span class="s2go">'+hmSvg("arrow",16)+'</span></div>'+(BANART||'<div class="s2art" style="font-size:80px;text-align:center">🎓</div>')+'</div>'+
+    '<div class="s2sr"><label class="s2sb">'+hmSvg("search",20)+'<input id="hmq" type="search" placeholder="Search books, subjects, exams..." enterkeyhint="search" onkeydown="if(event.key===\'Enter\'){location.hash=\'#/search/\'+encodeURIComponent(this.value.trim());}"></label><a class="s2fl" href="#/search" aria-label="Search and filters">'+hmSvg("filter",22)+'</a></div>'+
+    '<h3>Education Levels</h3><div class="s2lv">'+L.map(x=>'<a class="'+x[4]+'" href="#/level/'+x[0]+'"><span class="s2ic" style="background:'+x[3]+'">'+hmSvg(x[2],26)+'</span><b>'+x[0]+'</b><small>'+x[1]+'</small><span class="s2ar" style="background:'+x[3]+'">'+hmSvg("arrow",13)+'</span></a>').join("")+'</div>'+
+    '<h3>Quick Access</h3><div class="s2qa">'+Q.map(x=>'<a class="'+x[4]+'" href="'+x[1]+'"><span class="s2ic" style="background:'+x[3]+'">'+hmSvg(x[2],22)+'</span><b>'+x[0]+'</b></a>').join("")+'</div>'+
+    '<div class="s2row"><h3>Popular Books</h3><a href="#/library">See all ›</a></div><div class="s2bk">'+(bs.length?bs.map(row).join(""):'<div class="empty">Books will appear here soon.</div>')+'</div></div>';
+  }catch(e){console.error(e);}
+};
+rmApply();
+try{route();applyLang();}catch(e){console.error(e);}
+})();
+</script>
+
 </body>
 </html>
