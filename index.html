@@ -1218,7 +1218,7 @@ function route(){
   const hash = location.hash.slice(1) || "/";
   const parts = hash.split("/").filter(Boolean).map(decodeURIComponent);
   if(parts[0]!=="ai")aiReset=true;
-  document.getElementById("aiFab").style.display = (!["ai","admin",undefined].includes(parts[0]) && !(GATED.indexOf(parts[0])>-1 && !(window.EduAcct&&EduAcct.isIn()&&EduAcct.agreed()))) ? "flex" : "none";
+  document.getElementById("aiFab").style.display = (["search","library","exams","level"].includes(parts[0]) && !(GATED.indexOf(parts[0])>-1 && !(window.EduAcct&&EduAcct.isIn()&&EduAcct.agreed()))) ? "flex" : "none";
 
   if(GATED.indexOf(parts[0])>-1 && !(window.EduAcct&&EduAcct.isIn())) return renderGate(app);
   if(GATED.indexOf(parts[0])>-1 && window.EduAcct && EduAcct.isIn() && !EduAcct.agreed()) return renderAgreement(app);
