@@ -571,6 +571,13 @@ body.landing .l2{height:100%;min-height:100%!important;overflow:hidden}
 body:not(.light) .langgrid button{color:#eef2ff}
 body:not(.light) .langgrid button.sel{color:#7fdfff;border-color:#00c2ff;background:rgba(0,194,255,.12)}
 .bottomnav a{min-width:0}
+
+/* v1.1.2 Edu AI header: chat history far left, title middle, [options][reading][theme][account] far right */
+body:has(.topbar .aimore) .topbar{padding-left:8px!important;padding-right:8px!important;gap:6px!important}
+body:has(.topbar .aimore) .topbar .hamb{margin-left:0!important;margin-right:0!important;flex:none}
+body:has(.topbar .aimore) .topbar h2{flex:1 1 auto;min-width:0;text-align:center;font-size:14px!important;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding-right:112px}
+body:has(.topbar .aimore) #ctl{left:auto!important;right:46px!important}
+body:has(.topbar .aimore) .aimore{right:118px!important}
 </style>
 </head>
 <body>
@@ -1907,12 +1914,46 @@ function renderGate(app){
   AI_PENDING=null;
   setHeader(`<button class="back" onclick="aiBack()">←</button><h2>Edu Library</h2>`);
   setActiveNav("");
-  app.innerHTML=`<div class="card" style="margin-top:16px;text-align:center">
-    <div style="font-size:44px;line-height:1">🔐</div>
-    <h2 style="font-size:20px;margin:10px 0 6px">Sign in to continue</h2>
-    <p class="rmdesc" style="margin:0 0 16px">Edu Library needs a free account. Choose a username and a 6-number PIN. No email, phone number or real name.</p>
-    <div class="acstack"><button type="button" class="btn green" onclick="EduAcct.open('in')">Sign in</button><button type="button" class="btn" onclick="EduAcct.open('new')">Create account</button></div>
-  </div>`;
+  app.innerHTML=`<style>
+.lgw{padding:6px 4px 20px}
+.lgc{background:#fcfcff;border:1.5px solid #e6e8fb;border-radius:36px;padding:34px 22px 26px;text-align:center;box-shadow:0 18px 50px rgba(60,40,160,.18);color:#0c1f5c}
+.lgi{width:112px;height:112px;margin:0 auto 18px;border-radius:50%;background:linear-gradient(135deg,#7a2ff7,#2b8bff);display:flex;align-items:center;justify-content:center;font-size:54px;box-shadow:0 12px 34px rgba(90,60,240,.35)}
+.lgc h2{margin:0 0 12px;font-size:36px;font-weight:800;letter-spacing:-.5px;color:#0c1f5c;line-height:1.1}
+.lgc .lgs{margin:0 0 24px;font-size:16.5px;line-height:1.5;color:#6c7694}
+.lgc input{display:block;width:100%;box-sizing:border-box;margin:0 0 14px;padding:0 20px;height:58px;border-radius:18px;border:1.5px solid #20336f;background:#0c1b4b;color:#fff;font-size:18px;outline:none}
+.lgc input::placeholder{color:#7f8ab3}
+.lgc input:focus{border-color:#4f7cff}
+.lgb{display:block;width:100%;height:58px;border-radius:20px;font-size:18px;font-weight:800;cursor:pointer}
+.lgp{border:none;color:#fff;background:linear-gradient(90deg,#7a2ff7,#2b8bff);box-shadow:0 10px 26px rgba(70,90,255,.35);margin-top:6px}
+.lgp:disabled{opacity:.6}
+.lgo{margin-top:14px;background:#fff;color:#16296b;border:1.5px solid #dfe3f8}
+.lgm{min-height:20px;margin:10px 0 0;font-size:14px;color:#d23b3b}
+.lgf{margin:18px 0 0;font-size:14.5px;line-height:1.5;color:#6c7694}
+.lgk{background:none;border:none;color:#3b5bd9;font-size:15px;font-weight:600;margin-top:12px;cursor:pointer}
+</style>
+<div class="lgw"><div class="lgc">
+  <div class="lgi">🔐</div>
+  <h2>Welcome back</h2>
+  <p class="lgs">Sign in to continue your learning journey. Your account keeps your classes, progress and Edu AI experience together.</p>
+  <input id="lgU" type="text" placeholder="Username" maxlength="20" autocapitalize="none" autocomplete="off" spellcheck="false">
+  <input id="lgP" type="password" inputmode="numeric" placeholder="6-digit PIN" maxlength="6" autocomplete="off">
+  <button type="button" class="lgb lgp" id="lgGo">Sign in securely</button>
+  <div class="lgm" id="lgMsg"></div>
+  <button type="button" class="lgb lgo" id="lgNew">Create a new student account</button>
+  <button type="button" class="lgk" id="lgForgot">Forgot your PIN?</button>
+  <p class="lgf">🇲🇼 Built for students in Malawi · Secure · Simple · Student-first</p>
+</div></div>`;
+  const U=document.getElementById("lgU"),P=document.getElementById("lgP"),M=document.getElementById("lgMsg"),G=document.getElementById("lgGo");
+  const go=()=>{
+    const u=U.value.trim().toLowerCase(),p=P.value.trim();
+    if(!u||!p){M.textContent="Enter your username and PIN.";return;}
+    M.textContent="";G.disabled=true;G.textContent="Please wait…";
+    EduAcct.login(u,p,msg=>{G.disabled=false;G.textContent="Sign in securely";M.textContent=msg||"";});
+  };
+  G.onclick=go;
+  P.onkeydown=e=>{if(e.key==="Enter")go();};
+  document.getElementById("lgNew").onclick=()=>EduAcct.open("new");
+  document.getElementById("lgForgot").onclick=()=>EduAcct.open("forgot");
 }
 
 function renderAI(app){
@@ -2373,7 +2414,7 @@ window.addEventListener("hashchange", render);
 </script>
 <script>
 /* ---------- Reading mode + Settings ---------- */
-const APP_VERSION="1.1.0"; // <- change this when you release a new version
+const APP_VERSION="1.1.2"; // <- change this when you release a new version
 const APP_BUILD_NOTE="Mobile-friendly digital library for students in Malawi — navigation, Settings and account layout update";
 (function(){
   const EYE_SVG='<svg class="sic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-6.5 10-6.5S22 12 22 12s-3.6 6.5-10 6.5S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>',GEAR_SVG='<svg class="sic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h0a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51h0a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v0a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>';
@@ -2636,7 +2677,18 @@ window.eduSetLanguage=function(k){
     for(let i=mounts.length-1;i>=0;i--){const x=mounts[i];if(!x.el.isConnected){mounts.splice(i,1);continue;}draw(x.el,x.kind);}
     if(typeof window.eduAcctChanged==="function")window.eduAcctChanged();
   }
-  window.EduAcct={mount,refresh,isIn:()=>!!acct,token:freshToken,expired:()=>signOut(true),open:k=>agree(k==="new"?signupView:loginView)};
+  window.EduAcct={mount,refresh,isIn:()=>!!acct,token:freshToken,expired:()=>signOut(true),open:k=>agree(k==="new"?signupView:k==="forgot"?recoverView:loginView),
+    login:(u,p,done)=>{
+      const run=async fin=>{
+        try{const r=await post("/student-login",{username:u,pin:p});
+          if(r.d&&r.d.ok&&saveSession(r.d,u)){fin("");return;}
+          fin(em(r.d));
+        }catch(e){fin("Something went wrong. Try again in a few minutes.");}
+      };
+      if(agreed()){run(done);return;}
+      done("");
+      agree(()=>run(msg=>{const m=document.getElementById("lgMsg");if(m)m.textContent=msg||"";}));
+    }};
   try{if(typeof window.eduAcctChanged==="function")window.eduAcctChanged();}catch(e){}
 })();
 </script>
