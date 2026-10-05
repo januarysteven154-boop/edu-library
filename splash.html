@@ -111,8 +111,9 @@ function loop(ts){if(t0===null)t0=ts;var t=Math.min((ts-t0)/1000/DUR,1),p=t*.7+t
  if(t<1)requestAnimationFrame(loop);else finish()}
 function finish(){if(fin)return;fin=true;ns.forEach(function(n){n.className="n d"});ns[4].className="n a";
  var seq=["cap","brief","crown"],k=0;(function nx(){setAv(seq[k]);k++;if(k<3)setTimeout(nx,550);else setTimeout(leave,1300)})()}
-function leave(){st.classList.add("out");setTimeout(function(){
- try{sessionStorage.setItem("eduSplashSeen","1")}catch(e){}
- if(navigator.userAgent.indexOf("EduLibraryApp")!==-1)location.replace("/");else document.getElementById("rp").style.display="block"},750)}
-avs.innerHTML=ic("child");requestAnimationFrame(loop);
+function leave(){try{sessionStorage.setItem("eduSplashSeen","1")}catch(e){}
+ var app=navigator.userAgent.indexOf("EduLibraryApp")!==-1,b=document.getElementById("rp");
+ if(app){b.textContent="Open Edu Library";b.onclick=function(){location.href="/?go=1"};location.replace("/?go=1");setTimeout(function(){b.style.display="block"},4000)}
+ else b.style.display="block"}
+requestAnimationFrame(loop);
 </script></body></html>
