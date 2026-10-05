@@ -2,6 +2,15 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+<script>
+/* App-only gate: the Edu Library Android app adds "EduLibraryApp" to its browser name. Any normal browser only sees the notice below. */
+(function(){
+  if(/EduLibraryApp/.test(navigator.userAgent))return;
+  document.open();
+  document.write('<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow"><title>Edu Library</title></head><body style="margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;background:#0b1f4d;color:#fff;font-family:Arial,Helvetica,sans-serif;text-align:center;padding:24px;box-sizing:border-box"><div style="max-width:420px"><div style="font-size:54px">&#128218;</div><h1 style="margin:12px 0 8px;font-size:26px">Edu Library</h1><p style="font-size:17px;line-height:1.5;opacity:.9">Edu Library now works only inside its Android app.<br>Please open the app installed on your phone.</p></div></body></html>');
+  document.close();
+})();
+</script>
 <style>:root{--vh1:1vh}</style>
 <script>
 /* real screen height for every device/browser (old Chrome has no svh): --vh1 = 1% of the visible height */
@@ -2783,7 +2792,7 @@ window.addEventListener("hashchange", render);
 </script>
 <script>
 /* ---------- Reading mode + Settings ---------- */
-const APP_VERSION="1.4.1"; // <- change this when you release a new version
+const APP_VERSION="1.4.2"; // <- change this when you release a new version
 const APP_BUILD_NOTE="Mobile-friendly digital library for students in Malawi — navigation, Settings and account layout update";
 (function(){
   const EYE_SVG='<svg class="sic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-6.5 10-6.5S22 12 22 12s-3.6 6.5-10 6.5S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>',GEAR_SVG='<svg class="sic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h0a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51h0a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v0a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>';
