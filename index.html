@@ -13,6 +13,11 @@
  throw new Error("EduLibrary: app only");
 })();
 </script>
+<script>
+/* SPLASH: inside the app, show the loading screen once per launch */
+(function(){try{if(sessionStorage.getItem("eduSplashSeen"))return;sessionStorage.setItem("eduSplashSeen","1");}catch(e){return;}
+ window.stop();location.replace("/splash.html");throw new Error("EduLibrary: splash");})();
+</script>
 <style>:root{--vh1:1vh}</style>
 <script>
 /* real screen height for every device/browser (old Chrome has no svh): --vh1 = 1% of the visible height */
@@ -2794,7 +2799,7 @@ window.addEventListener("hashchange", render);
 </script>
 <script>
 /* ---------- Reading mode + Settings ---------- */
-const APP_VERSION="1.4.2"; // <- change this when you release a new version
+const APP_VERSION="1.4.3"; // <- change this when you release a new version
 const APP_BUILD_NOTE="Mobile-friendly digital library for students in Malawi — navigation, Settings and account layout update";
 (function(){
   const EYE_SVG='<svg class="sic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-6.5 10-6.5S22 12 22 12s-3.6 6.5-10 6.5S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>',GEAR_SVG='<svg class="sic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h0a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51h0a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v0a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>';
