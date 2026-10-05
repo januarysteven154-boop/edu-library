@@ -4,29 +4,29 @@
 <title>Edu Library</title>
 <style>
 html,body{margin:0;height:100%;background:#1a0f1e;overflow:hidden}
-#bg{position:fixed;inset:-5%;background:url(splash.jpg) center/cover;filter:blur(26px) brightness(.75)}
+#bt,#bb{position:fixed;left:0;right:0;height:51%}#bt{top:0;background:linear-gradient(90deg,#4c558d,#023786,#083888,#264492,#56569a)}#bb{bottom:0;background:linear-gradient(90deg,#181a01,#180c02,#150904,#311406,#241806)}
 #st{position:absolute;overflow:hidden;font-family:system-ui,sans-serif;color:#fff;transition:opacity .7s}
 #st.out{opacity:0}
-#cv,#fb{position:absolute;inset:0;width:100%;height:100%}
+#cv,#fb{-webkit-mask-image:linear-gradient(transparent,#000 7%,#000 95%,transparent);mask-image:linear-gradient(transparent,#000 7%,#000 95%,transparent);position:absolute;inset:0;width:100%;height:100%}
 #trk{position:absolute;left:31.6%;top:88.6%;width:36.8%;height:2.3%;background:#17110e;border:calc(var(--u)*3) solid #8d8780;border-radius:99px;box-sizing:border-box;overflow:hidden}
 #fill{height:100%;width:0;background:linear-gradient(#ffe45c,#f5a300);border-radius:99px}
-#tl{position:absolute;left:13%;width:74%;top:94.2%;height:5.6%}
+#tl{position:absolute;left:13%;width:74%;top:93.6%;height:6.4%}
 .n{position:absolute;top:0;transform:translateX(-50%);text-align:center;opacity:.35;transition:opacity .5s,transform .5s,filter .5s}
 .n b{color:#ffe27a;display:block;font-size:calc(var(--u)*30);line-height:1.1;font-weight:400}
-.n i{display:block;font-style:normal;font-size:calc(var(--u)*14);letter-spacing:.08em;font-weight:700;margin-top:calc(var(--u)*2)}
+.n i{display:block;font-style:normal;font-size:calc(var(--u)*13);letter-spacing:.08em;font-weight:700;margin-top:calc(var(--u)*2)}
 .n.d{opacity:.8}.n.a{opacity:1;transform:translateX(-50%) scale(1.15);filter:drop-shadow(0 0 calc(var(--u)*8) #ffd21f)}
-#ln{position:absolute;left:10%;width:80%;top:76%;height:calc(var(--u)*3);background:rgba(255,255,255,.25);border-radius:9px}
+#ln{position:absolute;left:10%;width:80%;top:calc(var(--u)*80);height:calc(var(--u)*3);background:rgba(255,255,255,.25);border-radius:9px}
 #lf{height:100%;width:0;background:#ffd21f;border-radius:9px}
-#av{position:absolute;top:76%;width:calc(var(--u)*42);height:calc(var(--u)*42);margin:calc(var(--u)*-20) 0 0 calc(var(--u)*-21);border-radius:50%;background:rgba(20,14,12,.85);border:calc(var(--u)*2) solid #ffd21f;display:flex;align-items:center;justify-content:center;font-size:calc(var(--u)*26);transition:box-shadow .6s}
+#av{position:absolute;top:calc(var(--u)*81);width:calc(var(--u)*32);height:calc(var(--u)*32);margin:calc(var(--u)*-16) 0 0 calc(var(--u)*-16);border-radius:50%;background:rgba(20,14,12,.85);border:calc(var(--u)*2) solid #ffd21f;display:flex;align-items:center;justify-content:center;font-size:calc(var(--u)*26);transition:box-shadow .6s}
 #av span{display:block;transition:opacity .2s,transform .2s}
-#av svg{width:calc(var(--u)*28);height:calc(var(--u)*28);color:#ffd21f}
-.n svg{width:calc(var(--u)*34);height:calc(var(--u)*34)}
+#av svg{width:calc(var(--u)*22);height:calc(var(--u)*22);color:#ffd21f}
+.n svg{width:calc(var(--u)*30);height:calc(var(--u)*30)}
 #av.sw span{opacity:0;transform:scale(.4)}
 #av.win{box-shadow:0 0 calc(var(--u)*22) calc(var(--u)*6) rgba(255,210,31,.7)}
 .fl{position:absolute;left:0;top:0;pointer-events:none;width:calc(var(--u)*22);height:calc(var(--u)*22);will-change:transform}
 #rp{position:fixed;left:50%;bottom:6%;transform:translateX(-50%);padding:12px 26px;border:0;border-radius:99px;background:#ffd21f;font-weight:700;font-size:16px;display:none}
 </style></head><body>
-<div id="bg"></div>
+<div id="bt"></div><div id="bb"></div>
 <div id="st"><canvas id="cv" width="1024" height="1536"></canvas><img id="fb" src="splash.jpg" alt="" style="display:none">
 <div id="trk"><div id="fill"></div></div>
 <div id="tl"><div id="ln"><div id="lf"></div></div>
