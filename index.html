@@ -13,6 +13,12 @@ set();window.addEventListener("resize",set);window.addEventListener("orientation
 </script>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
 <title>Edu Library</title>
+<link rel="manifest" href="/manifest.json">
+<meta name="theme-color" content="#0848cd">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png">
+<link rel="apple-touch-icon" href="/icon-192.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:wght@500;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -1853,7 +1859,7 @@ function fmtInline(t){
     .replace(/\*{1,}|#{2,}|~~/g,"");
 }
 function fmtAI(text){
-  const lines=String(text||"").replace(/\r/g,"").split("\n");
+  const lines=mathClean(text,false).replace(/\r/g,"").split("\n");
   let out="",list=null;
   const close=()=>{if(list){out+="</"+list+">";list=null;}};
   for(let raw of lines){
@@ -1868,8 +1874,89 @@ function fmtAI(text){
   }
   close();return out;
 }
+/* ---- maths / chemistry written in LaTeX ($$ ... $$) -> normal words (shown on screen and read aloud) ---- */
+const MJ_SUB={"0":"₀","1":"₁","2":"₂","3":"₃","4":"₄","5":"₅","6":"₆","7":"₇","8":"₈","9":"₉","+":"₊","-":"₋","=":"₌","(":"₍",")":"₎"};
+const MJ_SUP={"0":"⁰","1":"¹","2":"²","3":"³","4":"⁴","5":"⁵","6":"⁶","7":"⁷","8":"⁸","9":"⁹","+":"⁺","-":"⁻","=":"⁼","(":"⁽",")":"⁾","n":"ⁿ"};
+const MJ_TBL={
+  rightarrow:[" gives "," → "],to:[" gives "," → "],longrightarrow:[" gives "," → "],Rightarrow:[" gives "," ⇒ "],implies:[" gives "," ⇒ "],
+  leftarrow:[" comes from "," ← "],leftrightarrow:[" and back again "," ↔ "],rightleftharpoons:[" reversibly forms "," ⇌ "],
+  uparrow:[" gas given off "," ↑"],downarrow:[" solid forms "," ↓"],
+  times:[" times "," × "],cdot:[" times "," · "],div:[" divided by "," ÷ "],pm:[" plus or minus "," ± "],
+  leq:[" is less than or equal to "," ≤ "],le:[" is less than or equal to "," ≤ "],geq:[" is greater than or equal to "," ≥ "],ge:[" is greater than or equal to "," ≥ "],
+  neq:[" is not equal to "," ≠ "],ne:[" is not equal to "," ≠ "],approx:[" is approximately "," ≈ "],infty:[" infinity "," ∞ "],
+  degree:[" degrees ","°"],circ:[" degrees ","°"],ldots:[" "," … "],dots:[" "," … "],cdots:[" "," … "],
+  quad:[" "," "],qquad:[" "," "],left:["",""],right:["",""],
+  alpha:[" alpha "," α "],beta:[" beta "," β "],gamma:[" gamma "," γ "],delta:[" delta "," δ "],Delta:[" delta "," Δ "],theta:[" theta "," θ "],
+  lambda:[" lambda "," λ "],mu:[" mu "," μ "],pi:[" pi "," π "],sigma:[" sigma "," σ "],omega:[" omega "," ω "],Omega:[" omega "," Ω "],rho:[" rho "," ρ "],phi:[" phi "," φ "],epsilon:[" epsilon "," ε "]
+};
+function mjMap(str,map){let o="";for(const c of str){if(!map[c])return null;o+=map[c];}return o;}
+function mjBrace(s,i){
+  let d=0;
+  for(let j=i;j<s.length;j++){if(s[j]==="{")d++;else if(s[j]==="}"){d--;if(d===0)return [s.slice(i+1,j),j];}}
+  return [s.slice(i+1),s.length-1];
+}
+function mjConv(m,sp){
+  let s=String(m);
+  let g=0,k;
+  while(g++<20&&(k=s.search(/\\[dt]?frac\s*\{/))>=0){
+    const o1=s.indexOf("{",k),b1=mjBrace(s,o1);
+    let p=b1[1]+1;while(p<s.length&&/\s/.test(s[p]))p++;
+    if(s[p]!=="{"){s=s.slice(0,k)+s.slice(o1);continue;}
+    const b2=mjBrace(s,p),a=mjConv(b1[0],sp),b=mjConv(b2[0],sp);
+    const rep=sp?" "+a+" over "+b+" ":((/^[A-Za-z0-9.]+$/.test(a)&&/^[A-Za-z0-9.]+$/.test(b))?a+"/"+b:"("+a+")/("+b+")");
+    s=s.slice(0,k)+rep+s.slice(b2[1]+1);
+  }
+  g=0;
+  while(g++<20&&(k=s.search(/\\sqrt\s*\{/))>=0){
+    const o1=s.indexOf("{",k),b1=mjBrace(s,o1),x=mjConv(b1[0],sp);
+    s=s.slice(0,k)+(sp?" square root of "+x+" ":"√"+(/^[A-Za-z0-9.]+$/.test(x)?x:"("+x+")"))+s.slice(b1[1]+1);
+  }
+  for(let r=0;r<3;r++)s=s.replace(/\\(?:text|textbf|textit|textrm|mathrm|mathbf|mathit|mathsf|operatorname|ce|mbox|boldsymbol|bf|rm)\s*\{([^{}]*)\}/g,"$1");
+  s=s.replace(/\\x(?:long)?rightarrow\s*(?:\[[^\]]*\])?\s*\{([^{}]*)\}/g,(x,a)=>sp?" gives, using "+a.trim()+", ":" →("+a.trim()+") ");
+  s=s.replace(/\^\s*\{?\s*\\circ\s*\}?/g,sp?" degrees ":"°");
+  s=s.replace(/\\([A-Za-z]+)/g,(x,c)=>MJ_TBL[c]?MJ_TBL[c][sp?0:1]:"");
+  s=s.replace(/\\%/g,sp?" percent ":"%").replace(/\\\\/g," ").replace(/\\[,;:! ]/g," ").replace(/\\([&#_{}$])/g,"$1");
+  s=s.replace(/([_^])\s*(?:\{([^{}]*)\}|([A-Za-z0-9+\-]))/g,(x,op,a,b)=>{
+    const v=(a!==undefined?a:b).trim();
+    if(op==="_"){
+      if(sp)return v;
+      const t=mjMap(v,MJ_SUB);return t!==null?t:"_"+v;
+    }
+    if(sp){
+      if(v==="2")return " squared ";
+      if(v==="3")return " cubed ";
+      const ion=v.match(/^(\d*)([+-])$/);
+      if(ion)return " "+(ion[1]?ion[1]+" ":"")+(ion[2]==="+"?"plus ":"minus ");
+      return " to the power of "+v.replace(/^-/,"minus ")+" ";
+    }
+    const t=mjMap(v,MJ_SUP);return t!==null?t:"^("+v+")";
+  });
+  if(sp)s=s.replace(/\+/g," plus ").replace(/=/g," equals ");
+  s=s.replace(/[{}]/g,"").replace(/\s+/g," ").trim();
+  return s;
+}
+function mathClean(t,sp){
+  let s=String(t||"");
+  if(s.indexOf("$")<0&&s.indexOf("\\")<0)return s;
+  const like=x=>/[\\^_{}]/.test(x);
+  s=s.replace(/\$\$([\s\S]+?)\$\$/g,(a,m)=>" "+mjConv(m,sp)+" ");
+  s=s.replace(/\\\[([\s\S]+?)\\\]/g,(a,m)=>" "+mjConv(m,sp)+" ");
+  s=s.replace(/\\\(([\s\S]+?)\\\)/g,(a,m)=>mjConv(m,sp));
+  s=s.replace(/\$([^$\n]+?)\$/g,(a,m)=>like(m)?mjConv(m,sp):a);
+  return s;
+}
+function symSpeak(t){
+  return String(t||"")
+    .replace(/\s*(?:→|⟶|⇒|➔|➜|➡️?|->|=>)\s*/g," gives ")
+    .replace(/\s*(?:⇌|⇄|↔|<->)\s*/g," reversibly forms ")
+    .replace(/\s\+\s/g," plus ").replace(/\s=\s/g," equals ")
+    .replace(/\s*×\s*/g," times ").replace(/\s*÷\s*/g," divided by ")
+    .replace(/√\s*/g," square root of ").replace(/²/g," squared ").replace(/³/g," cubed ")
+    .replace(/°C/g," degrees Celsius").replace(/°F/g," degrees Fahrenheit").replace(/°/g," degrees")
+    .replace(/[₀-₉]/g,c=>String(c.charCodeAt(0)-0x2080));
+}
 function plainAI(text){
-  return String(text||"").replace(/```/g,"").replace(/^#{1,6}\s*/gm,"").replace(/^\s*[-*•+]\s+/gm,"").replace(/[*_`#~@\\|]/g," ").replace(/[\u{1F000}-\u{1FAFF}\u{2190}-\u{21FF}\u{2300}-\u{23FF}\u{2460}-\u{27BF}\u{2900}-\u{2BFF}\u{FE00}-\u{FE0F}\u{200D}\u{20E3}\u{E0020}-\u{E007F}]/gu," ").replace(/\s{2,}/g," ").trim();
+  return symSpeak(mathClean(text,true)).replace(/```/g,"").replace(/^#{1,6}\s*/gm,"").replace(/^\s*[-*•+]\s+/gm,"").replace(/[*_`#~@\\|]/g," ").replace(/[\u{1F000}-\u{1FAFF}\u{2190}-\u{21FF}\u{2300}-\u{23FF}\u{2460}-\u{27BF}\u{2900}-\u{2BFF}\u{FE00}-\u{FE0F}\u{200D}\u{20E3}\u{E0020}-\u{E007F}]/gu," ").replace(/\s{2,}/g," ").trim();
 }
 function aiMsgHTML(t, i){
   const canSpeak = "speechSynthesis" in window;
@@ -2696,7 +2783,7 @@ window.addEventListener("hashchange", render);
 </script>
 <script>
 /* ---------- Reading mode + Settings ---------- */
-const APP_VERSION="1.3.0"; // <- change this when you release a new version
+const APP_VERSION="1.4.1"; // <- change this when you release a new version
 const APP_BUILD_NOTE="Mobile-friendly digital library for students in Malawi — navigation, Settings and account layout update";
 (function(){
   const EYE_SVG='<svg class="sic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-6.5 10-6.5S22 12 22 12s-3.6 6.5-10 6.5S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>',GEAR_SVG='<svg class="sic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h0a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51h0a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v0a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>';
@@ -2968,5 +3055,8 @@ window.eduSetLanguage=function(k){
 })();
 </script>
 
+<script>
+if("serviceWorker" in navigator){window.addEventListener("load",function(){navigator.serviceWorker.register("/sw.js").catch(function(){});});}
+</script>
 </body>
 </html>
