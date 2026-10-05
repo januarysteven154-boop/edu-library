@@ -1,16 +1,16 @@
 <!DOCTYPE html>
 <html lang="en"><head><meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Edu Library</title>
+<meta name="theme-color" content="#2b1030"><title>Edu Library</title>
 <style>
-html,body{margin:0;height:100%;background:#1a0f1e;overflow:hidden}
-#bt,#bb{position:fixed;left:0;right:0;height:51%}#bt{top:0;background:linear-gradient(90deg,#4c558d,#023786,#083888,#264492,#56569a)}#bb{bottom:0;background:linear-gradient(90deg,#181a01,#180c02,#150904,#311406,#241806)}
+html,body{margin:0;height:100%;background:linear-gradient(#2b1030,#1c0c14 45%,#150a06);overflow:hidden}
+
 #st{position:absolute;overflow:hidden;font-family:system-ui,sans-serif;color:#fff;transition:opacity .7s}
 #st.out{opacity:0}
-#cv,#fb{-webkit-mask-image:linear-gradient(transparent,#000 7%,#000 95%,transparent);mask-image:linear-gradient(transparent,#000 7%,#000 95%,transparent);position:absolute;inset:0;width:100%;height:100%}
+#cv,#fb{-webkit-mask-image:linear-gradient(transparent,#000 5%,#000 95%,transparent);mask-image:linear-gradient(transparent,#000 5%,#000 95%,transparent);position:absolute;inset:0;width:100%;height:100%}
 #trk{position:absolute;left:31.6%;top:88.6%;width:36.8%;height:2.3%;background:#17110e;border:calc(var(--u)*3) solid #8d8780;border-radius:99px;box-sizing:border-box;overflow:hidden}
 #fill{height:100%;width:0;background:linear-gradient(#ffe45c,#f5a300);border-radius:99px}
-#tl{position:absolute;left:13%;width:74%;top:93.6%;height:6.4%}
+#tl{position:fixed;left:7%;width:86%;height:calc(var(--u)*100);color:#fff;font-family:system-ui,sans-serif}
 .n{position:absolute;top:0;transform:translateX(-50%);text-align:center;opacity:.35;transition:opacity .5s,transform .5s,filter .5s}
 .n b{color:#ffe27a;display:block;font-size:calc(var(--u)*30);line-height:1.1;font-weight:400}
 .n i{display:block;font-style:normal;font-size:calc(var(--u)*13);letter-spacing:.08em;font-weight:700;margin-top:calc(var(--u)*2)}
@@ -26,21 +26,23 @@ html,body{margin:0;height:100%;background:#1a0f1e;overflow:hidden}
 .fl{position:absolute;left:0;top:0;pointer-events:none;width:calc(var(--u)*22);height:calc(var(--u)*22);will-change:transform}
 #rp{position:fixed;left:50%;bottom:6%;transform:translateX(-50%);padding:12px 26px;border:0;border-radius:99px;background:#ffd21f;font-weight:700;font-size:16px;display:none}
 </style></head><body>
-<div id="bt"></div><div id="bb"></div>
+
 <div id="st"><canvas id="cv" width="1024" height="1536"></canvas><img id="fb" src="splash.jpg" alt="" style="display:none">
 <div id="trk"><div id="fill"></div></div>
+</div>
 <div id="tl"><div id="ln"><div id="lf"></div></div>
 <div class="n" style="left:10%"><b data-i="pack"></b><i>PRIMARY</i></div>
 <div class="n" style="left:30%"><b data-i="books"></b><i>SECONDARY</i></div>
 <div class="n" style="left:50%"><b data-i="cap"></b><i>TERTIARY</i></div>
 <div class="n" style="left:70%"><b data-i="brief"></b><i>CAREER</i></div>
 <div class="n" style="left:90%"><b data-i="crown"></b><i>SUCCESS</i></div>
-<div id="av"><span></span></div></div></div>
+<div id="av"><span></span></div></div>
 <button id="rp" onclick="location.reload()">Replay</button>
 <script>
 var st=document.getElementById("st"),DUR=8.6;
-function fit(){var W=innerWidth,H=innerHeight,s=Math.min(W/1024,H/1536);
-st.style.width=1024*s+"px";st.style.height=1536*s+"px";st.style.left=(W-1024*s)/2+"px";st.style.top=(H-1536*s)/2+"px";st.style.setProperty("--u",s+"px")}
+function fit(){var W=innerWidth,H=innerHeight,s=Math.min(W/1024,H/1536),h=1536*s,tl=document.getElementById("tl");
+st.style.width=1024*s+"px";st.style.height=h+"px";st.style.left=(W-1024*s)/2+"px";st.style.top="0px";st.style.setProperty("--u",s+"px");
+var u=Math.min(s*1.7,(H-h)/118);if(u<s)u=s;tl.style.setProperty("--u",u+"px");tl.style.top=(h+Math.max(6,(H-h-100*u)/2))+"px"}
 fit();addEventListener("resize",fit);
 /* ---- wind (WebGL): only flag, leaves, water and sky move; logo, students, books, city stay fixed ---- */
 var cv=document.getElementById("cv"),gl=cv.getContext("webgl"),T=0;
