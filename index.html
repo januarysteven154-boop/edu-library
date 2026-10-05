@@ -835,11 +835,12 @@ const SERVERS=[
   {id:"A",name:"Server A",url:"https://uozxdopexjbxjpatodpl.supabase.co",key:"sb_publishable_7WBlnIk-CDi-nSiUT9JDBg_7iRT8j-V"},
   {id:"B",name:"Server B",type:"appwrite",endpoint:"https://fra.cloud.appwrite.io/v1",project:"6abc042e003c999d9977",db:"6abc081a001aa74f7a4c",table:"6abc0877003260119342",bucket:"6abc129c000afccadc97"},
   /* Examination servers (exam PDFs only). Fill in endpoint / project / db / table / bucket of each new Appwrite project to switch it on. */
-  {id:"C",name:"Server C",exam:true,type:"appwrite",endpoint:"",project:"",db:"",table:"",bucket:""},
+  {id:"C",name:"Server C",exam:true,type:"filebase"},
   {id:"D",name:"Server D",exam:true,type:"appwrite",endpoint:"",project:"",db:"",table:"",bucket:""}
 ];
 SERVERS.forEach(x=>{
-  if(x.type==="appwrite"){
+  if(x.type==="filebase"){x.ok=true;}
+  else if(x.type==="appwrite"){
     x.ok=false;
     try{
       if(window.Appwrite&&x.endpoint&&x.project&&x.db&&x.table&&x.bucket){
@@ -936,7 +937,7 @@ setInterval(()=>{const e=document.getElementById("mot");if(e){qi=(qi+1)%QUOTES.l
 
 pdfjsLib.GlobalWorkerOptions.workerSrc="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
 const thumbIO=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){thumbIO.unobserve(e.target);drawThumb(e.target);}}),{rootMargin:"200px"});
-function hydrateThumbs(){document.querySelectorAll(".thumb[data-src]:not([data-h])").forEach(t=>{t.dataset.h=1;thumbIO.observe(t);});}
+function hydrateThumbs(){document.querySelectorAll(".thumb[data-src]:not([data-h])").forEach(t=>{t.dataset.h=1;if(String(t.dataset.src).indexOf("fb:")===0)return;thumbIO.observe(t);});}
 async function drawThumb(t){
   const url=t.dataset.src,key="edu_th_"+url;
   try{
@@ -966,8 +967,15 @@ function previewBook(id){
   const b=findBook(id);if(!b)return;closePreview();
   try{const r=JSON.parse(localStorage.getItem("edu_recent")||"[]").filter(x=>x!=id);r.unshift(id);localStorage.setItem("edu_recent",JSON.stringify(r.slice(0,8)));}catch(e){}
   const m=document.createElement("div");m.className="pv";
-  m.innerHTML=`<div class="pvbar"><button onclick="closePreview()">✕</button><b>${esc(b.title)}</b><button type="button" aria-label="Zoom out" onclick="pvStep(-1)">\u2212</button><button type="button" aria-label="Zoom in" onclick="pvStep(1)">+</button><button id="rmBtn" title="Reading mode" onclick="toggleReading()">📖</button><a class="open" aria-label="Save" title="Save" href="${esc(dlUrl(b))}">${IC_DL}</a></div><div class="pvbody" id="pvbody"><div class="empty">Loading preview…</div></div><div class="pvtint"></div>`;
-  document.body.appendChild(m);applyReading();renderPages(b.file_path);
+  m.innerHTML=`<div class="pvbar"><button onclick="closePreview()">✕</button><b>${esc(b.title)}</b><button type="button" aria-label="Zoom out" onclick="pvStep(-1)">\u2212</button><button type="button" aria-label="Zoom in" onclick="pvStep(1)">+</button><button id="rmBtn" title="Reading mode" onclick="toggleReading()">📖</button><a class="open" aria-label="Save" title="Save" href="${esc(dlUrl(b))}"${isFb(b)?` onclick="return fbDl('${bkey(b)}')"`:""}>${IC_DL}</a></div><div class="pvbody" id="pvbody"><div class="empty">Loading preview…</div></div><div class="pvtint"></div>`;
+  document.body.appendChild(m);applyReading();
+  (async()=>{
+    let u=b.file_path;
+    if(isFb(b)){
+      try{u=await fbUrl(u);}catch(e){const pb=document.getElementById("pvbody");if(pb)pb.innerHTML='<div class="empty">Could not open this paper. Please try again.</div>';return;}
+    }
+    renderPages(u);
+  })();
 }
 /*PV-BEGIN*/
 const PV_STEPS=[1,1.5,2,3,4];
@@ -1207,7 +1215,36 @@ async function loadAppwriteBooks(x){
     return {data:out,error:null};
   }catch(e){return {data:null,error:e};}
 }
+/* ---- Server C (Filebase): private files, signed links made by the backend ---- */
+const FB_API="https://edu-ai-backend-three.vercel.app";
+function isFb(b){return String((b&&b.file_path)||"").indexOf("fb:")===0;}
+async function fbPost(path,extra,body){
+  const h=Object.assign({"Content-Type":"application/json"},extra||{});
+  const r=await fetch(FB_API+path,{method:"POST",headers:h,body:JSON.stringify(body||{})});
+  const j=await r.json().catch(()=>({}));
+  if(!r.ok)throw new Error(j.error||("Server error "+r.status));
+  return j;
+}
+async function fbUrl(filePath){
+  const j=await fbPost("/api/book-link?key="+encodeURIComponent(String(filePath).slice(3)));
+  if(!j.url)throw new Error("No link");
+  return j.url;
+}
+async function fbDl(k){
+  const b=findBook(k);if(!b)return false;
+  try{location.href=await fbUrl(b.file_path);}catch(e){alert("Could not get the file. Please try again.");}
+  return false;
+}
+async function loadFilebaseBooks(){
+  try{
+    const j=await fbPost("/api/exam-list");
+    const data=(j.items||[]).map(it=>({id:it.key,title:it.title||"",subject:it.subject||"",author:"",level:it.level||"",
+      class:(it.cls0||"")+TIER_SEP+"Exam"+(it.body?TIER_SEP+it.body:""),description:"",file_path:"fb:"+it.key,added:it.added||""}));
+    return {data,error:null};
+  }catch(e){return {data:null,error:e};}
+}
 function loadServerBooks(x){
+  if(x.type==="filebase")return loadFilebaseBooks();
   if(x.type==="appwrite")return loadAppwriteBooks(x);
   return x.sb.from("books").select("*").order("added",{ascending:false});
 }
@@ -1236,6 +1273,7 @@ function adminLogout(){ sessionStorage.removeItem("edu_admin"); appwriteLogout()
 function esc(s){ return String(s||"").replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 
 function dlUrl(b){
+  if(isFb(b))return "#";
   if(srv(b._s||"A").type==="appwrite")return String(b.file_path).replace("/view?","/download?");
   return b.file_path+"?download="+encodeURIComponent((b.title||"book")+".pdf");
 }
@@ -1243,7 +1281,7 @@ function bookCard(b){
   const ok=!!b.file_path;
   return `<div class="book"><div class="thumb" ${ok?`data-src="${esc(b.file_path)}" onclick="previewBook('${bkey(b)}')"`:''}>📄</div>
     <div class="meta"><b>${esc(b.title)}</b><div>${esc(b.subject)}${b.author?` • ${esc(b.author)}`:""}</div><div>${esc(b.level)} → ${esc(clsOf(b))}${tierOf(b)?` • ${esc(tierOf(b))}`:""}${examBody(b)?` • ${esc(examBody(b))}`:""}</div></div>
-    <div class="acts">${ok?`<button class="open ib" type="button" aria-label="Preview" title="Preview" onclick="previewBook('${bkey(b)}')">${IC_EYE}</button><a class="open dl ib" aria-label="Save" title="Save" href="${esc(dlUrl(b))}">${IC_DL}</a>`:''}</div></div>`;
+    <div class="acts">${ok?`<button class="open ib" type="button" aria-label="Preview" title="Preview" onclick="previewBook('${bkey(b)}')">${IC_EYE}</button><a class="open dl ib" aria-label="Save" title="Save" href="${esc(dlUrl(b))}"${isFb(b)?` onclick="return fbDl('${bkey(b)}')"`:""}>${IC_DL}</a>`:''}</div></div>`;
 }
 
 function setHeader(html,noAcct){ document.getElementById("topHeader").innerHTML = `<div class="topbar">${html}<button type="button" class="accttop"${noAcct?' style="display:none"':''} aria-label="My account" title="My account" onclick="eduOpenAccount()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="3.6"/><path d="M4.5 20c.8-3.7 3.8-5.8 7.5-5.8s6.7 2.1 7.5 5.8"/></svg></button></div>`; }
@@ -1661,7 +1699,14 @@ async function saveExam(){
   const path=`${level}/${cls0}/Exam${body?"/"+body:""}/${Date.now()}_${file.name}`.replace(/\s+/g,"_");
   btn.disabled=true; msg.style.color="var(--sub)"; msg.textContent="Uploading PDF exam...";
   try{
-    if(S.type==="appwrite"){
+    if(S.type==="filebase"){
+      const ss=sb?(await sb.auth.getSession()).data.session:null;
+      if(!ss)throw new Error("Please sign in as admin again.");
+      const j=await fbPost("/api/exam-upload",{Authorization:"Bearer "+ss.access_token},{level,cls0,body,subject,title});
+      if(!j.url)throw new Error("No upload link");
+      const put=await fetch(j.url,{method:"PUT",body:file});
+      if(!put.ok)throw new Error("File upload failed ("+put.status+")");
+    }else if(S.type==="appwrite"){
       const up=await S.storage.createFile({bucketId:S.bucket,fileId:Appwrite.ID.unique(),file:file});
       const fileUrl=S.endpoint+"/storage/buckets/"+S.bucket+"/files/"+up.$id+"/view?project="+S.project;
       await S.tdb.createRow({databaseId:S.db,tableId:S.table,rowId:Appwrite.ID.unique(),data:{title:title,subject:subject,author:"",level:level,class:cls,description:desc,file_path:fileUrl}});
@@ -2633,7 +2678,7 @@ window.addEventListener("hashchange", render);
 </script>
 <script>
 /* ---------- Reading mode + Settings ---------- */
-const APP_VERSION="1.1.9"; // <- change this when you release a new version
+const APP_VERSION="1.2.0"; // <- change this when you release a new version
 const APP_BUILD_NOTE="Mobile-friendly digital library for students in Malawi — navigation, Settings and account layout update";
 (function(){
   const EYE_SVG='<svg class="sic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-6.5 10-6.5S22 12 22 12s-3.6 6.5-10 6.5S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>',GEAR_SVG='<svg class="sic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h0a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51h0a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v0a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>';
