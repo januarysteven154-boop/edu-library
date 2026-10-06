@@ -3262,5 +3262,234 @@ window.eduSetLanguage=function(k){
 <script>
 if("serviceWorker" in navigator){window.addEventListener("load",function(){navigator.serviceWorker.register("/sw.js").catch(function(){});});}
 </script>
+<style>
+#eduOfflineBar{position:fixed;left:10px;right:10px;bottom:calc(72px + env(safe-area-inset-bottom,0px));z-index:2147483000;display:none;align-items:center;gap:10px;padding:10px 12px;border:1px solid rgba(255,255,255,.16);border-radius:16px;background:rgba(30,12,45,.96);color:#fff;box-shadow:0 10px 30px rgba(0,0,0,.35);backdrop-filter:blur(12px)}
+#eduOfflineBar.show{display:flex}#eduOfflineBar .offico{font-size:23px}#eduOfflineBar div{flex:1;min-width:0}#eduOfflineBar b{display:block;font-size:13px}#eduOfflineBar small{display:block;font-size:11px;color:#dbcbbd;margin-top:2px}#eduOfflineBar button{border:1px solid rgba(255,255,255,.2);background:#f25e1e;color:#fff;border-radius:10px;padding:8px 10px;font-weight:700;font-size:11px}
+.dlbtn{min-width:44px}.dlbtn.downloaded{background:#15935a!important}.dlbtn.downloading{opacity:.75;pointer-events:none}.pvdl{min-width:42px;padding:8px 10px!important}
+.downloadHub{width:100%;display:flex;align-items:center;gap:12px;margin:8px 0 16px;padding:14px 15px;border:1px solid rgba(249,184,31,.28);border-radius:16px;background:linear-gradient(135deg,rgba(242,94,30,.2),rgba(91,53,216,.22));color:inherit;text-align:left}.downloadHub>span{width:44px;height:44px;border-radius:13px;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,.12);font-size:23px}.downloadHub div{flex:1}.downloadHub b{display:block;font-size:15px}.downloadHub small{display:block;color:var(--sub);font-size:11.5px;margin-top:3px}.downloadHub i{font-size:25px;font-style:normal;color:#f9b81f}
+.offlineEmpty,.offlineBook{text-align:center;padding:46px 18px;color:var(--sub)}.offbig{font-size:50px;margin-bottom:10px}.offlineEmpty b,.offlineBook b{display:block;color:var(--ink);font-size:17px}.offlineEmpty p,.offlineBook p{font-size:13px;line-height:1.55;max-width:360px;margin:8px auto 18px}.permrow{display:flex;align-items:center;gap:12px;padding:14px 0;border-bottom:1px solid var(--line)}.permrow:last-child{border-bottom:none}.permrow>span{font-size:25px;width:34px;text-align:center}.permrow>div{flex:1}.permrow b{display:block;font-size:14px}.permrow small{display:block;color:var(--sub);font-size:11.5px;line-height:1.4;margin-top:2px}.permgo{border:1px solid var(--line);background:rgba(127,127,127,.14);color:var(--ink);border-radius:10px;padding:8px 10px;font-weight:700;font-size:11.5px}
+</style>
+<script>
+/* ================================================================
+   EDU LIBRARY OFFLINE-FIRST UPGRADE
+   - Persistent downloaded PDFs in IndexedDB (WebView app storage)
+   - One-tap download with progress
+   - Offline catalog + offline reader
+   - Downloaded-books page
+   - Connectivity banner / retry
+   - Camera + microphone permission helpers
+   ================================================================ */
+(function(){
+  const DB_NAME="edu_library_offline_v1", DB_VER=1, BOOK_STORE="books", META_STORE="meta";
+  let dbPromise=null;
+  const localDownloadedKeys=new Set();
+  function showToast(msg){let t=document.getElementById("eduToast");if(!t){t=document.createElement("div");t.id="eduToast";t.style.cssText="position:fixed;left:50%;bottom:calc(82px + env(safe-area-inset-bottom,0px));transform:translateX(-50%) translateY(10px);z-index:2147483001;max-width:90%;padding:11px 15px;border-radius:13px;background:rgba(20,10,35,.96);color:#fff;font-size:12.5px;font-weight:600;box-shadow:0 8px 24px rgba(0,0,0,.35);opacity:0;transition:opacity .2s ease,transform .2s ease;pointer-events:none;text-align:center";document.body.appendChild(t);}t.textContent=msg;t.style.opacity="1";t.style.transform="translateX(-50%) translateY(0)";clearTimeout(t._tm);t._tm=setTimeout(()=>{t.style.opacity="0";t.style.transform="translateX(-50%) translateY(10px)";},2800);}
+  window.eduToast=showToast;
+  function openDB(){
+    if(dbPromise)return dbPromise;
+    dbPromise=new Promise((resolve,reject)=>{
+      if(!window.indexedDB)return reject(new Error("Local storage is not supported on this device."));
+      const r=indexedDB.open(DB_NAME,DB_VER);
+      r.onupgradeneeded=()=>{
+        const db=r.result;
+        if(!db.objectStoreNames.contains(BOOK_STORE))db.createObjectStore(BOOK_STORE,{keyPath:"key"});
+        if(!db.objectStoreNames.contains(META_STORE))db.createObjectStore(META_STORE,{keyPath:"key"});
+      };
+      r.onsuccess=()=>resolve(r.result);r.onerror=()=>reject(r.error||new Error("Could not open local storage."));
+    });
+    return dbPromise;
+  }
+  async function idbPut(store,val){const db=await openDB();return new Promise((ok,no)=>{const t=db.transaction(store,"readwrite");t.objectStore(store).put(val);t.oncomplete=()=>ok(val);t.onerror=()=>no(t.error||new Error("Local save failed."));});}
+  async function idbGet(store,key){const db=await openDB();return new Promise((ok,no)=>{const t=db.transaction(store,"readonly"),r=t.objectStore(store).get(key);r.onsuccess=()=>ok(r.result||null);r.onerror=()=>no(r.error);});}
+  async function idbDelete(store,key){const db=await openDB();return new Promise((ok,no)=>{const t=db.transaction(store,"readwrite");t.objectStore(store).delete(key);t.oncomplete=()=>ok();t.onerror=()=>no(t.error);});}
+  async function idbAll(store){const db=await openDB();return new Promise((ok,no)=>{const t=db.transaction(store,"readonly"),r=t.objectStore(store).getAll();r.onsuccess=()=>ok(r.result||[]);r.onerror=()=>no(r.error);});}
+  async function metaSet(key,value){return idbPut(META_STORE,{key,value});}
+  async function metaGet(key){const x=await idbGet(META_STORE,key);return x?x.value:null;}
+
+  const CATALOG_KEY="catalog";
+  async function saveCatalog(list){try{await metaSet(CATALOG_KEY,list);}catch(e){console.warn("Edu Library: catalog cache failed",e);}}
+  async function loadCatalog(){try{return (await metaGet(CATALOG_KEY))||[];}catch(e){return [];}}
+
+  function localKey(b){return bkey(b);}
+  async function localBook(b){try{return await idbGet(BOOK_STORE,localKey(b));}catch(e){return null;}}
+  async function localBooks(){try{return await idbAll(BOOK_STORE);}catch(e){return [];}}
+  async function localHas(b){return !!(await localBook(b));}
+
+  function online(){return navigator.onLine!==false;}
+  function offlineText(){return "No internet connection. Your downloaded books are still available offline.";}
+
+  /* ---------- Global offline banner ---------- */
+  function ensureOfflineUI(){
+    let b=document.getElementById("eduOfflineBar");
+    if(!b){
+      b=document.createElement("div");b.id="eduOfflineBar";
+      b.innerHTML='<span class="offico">📡</span><div><b>You\'re Offline</b><small>Downloaded books are still available.</small></div><button type="button" onclick="eduRetryOnline()">↻ Try Again</button>';
+      document.body.appendChild(b);
+    }
+    b.classList.toggle("show",!online());
+  }
+  window.eduRetryOnline=function(){
+    if(!online()){alert(offlineText());return;}
+    ensureOfflineUI();
+    try{refreshBooks().then(()=>route());}catch(e){route();}
+  };
+  window.addEventListener("online",()=>{ensureOfflineUI();try{refreshBooks().then(()=>route());}catch(e){}});
+  window.addEventListener("offline",ensureOfflineUI);
+
+  /* ---------- One-click persistent download ---------- */
+  async function fetchBookBlob(b,onProgress){
+    let u=b.file_path;
+    if(isFb(b))u=await fbUrl(u);
+    if(!u)throw new Error("This book has no download file.");
+    const res=await fetch(u,{method:"GET",cache:"no-store"});
+    if(!res.ok)throw new Error("Download failed ("+res.status+").");
+    const total=Number(res.headers.get("content-length"))||0;
+    if(!res.body){const blob=await res.blob();if(onProgress)onProgress(100);return blob;}
+    const reader=res.body.getReader();let received=0,parts=[];
+    while(true){const x=await reader.read();if(x.done)break;parts.push(x.value);received+=x.value.length;if(onProgress&&total)onProgress(Math.min(99,Math.round(received/total*100)));}
+    const out=new Blob(parts,{type:res.headers.get("content-type")||"application/pdf"});if(onProgress)onProgress(100);return out;
+  }
+  function setDownloadUI(k,state,pct){
+    document.querySelectorAll('[data-download-key]').forEach(el=>{if(el.getAttribute("data-download-key")!==k)return;
+      if(state==="downloading"){el.disabled=true;el.classList.add("downloading");el.innerHTML='↓ '+(pct>0?('Downloading '+pct+'%'):"Downloading…");}
+      else if(state==="done"){el.disabled=false;el.classList.remove("downloading");el.classList.add("downloaded");el.innerHTML='✓ Downloaded';}
+      else if(state==="error"){el.disabled=false;el.classList.remove("downloading");el.innerHTML='↻ Retry Download';}
+      else{el.disabled=false;el.classList.remove("downloading");el.classList.toggle("downloaded",state==="downloaded");el.innerHTML=state==="downloaded"?'✓ Downloaded':'⬇ Download';}
+    });
+  }
+  async function downloadBook(k){
+    const b=findBook(k);if(!b)return false;
+    const existing=await localBook(b);if(existing){setDownloadUI(k,"downloaded");return true;}
+    if(!online()){alert("No internet connection. Please reconnect to download this book.\n\nYour already downloaded books remain available offline.");return false;}
+    setDownloadUI(k,"downloading",0);
+    try{
+      const blob=await fetchBookBlob(b,p=>setDownloadUI(k,"downloading",p));
+      if(!blob||blob.size<10)throw new Error("The downloaded file is empty.");
+      await idbPut(BOOK_STORE,{key:localKey(b),book:{...b},blob,size:blob.size,downloadedAt:new Date().toISOString()});
+      localDownloadedKeys.add(k);
+      setDownloadUI(k,"done");
+      showToast("✓ Book downloaded successfully — available offline.");
+      return true;
+    }catch(e){
+      console.error("Edu Library download:",e);setDownloadUI(k,"error");
+      alert((e&&e.message)||"Download failed. Please try again.");return false;
+    }
+  }
+  window.downloadBook=downloadBook;
+  window.fbDl=function(k){downloadBook(k);return false;};
+
+  /* ---------- Book card: Preview + ONE-CLICK Download ---------- */
+  window.bookCard=function(b){
+    const ok=!!b.file_path,k=esc(bkey(b)),downloaded=localDownloadedKeys.has(bkey(b));
+    return `<div class="book"><div class="thumb" ${ok?`onclick="previewBook('${k}')"`:''}>📄</div>
+      <div class="meta"><b>${esc(b.title)}</b><div>${esc(b.subject)}${b.author?` • ${esc(b.author)}`:""}</div><div>${esc(b.level)} → ${esc(clsOf(b))}${tierOf(b)?` • ${esc(tierOf(b))}`:""}${examBody(b)?` • ${esc(examBody(b))}`:""}</div></div>
+      <div class="acts">${ok?`<button class="open ib" type="button" aria-label="Preview" title="Preview" onclick="previewBook('${k}')">${IC_EYE}</button><button class="open dl ib dlbtn" type="button" data-download-key="${k}" aria-label="Download" title="Download" onclick="downloadBook('${k}')">${downloaded?"✓ Downloaded":"⬇ Download"}</button>`:''}</div></div>`;
+  };
+
+  /* ---------- Preview: prefer local copy, otherwise stream online ---------- */
+  window.previewBook=async function(id){
+    const b=findBook(id);if(!b)return;closePreview();
+    try{const r=JSON.parse(localStorage.getItem("edu_recent")||"[]").filter(x=>x!=id);r.unshift(id);localStorage.setItem("edu_recent",JSON.stringify(r.slice(0,8)));}catch(e){}
+    const m=document.createElement("div");m.className="pv";
+    m.innerHTML=`<div class="pvbar"><button onclick="closePreview()">✕</button><b>${esc(b.title)}</b><button type="button" aria-label="Zoom out" onclick="pvStep(-1)">−</button><button type="button" aria-label="Zoom in" onclick="pvStep(1)">+</button><button id="rmBtn" title="Reading mode" onclick="toggleReading()">📖</button><button class="open dl ib pvdl" type="button" data-download-key="${esc(bkey(b))}" onclick="downloadBook('${esc(bkey(b))}')">⬇</button></div><div class="pvbody" id="pvbody"><div class="empty">Loading preview…</div></div><div class="pvtint"></div>`;
+    document.body.appendChild(m);applyReading();
+    let objectUrl=null;
+    try{
+      const local=await localBook(b);
+      if(local&&local.blob){objectUrl=URL.createObjectURL(local.blob);renderPages(objectUrl);}
+      else if(!online()){
+        const pb=document.getElementById("pvbody");if(pb)pb.innerHTML='<div class="offlineBook"><div class="offbig">📚</div><b>This book is not downloaded yet.</b><p>You\'re offline. Download this book when you have internet, then you can read it anywhere offline.</p><button class="btn green" onclick="closePreview()">Close</button></div>';return;
+      }else{
+        let u=b.file_path;if(isFb(b))u=await fbUrl(u);renderPages(u);
+      }
+    }catch(e){
+      const pb=document.getElementById("pvbody");if(pb)pb.innerHTML='<div class="empty">Could not open this book. Please try again.</div>';
+    }
+    /* Keep the object URL alive until the preview is closed. */
+    if(objectUrl){const old=PV&&PV.pdf;const watch=setInterval(()=>{if(!document.querySelector(".pv")){clearInterval(watch);try{URL.revokeObjectURL(objectUrl)}catch(_){}}},500);}
+  };
+
+  /* ---------- Downloads page ---------- */
+  window.renderDownloads=async function(app){
+    setHeader(`<button class="back" onclick="location.hash='#/library'">←</button><h2>My Downloads</h2>`);setActiveNav("library");
+    app.innerHTML='<div class="pagehead"><h2>📚 My Downloads</h2><p>Books saved on this device and available without internet.</p></div><div id="offlineBooks"><div class="empty">Loading your downloaded books…</div></div>';
+    const rows=await localBooks(),el=document.getElementById("offlineBooks");if(!el)return;
+    const valid=rows.filter(x=>x.book&&!isExam(x.book));
+    el.innerHTML=valid.length?valid.map(x=>bookCard(x.book)).join(""):`<div class="offlineEmpty"><div class="offbig">📚</div><b>No downloaded books yet.</b><p>Tap <b>⬇ Download</b> on any book while you are online. It will be saved on this device for offline reading.</p><button class="btn green" onclick="location.hash='#/library'">Browse Library</button></div>`;
+    valid.forEach(x=>setDownloadUI(localKey(x.book),"downloaded"));
+  };
+
+  /* ---------- Persistent catalog: makes the app usable offline after first online sync ---------- */
+  const oldRefreshBooks=window.refreshBooks;
+  window.refreshBooks=async function(){
+    if(!booksCache.length){const cached=await loadCatalog();if(cached.length)booksCache=cached;}
+    if(!online())return booksCache;
+    try{
+      const live=SERVERS.filter(x=>x.ok);
+      const res=await Promise.allSettled(live.map(x=>loadServerBooks(x)));
+      let all=[];const failed=new Set();
+      res.forEach((r,i)=>{const x=live[i];if(r.status==="fulfilled"&&!r.value.error&&r.value.data){r.value.data.forEach(b=>{b._s=x.id;all.push(b);});}else failed.add(x.id);});
+      if(failed.size<live.length){all=all.concat(booksCache.filter(b=>failed.has(b._s)));all.sort((a,b)=>String(a.added||"")<String(b.added||"")?1:-1);booksCache=all;await saveCatalog(booksCache);}
+    }catch(e){console.warn("Edu Library offline sync:",e);}
+    return booksCache;
+  };
+
+  /* ---------- Offline-aware recent rows ---------- */
+  window.recentRows=function(){
+    let ids=[];try{ids=JSON.parse(localStorage.getItem("edu_recent")||"[]");}catch(e){}
+    const rec=ids.map(id=>findBook(id)).filter(b=>b&&!isExam(b));
+    const row=(t,a)=>a.length?`<h3 class="hd">${t}</h3><div class="hrow">${a.map(b=>`<div class="hcard" onclick="previewBook('${esc(bkey(b))}')"><div class="thumb">📄</div><b>${esc(b.title)}</b><span>${esc(b.class)}</span></div>`).join("")}</div>`:"";
+    return row("Continue Reading",rec.slice(0,8))+row("Recently Added",loadBooks().slice(0,8));
+  };
+
+  /* ---------- Library landing: add obvious Downloads entry ---------- */
+  window.renderLibrary=function(app){
+    setHeader("");setActiveNav("library");
+    const D={Primary:["Build strong foundations for a brighter future.","pri"],Secondary:["Gain knowledge, develop skills, reach your goals.","sec"],Tertiary:["Advance your education, shape your career.","ter"]};
+    app.innerHTML=`<div class="phero"><div class="pt"><div class="brandline"><span class="bli">${LS(BOOKP)}</span><b>Edu <i>Library</i></b></div><h2 style="margin-top:18px">Welcome Back!</h2><p>Your journey to knowledge continues here.</p></div><div class="ph wel">${flag()}</div></div><p class="mot" id="mot">${SPARK}<span>Education changes lives</span></p>
+      <button type="button" class="downloadHub" onclick="location.hash='#/downloads'"><span>📚</span><div><b>My Downloads</b><small>Read your saved books offline</small></div><i>›</i></button>
+      <div class="chooser"><h3>Choose Your Education Level</h3><p class="sub">Select your level to access classes and learning materials.</p>
+      ${Object.entries(LEVELS).map(([k,l])=>`<a class="lv ${D[k][1]}" href="#/level/${k}"><div class="orb2">${LS(LVSVG[k]||BOOKP)}</div><div><b>${esc(l.label)}</b><em>${l.sub||(l.classes[0]+" – "+l.classes[l.classes.length-1])}</em><p>${D[k][0]}</p></div><i class="chev">›</i></a>`).join("")}</div>${recentRows()}`;
+  };
+
+  /* ---------- Route extension for Downloads ---------- */
+  const oldRoute=window.route;
+  window.route=function(){
+    const hash=location.hash.slice(1)||"/",parts=hash.split("/").filter(Boolean).map(decodeURIComponent);
+    if(parts[0]==="downloads")return renderDownloads(document.getElementById("app"));
+    return oldRoute();
+  };
+
+  /* ---------- Settings: permission helper ---------- */
+  const oldSettings=window.renderSettings;
+  window.renderSettings=function(app,sub){
+    if(sub!=="permissions")return oldSettings(app,sub);
+    setActiveNav("settings");setHeader(`<button class="back" onclick="location.hash='#/settings'">←</button><h2>Permissions</h2>`);
+    app.innerHTML=`<div class="settingspage"><div class="pagehead"><h2>📱 Device permissions</h2><p>Allow access only when a feature needs it.</p></div>
+      <div class="setbox"><div class="permrow"><span>📷</span><div><b>Camera</b><small>Used for Edu AI camera features.</small></div><button class="permgo" onclick="eduRequestCamera()">Allow</button></div>
+      <div class="permrow"><span>🎤</span><div><b>Microphone</b><small>Used for voice typing in Edu AI.</small></div><button class="permgo" onclick="eduRequestMic()">Allow</button></div>
+      <div class="permrow"><span>📁</span><div><b>Files &amp; storage</b><small>Downloaded books are stored privately inside the app. Android does not need broad storage permission for these files.</small></div><button class="permgo" onclick="eduChooseFile()">Choose file</button></div></div>
+      <div class="note">For security, the app should not request camera or microphone access until you use the feature. Android's own permission dialog will appear when access is requested.</div></div>`;
+  };
+  window.eduRequestCamera=async function(){try{if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia)throw new Error("Camera permission is not supported here.");const s=await navigator.mediaDevices.getUserMedia({video:true});s.getTracks().forEach(t=>t.stop());window.eduToast("✓ Camera permission granted.");}catch(e){alert("Camera access was not granted. Please allow camera access in Android app permissions if you want to use this feature.");}};
+  window.eduRequestMic=async function(){try{if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia)throw new Error("Microphone permission is not supported here.");const s=await navigator.mediaDevices.getUserMedia({audio:true});s.getTracks().forEach(t=>t.stop());window.eduToast("✓ Microphone permission granted.");}catch(e){alert("Microphone access was not granted. Please allow microphone access in Android app permissions if you want to use this feature.");}};
+  window.eduChooseFile=function(){const i=document.createElement("input");i.type="file";i.accept="application/pdf,.pdf";i.onchange=()=>window.eduToast(i.files&&i.files[0]?"✓ File access is available.":"No file selected.");i.click();};
+
+  /* Add permission entry to the existing Settings list. */
+  const settingsObserver=new MutationObserver(()=>{
+    const list=document.querySelector(".settingspage .setlist");
+    if(list&&!list.querySelector('[data-perm-entry]')){const a=document.createElement("a");a.className="setitem";a.dataset.permEntry="1";a.href="#/settings/permissions";a.innerHTML='<span><b>Device permissions</b><small>Camera, microphone and file access</small></span><span>›</span>';list.appendChild(a);}
+  });
+  settingsObserver.observe(document.getElementById("app"),{childList:true,subtree:true});
+
+  /* ---------- Re-render safely after the original startup render ---------- */
+  (async function initOffline(){
+    try{const saved=await localBooks();saved.forEach(x=>localDownloadedKeys.add(x.key));}catch(e){}
+    try{const cached=await loadCatalog();if(cached.length&&!booksCache.length){booksCache=cached;route();}}
+    catch(e){}
+    ensureOfflineUI();
+  })();
+})();
+</script>
 </body>
 </html>
