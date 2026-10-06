@@ -44,7 +44,7 @@ set();window.addEventListener("resize",set);window.addEventListener("orientation
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
 <title>Edu Library</title>
 <link rel="manifest" href="/manifest.json">
-<meta name="theme-color" content="#0848cd">
+<meta name="theme-color" content="#2b1030">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png">
@@ -783,9 +783,142 @@ body.gate .topbar{padding-right:92px!important}
 body.aipage .topbar{padding-left:8px!important;padding-right:8px!important}
 body.aipage .topbar h2{padding-right:84px!important}
 header.top .accttop{position:fixed!important;right:8px;top:11px;margin:0!important;z-index:56}
+
+/* SUNSET THEME (default): golden sunset colours; Dark and Light remain as options */
+
+body.sunset{--navy:#4e1b4a;--navy2:#5e255a;--purple-deep:#5b2156;--ink:#4f234b;--sub:#ac522b;--line:#ede9e2;--bg:#fbf8f4;--secondary:#a6451c;--secondary-tint:#f9f1e5;--tertiary:#a04c3f;--tertiary-tint:#f8ebe9}
+body.sunset .hero{background:radial-gradient(circle at 30% 0%,#6f2c6a,var(--navy) 60%)}
+body.sunset .hero p{color:#d6cab9}
+body.sunset .lvl-row.Secondary{background:linear-gradient(135deg,#a6451c,#c45a2c)}
+body.sunset .lvl-row.Tertiary{background:linear-gradient(135deg,#a04c3f,#c46354)}
+body.sunset .aibar .aisend{background:linear-gradient(135deg,#f25e1e,#f9b81f)!important;box-shadow:0 0 0 1px rgba(249,184,31,.55),0 0 18px rgba(249,184,31,.5)!important}
+body.sunset .aibar .aisend.arrow{box-shadow:0 0 0 1px rgba(249,184,31,.85),0 0 26px rgba(249,184,31,.75)!important}
+body.sunset .aiprevx{background:#551950}
+body.sunset{--bg:#2f102d;--ink:#fdf5e8;--sub:#c8b18e;--line:rgba(244,195,121,.22);--neon:#f9b81f;--neon2:#f77864}
+body.sunset{background:radial-gradient(circle at 12% -8%,#6a1f63 0,transparent 45%),radial-gradient(circle at 100% 35%,#5a1a54 0,transparent 40%),#2f102d}
+body.sunset::before{background-image:linear-gradient(rgba(249,184,31,.05) 1px,transparent 1px),linear-gradient(90deg,rgba(249,184,31,.05) 1px,transparent 1px)}
+body.sunset header,body.sunset #topHeader{background:rgba(47,16,45,.78)!important}
+body.sunset .hero{background:linear-gradient(160deg,rgba(245,93,70,.32),rgba(249,184,31,.1))!important}
+body.sunset ::placeholder{color:#d78460}
+body.sunset .badgecard:hover,body.sunset .book:hover,body.sunset .lvl-row:hover{box-shadow:0 0 20px rgba(249,184,31,.35)}
+body.sunset .lvl-row{box-shadow:0 0 22px rgba(249,184,31,.16)}
+body.sunset .book .open,body.sunset .cta,body.sunset .search button{background:linear-gradient(90deg,#f9b81f,#f77864)!important;box-shadow:0 0 14px rgba(249,184,31,.4)}
+body.sunset .bottomnav{background:rgba(47,16,45,.88)!important}
+body.sunset .pv{background:#2f102d}
+body.sunset .pvpage{box-shadow:0 0 22px rgba(249,184,31,.18)}
+body.sunset{background:linear-gradient(180deg,#591a54,#3c1139 55%,#350f32)}
+body.sunset .book .open,body.sunset .cta,body.sunset .search button{background:linear-gradient(90deg,#f25e1e,#e8632a)!important}
+body.sunset .book,body.sunset .badgecard,body.sunset .card,body.sunset .feats div{background:#5d1c57!important}
+body.sunset input,body.sunset select,body.sunset textarea,body.sunset .filters button{background:#5d1c57!important}
+body.sunset .filters button.active{background:#f25e1e!important;border-color:#f25e1e!important}
+body.sunset .bottomnav{background:#461441!important}
+body.sunset .bottomnav a.active{color:#f2b55a;text-shadow:0 0 12px #f46f36}
+body.sunset .lvl-row.Secondary{background:linear-gradient(90deg,#e85b1e,#f57138)}
+body.sunset .lvl-row.Tertiary{background:linear-gradient(90deg,#d84b35,#f66b56)}
+body.sunset .lvl-list::after{color:#fbebd3;background:linear-gradient(180deg,rgba(242,94,30,.15),rgba(216,75,53,.25))}
+body.sunset .welcome{background:linear-gradient(135deg,#d8561e,#d84b35 60%,#12a05c)}
+body.sunset .welcome a{background:#f25e1e}
+body.sunset .tp{background:linear-gradient(135deg,#e0543f,#f77864)}
+body.sunset .tb{background:linear-gradient(135deg,#e85b1e,#f57138)}
+body.sunset .kfs div{background:#5d1c57}
+body.sunset .avail{background:#5d1c57}
+body.sunset .subrow{background:#5d1c57}
+body.sunset .subrow span{background:rgba(242,94,30,.2)}
+body.sunset .pops button{background:#5d1c57}
+body.sunset .orb{background:radial-gradient(circle at 35% 30%,#f2b55a,#d84b35 65%,#651f5f);box-shadow:0 0 0 10px rgba(242,181,90,.1),0 0 60px rgba(216,75,53,.7)}
+body.sunset .land h1{background:linear-gradient(90deg,#f5ca89,#faaca0)}
+body.sunset .land .tag{color:#dac29f}
+body.sunset .land .desc{color:#fbebd3}
+body.sunset .go{background:linear-gradient(90deg,#f25e1e,#f66b56);box-shadow:0 0 26px rgba(242,181,90,.55)}
+body.sunset .pa{background:linear-gradient(135deg,#d84b35,#f77864)}
+body.sunset .wl i,body.sunset .phero i,body.sunset .brandline i{color:#f9b81f}
+body.sunset .sun{background:radial-gradient(circle at 70% 30%,#ffd27a,transparent 32%),linear-gradient(180deg,#f7a24a,#e0578a 38%,#ad522b 68%,#350f32)}
+body.sunset .logo{background:radial-gradient(circle at 35% 30%,#f2b55a,#d84b35 70%);box-shadow:0 0 40px rgba(242,181,90,.8)}
+body.sunset .wl .tg{color:#fbebd3}
+body.sunset .wl .ds{color:#fdf5e8}
+body.sunset .inside{background:rgba(93,28,87,.6)}
+body.sunset .pill{border:1px solid #d05c2a;background:#86277e}
+body.sunset .go2{background:linear-gradient(90deg,#f25e1e,#f9b81f);box-shadow:0 0 28px rgba(249,184,31,.55)}
+body.sunset .mtm{color:#c8b18e}
+body.sunset .phero{background:radial-gradient(circle at 80% 10%,rgba(255,190,90,.35),transparent 40%),linear-gradient(180deg,#a8451b,#591a54)}
+body.sunset .phero p{color:#fcf0de}
+body.sunset .pri{background:linear-gradient(90deg,#0b6b3d,#531d4e)}
+body.sunset .sec{background:linear-gradient(90deg,#a83c0e,#7d2475);border-color:#f57138}
+body.sunset .ter{background:linear-gradient(90deg,#a83b2a,#82277b);border-color:#f77864}
+body.sunset .sec em{color:#f2b55a}
+body.sunset .ter em{color:#faaca0}
+body.sunset .chev{background:#f25e1e}
+body.sunset #aiFab{background:rgba(82,24,77,.9)!important;border:2px solid #f3bb68!important;box-shadow:0 0 18px rgba(243,187,104,.7)!important}
+body.sunset .ph::after{background:linear-gradient(90deg,#591a54 0,transparent 42%)}
+body.sunset .phw .ph::after{background:linear-gradient(0deg,#350f32 0,transparent 45%)}
+body.sunset .phero{background:linear-gradient(180deg,#8c3712,#591a54)!important}
+body.sunset .lv.sec{background:linear-gradient(90deg,#a83c0e 34%,rgba(168,60,14,.6) 60%,rgba(168,60,14,.1)),var(--c-sec) right center/auto 100% no-repeat,#7d2475}
+body.sunset .lv.ter{background:linear-gradient(90deg,#a83b2a 34%,rgba(168,59,42,.6) 60%,rgba(168,59,42,.1)),var(--c-ter) right center/auto 100% no-repeat,#82277b}
+body.sunset .mot{color:#f9b81f;text-shadow:0 0 14px #f9b81f}
+body.sunset .wl h1{text-shadow:0 0 26px rgba(249,184,31,.6)}
+body.sunset .phero h2 i{text-shadow:0 0 16px #f9b81f}
+body.sunset .lv,body.sunset .ct{box-shadow:0 0 16px rgba(249,184,31,.3)}
+body.sunset .wl .tg{text-shadow:0 0 12px rgba(249,184,31,.7)}
+body.sunset #aiFab{background:#621f5c!important;border-color:#f99f91!important;box-shadow:0 8px 26px rgba(0,0,0,.65),0 0 20px rgba(245,200,133,.85)!important}
+body.sunset .phw .ph::after{background:linear-gradient(0deg,#350f32 0,rgba(53,15,50,.55) 28%,transparent 62%)!important}
+body.sunset .l2t h1{text-shadow:0 0 26px rgba(249,184,31,.6)}
+body.sunset .l2t h1 i{color:#f9b81f}
+body.sunset .tl{text-shadow:0 0 12px rgba(249,184,31,.7)}
+body.sunset .l2t .ds{color:#fcf0de}
+body.sunset .l2 .inside{background:rgba(82,24,77,.4)}
+
+
+
+body.sunset #ctl>button{background:rgba(70,20,65,.72)}
+
+body.sunset .topbar .hamb{color:#f25e1e}
+body.sunset .aidrawer{background:#4f174a}
+body.sunset .aidrawer .hav{background:linear-gradient(135deg,#f25e1e,#f9b81f)}
+body.sunset .aidrawer .hnew{color:#4f174a}
+body.sunset .speak-btn.on{background:#f25e1e}
+body.sunset .avrow i{color:#f25e1e}
+body.sunset .avrow.sel{border-color:#f25e1e;background:rgba(242,94,30,.16)}
+body.sunset:not(.light) .aimenu .aimcard{background:#501f4c;color:#fef8ef}
+body.sunset:not(.light) .aimenu .aimtitle{color:#c7b59a}
+body.sunset:not(.light) .aimenu .aimcard .vico{color:#e6d4b9}
+body.sunset .avtabs button.sel{background:#f25e1e;border-color:#f25e1e}
+body.sunset:not(.light) .rmcard{background:#501f4c;color:#fef8ef}
+body.sunset:not(.light) .rmdesc{color:#c7b59a}
+body.sunset .rmsw{background:#e0dcd7}
+body.sunset .rmsw.on{background:#f35816}
+body.sunset .rmslider{background:linear-gradient(90deg,#f35816 var(--v,50%),#ece7df var(--v,50%))}
+body.sunset:not(.light) .rmslider{background:linear-gradient(90deg,#f35816 var(--v,50%),#6a3b66 var(--v,50%))}
+body.sunset input.rmslider{background:linear-gradient(90deg,#f35816 var(--v,50%),#ece7df var(--v,50%))!important}
+body.sunset:not(.light) input.rmslider{background:linear-gradient(90deg,#f35816 var(--v,50%),#6a3b66 var(--v,50%))!important}
+body.sunset .rmlink{color:#f35816}
+body.sunset .rmswatches button.sel{border-color:#f35816;box-shadow:0 0 0 2px rgba(243,88,22,.3)}
+body.sunset .langgrid button.sel{border-color:#f25e1e;background:rgba(242,94,30,.14);color:#f25e1e}
+body.sunset:not(.light) .langgrid button{color:#fef8ef}
+body.sunset:not(.light) .langgrid button.sel{color:#fcd782;border-color:#f9b81f;background:rgba(249,184,31,.12)}
+body.sunset .lgc{background:#5b1c56;border:1.5px solid #7b3b1f}
+body.sunset .lgi{background:linear-gradient(135deg,#f44c32,#f46f36);box-shadow:0 12px 34px rgba(240,84,60,.35)}
+body.sunset .lgc .lgs{color:#e0caa9}
+body.sunset .lgc input{border:1.5px solid #8d4323!important;background:#4f174a!important}
+body.sunset .lgc input::placeholder{color:#d6815c}
+body.sunset .lgc input:focus{border-color:#f2b65c!important}
+body.sunset .lgp{background:linear-gradient(90deg,#f44c32,#f46f36);box-shadow:0 10px 26px rgba(246,129,79,.35)}
+body.sunset .lgo{border:1.5px solid #984826}
+body.sunset .lgf{color:#e0caa9}
+body.sunset .lgk{color:#f7d197}
+body.sunset .agcard{background:#5b1c56!important;border:1.5px solid #7b3b1f!important}
+body.sunset .agcard .agbox{border:1px solid #7b3b1f;color:#fcf0de}
+body.sunset .agcard .acchk{color:#fcf0de}
+body.sunset.gate .lgc.agp .agbox{border:1px solid #7b3b1f;color:#fcf0de}
+body.sunset.gate .lgc.agp .acchk{color:#fcf0de}
+body.sunset.gate .lgc .acchk input[type=checkbox]{accent-color:#f3bb67}
+
+body.sunset:not(.light) .aishcard{background:#501f4c;color:#fef8ef}
+body.sunset:not(.light) .aishgrid button{background:#61285c}
+body.sunset #ctl{background:#5b1c56}
+body.sunset{background:linear-gradient(180deg,#2b1030 0%,#43183a 35%,#7a2d3a 70%,#a8472f 100%);background-attachment:fixed;--bg:#2b1030;--card:rgba(255,235,210,.08);--ink:#fff2e0;--sub:#e8b894;--line:rgba(255,176,96,.28);--neon:#ffb547;--neon2:#ff6b4a}
 </style>
 </head>
-<body>
+<body><script>(function(){try{var t=localStorage.getItem("edu_theme2")||"sunset";document.body.classList.add(t==="light"?"light":t==="dark"?"dark":"sunset")}catch(e){document.body.classList.add("sunset")}})();</script>
 <header class="top" id="topHeader"></header>
 <main class="wrap" id="app"></main>
 <button class="aifab" id="aiFab" onclick="location.hash='#/ai'" title="Edu AI Assistant">🤖</button>
@@ -939,7 +1072,7 @@ const LANGS=[["en","English"],["ny","Chichewa"],["tum","Chitumbuka"],["yao","Chi
 const AIQ_X={tum:"✦ Fumbani chilichose chakukhwaskana na sukulu",yao:"✦ Mundite nduna ya chonse chakusukulu",lom:"✦ Funsani chilichonse chokhudza sukulu",seh:"✦ Funsani cinthu ciri conse cakusukulu"};
 Object.assign(AIQ,AIQ_X);
 function langName(){const l=LANGS.find(x=>x[0]===LANG);return l?l[1]:"English";}
-let LANG=(function(){let v=null;try{v=localStorage.getItem("edu_lang");}catch(e){}return LANGS.some(l=>l[0]===v)?v:"en";})(),THEME=localStorage.getItem("edu_theme")||"dark";
+let LANG=(function(){let v=null;try{v=localStorage.getItem("edu_lang");}catch(e){}return LANGS.some(l=>l[0]===v)?v:"en";})(),THEME=(function(){try{return localStorage.getItem("edu_theme2")||"sunset"}catch(e){return "sunset"}})();
 function trq(t){const d=I18N[LANG];return (d&&d[t])||t;}
 function applyLang(){
   const d=I18N[LANG]||null;document.documentElement.lang=({ny:"ny",nya:"ny",nya_mang:"ny",tum:"tum",yao:"yao",seh:"seh",tog:"tog"})[LANG]||"en";
@@ -951,7 +1084,7 @@ function applyLang(){
 }
 const TH_SUN='<svg class="sic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2.5v2.2M12 19.3v2.2M2.5 12h2.2M19.3 12h2.2M5.3 5.3l1.6 1.6M17.1 17.1l1.6 1.6M18.7 5.3l-1.6 1.6M6.9 17.1l-1.6 1.6"/></svg>';
 const TH_MOON='<svg class="sic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.5 14.2A8.5 8.5 0 0 1 9.8 3.5a8.5 8.5 0 1 0 10.7 10.7z"/></svg>';
-function applyTheme(){document.body.classList.toggle("light",THEME==="light");const b=document.getElementById("thBtn");if(b){const l=THEME==="light";b.innerHTML=l?TH_MOON:TH_SUN;const t=l?"Switch to dark theme":"Switch to light theme";b.setAttribute("aria-label",t);b.title=t;}}
+function applyTheme(){document.body.classList.toggle("light",THEME==="light");document.body.classList.toggle("sunset",THEME==="sunset");const b=document.getElementById("thBtn");if(b){const l=THEME==="light";b.innerHTML=l?TH_MOON:TH_SUN;const t="Theme: "+THEME.charAt(0).toUpperCase()+THEME.slice(1)+" (tap to change)";b.setAttribute("aria-label",t);b.title=t;}}
 (function(){
   const c=document.createElement("div");c.id="ctl";
   c.innerHTML=`<button id="rmBtn" aria-label="Reading mode" aria-pressed="false"><svg class="sic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-6.5 10-6.5S22 12 22 12s-3.6 6.5-10 6.5S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg></button><button id="thBtn" aria-label="Theme"></button>`;
@@ -964,7 +1097,7 @@ function applyTheme(){document.body.classList.toggle("light",THEME==="light");co
   c.addEventListener("click",()=>setTimeout(shut,0));
   document.addEventListener("click",e=>{if(!e.target.closest||(!e.target.closest("#ctl")&&!e.target.closest("#ctlMore")))shut();});
   window.addEventListener("hashchange",shut);
-  c.querySelector("#thBtn").onclick=()=>{THEME=THEME==="light"?"dark":"light";localStorage.setItem("edu_theme",THEME);applyTheme();};
+  c.querySelector("#thBtn").onclick=()=>{THEME=({sunset:"light",light:"dark",dark:"sunset"})[THEME]||"sunset";try{localStorage.setItem("edu_theme2",THEME)}catch(e){}applyTheme();};
   applyTheme();
 })();
 const QUOTES=["Education changes lives","Dream big. Study hard. Rise higher.","Every page you read builds your future","Malawi's future starts with you"];let qi=0;
@@ -2813,7 +2946,7 @@ window.addEventListener("hashchange", render);
 </script>
 <script>
 /* ---------- Reading mode + Settings ---------- */
-const APP_VERSION="1.4.4"; // <- change this when you release a new version
+const APP_VERSION="1.4.5"; // <- change this when you release a new version
 const APP_BUILD_NOTE="Mobile-friendly digital library for students in Malawi — navigation, Settings and account layout update";
 (function(){
   const EYE_SVG='<svg class="sic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-6.5 10-6.5S22 12 22 12s-3.6 6.5-10 6.5S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>',GEAR_SVG='<svg class="sic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h0a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51h0a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v0a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>';
