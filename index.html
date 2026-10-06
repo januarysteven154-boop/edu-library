@@ -920,6 +920,34 @@ body.sunset{background:linear-gradient(180deg,#2b1030 0%,#43183a 35%,#7a2d3a 70%
 body.sunset .ph::after,body.sunset .phw .ph::after{background:none!important}
 body.sunset .phero .ph{-webkit-mask-image:linear-gradient(90deg,transparent 0,rgba(0,0,0,.6) 20%,#000 46%),linear-gradient(0deg,transparent 0,#000 16%);mask-image:linear-gradient(90deg,transparent 0,rgba(0,0,0,.6) 20%,#000 46%),linear-gradient(0deg,transparent 0,#000 16%);-webkit-mask-composite:source-in;mask-composite:intersect}
 body.sunset .phw .ph{-webkit-mask-image:linear-gradient(90deg,transparent 0,#000 9%,#000 91%,transparent 100%),linear-gradient(0deg,transparent 0,rgba(0,0,0,.6) 18%,#000 42%);mask-image:linear-gradient(90deg,transparent 0,#000 9%,#000 91%,transparent 100%),linear-gradient(0deg,transparent 0,rgba(0,0,0,.6) 18%,#000 42%);-webkit-mask-composite:source-in;mask-composite:intersect}
+
+/* HERO BACKGROUND (1.4.7): the Get Started picture is a full-width background behind the welcome text and fades into the page */
+body.landing .wrap{padding-left:0!important;padding-right:0!important}
+body.landing .l2{position:relative;box-sizing:border-box;padding:0 clamp(12px,4.2vw,18px)}
+.hz{--p:43,16,48;position:relative;z-index:0;display:flex;flex-direction:column;justify-content:flex-end;flex:1 1 0;min-height:300px;max-height:480px;margin:0 calc(-1*clamp(12px,4.2vw,18px));padding:0 clamp(12px,4.2vw,18px)}
+body.light .hz{--p:219,231,255}
+body:not(.sunset):not(.light) .hz{--p:5,10,28}
+.hz .hzb{position:absolute;left:0;right:0;top:0;bottom:0;z-index:-1;overflow:hidden;pointer-events:none;display:flex;flex-direction:column;-webkit-mask-image:linear-gradient(180deg,#000 0,#000 52%,rgba(0,0,0,.5) 80%,transparent 100%);mask-image:linear-gradient(180deg,#000 0,#000 52%,rgba(0,0,0,.5) 80%,transparent 100%)}
+.hz .hzb::after{content:"";position:absolute;inset:0;z-index:3;background:linear-gradient(180deg,rgba(var(--p),0) 0,rgba(var(--p),.12) 30%,rgba(var(--p),.62) 58%,rgba(var(--p),.85) 100%)}
+.hz .ph.wel{flex:none;position:relative;z-index:2;width:120%;margin-left:-10%!important;margin-right:0;-webkit-mask-image:linear-gradient(180deg,#000 0,#000 52%,transparent 100%);mask-image:linear-gradient(180deg,#000 0,#000 52%,transparent 100%)}
+.hz .ph.wel::after{display:none!important}
+.hz .hzx{flex:1 1 auto;position:relative;z-index:1;width:120%;margin-left:-10%;margin-top:-50px;background-image:var(--h-wel);background-repeat:no-repeat;background-size:100% 500%;background-position:center bottom;filter:blur(20px) brightness(.85) saturate(1.1)}
+.hz .logo{position:relative;left:auto;bottom:auto;transform:none;margin:0 auto;flex:none;width:60px;height:60px;font-size:28px;z-index:2}
+body.landing .l2 .hz .l2t{margin-top:12px;flex:none;position:relative;z-index:2}
+.hz .l2t small,.hz .l2t .tl,.hz .l2t .ds{text-shadow:0 1px 10px rgba(var(--p),.9),0 0 3px rgba(var(--p),.7)}
+body.light .hz .l2t small,body.light .hz .l2t .tl,body.light .hz .l2t .ds{text-shadow:none}
+@media (max-height:640px){.hz{min-height:270px}}
+
+/* HOME ICONS (1.4.8): line symbols instead of emojis, matching the theme */
+.l2 .fg3 span.fi{background:rgba(255,181,71,.12);border:1.3px solid rgba(255,181,71,.55);color:#ffc468;box-shadow:0 0 14px rgba(255,150,60,.2)}
+.l2 .fg3 span.fi svg{width:56%;height:56%}
+body.light .l2 .fg3 span.fi{background:rgba(255,140,60,.12);border-color:rgba(214,90,30,.45);color:#c2571b;box-shadow:none}
+body:not(.sunset):not(.light) .l2 .fg3 span.fi{background:rgba(25,211,255,.1);border-color:rgba(25,211,255,.5);color:#19d3ff;box-shadow:0 0 14px rgba(25,211,255,.2)}
+.hz .logo svg{width:52%;height:52%;color:#fff7e8}
+.mot .msp{width:13px;height:13px;vertical-align:-1px;margin-right:6px;fill:currentColor;stroke:none}
+.brandline .bli{display:inline-flex;color:#ffc468}.brandline .bli svg{width:22px;height:22px}
+body.light .phero .brandline .bli{color:#fff}
+.orb2 svg{width:40px;height:40px;stroke-width:1.5;color:#fff}
 </style>
 </head>
 <body><script>(function(){try{var t=localStorage.getItem("edu_theme2")||"sunset";document.body.classList.add(t==="light"?"light":t==="dark"?"dark":"sunset")}catch(e){document.body.classList.add("sunset")}})();</script>
@@ -935,6 +963,14 @@ body.sunset .phw .ph{-webkit-mask-image:linear-gradient(90deg,transparent 0,#000
 </nav>
 
 <script>
+/* line icons used on the home pages */
+const LS=p=>`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${p}</svg>`;
+const BOOKP='<path d="M12 6.5C10 5 7 4.5 3.5 5v13c3.5-.5 6.5 0 8.5 1.5 2-1.5 5-2 8.5-1.5V5c-3.5-.5-6.5 0-8.5 1.5z"/><path d="M12 6.5v13"/>';
+const CAPP='<path d="M2.5 9.5L12 5l9.5 4.5L12 14z"/><path d="M6.5 11.7v4.3c0 1.2 2.5 2.6 5.5 2.6s5.5-1.4 5.5-2.6v-4.3"/><path d="M21.5 9.5v5.5"/>';
+const NOTEP='<path d="M6 3.5h10.5a1.5 1.5 0 0 1 1.5 1.5v14a1.5 1.5 0 0 1-1.5 1.5H6z"/><path d="M6 3.5v17M9.5 8h5M9.5 11.5h5"/>';
+const CAMPP='<path d="M3 20.5h18M5 20.5V10M9.5 20.5V10M14.5 20.5V10M19 20.5V10"/><path d="M2.5 10L12 4l9.5 6z"/>';
+const LVSVG={Primary:NOTEP,Secondary:CAPP,Tertiary:CAMPP};
+const SPARK='<svg class="msp" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2l2.3 7.7L22 12l-7.7 2.3L12 22l-2.3-7.7L2 12l7.7-2.3z"/></svg>';
 const LEVELS = {
   Primary:   {label:"Primary School", classes:["Standard 1","Standard 2","Standard 3","Standard 4","Standard 5","Standard 6","Standard 7","Standard 8"], icon:"📘", color:"#1F8A54"},
   Secondary: {label:"Secondary School", classes:["Form 1","Form 2","Form 3","Form 4"], icon:"🎓", color:"#1C6FA6"},
@@ -1085,6 +1121,7 @@ function applyLang(){
   [document.getElementById("app"),document.querySelector(".bottomnav"),document.querySelector(".pv"),null].concat(Array.from(document.querySelectorAll(".aimodal"))).forEach(r=>{if(!r)return;
     const tw=document.createTreeWalker(r,NodeFilter.SHOW_TEXT);let n;
     while(n=tw.nextNode()){if(n._o===undefined)n._o=n.nodeValue;const k=n._o.trim();if(!k)continue;const t=d&&d[k];n.nodeValue=t?n._o.replace(k,t):n._o;}});
+  try{const m=document.querySelector("#mot span");if(m)m.textContent=trq("✨ "+QUOTES[qi]).replace(/^✨\s*/,"");}catch(e){}
 }
 const TH_SUN='<svg class="sic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2.5v2.2M12 19.3v2.2M2.5 12h2.2M19.3 12h2.2M5.3 5.3l1.6 1.6M17.1 17.1l1.6 1.6M18.7 5.3l-1.6 1.6M6.9 17.1l-1.6 1.6"/></svg>';
 const TH_MOON='<svg class="sic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.5 14.2A8.5 8.5 0 0 1 9.8 3.5a8.5 8.5 0 1 0 10.7 10.7z"/></svg>';
@@ -1105,7 +1142,7 @@ function applyTheme(){document.body.classList.toggle("light",THEME==="light");do
   applyTheme();
 })();
 const QUOTES=["Education changes lives","Dream big. Study hard. Rise higher.","Every page you read builds your future","Malawi's future starts with you"];let qi=0;
-setInterval(()=>{const e=document.getElementById("mot");if(e){qi=(qi+1)%QUOTES.length;e.textContent=trq("✨ "+QUOTES[qi]);}},3500);
+setInterval(()=>{const e=document.getElementById("mot");if(e){qi=(qi+1)%QUOTES.length;const sp=e.querySelector("span");if(sp)sp.textContent=trq("✨ "+QUOTES[qi]).replace(/^✨\s*/,"");}},3500);
 
 
 pdfjsLib.GlobalWorkerOptions.workerSrc="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
@@ -1513,10 +1550,10 @@ function route(){
 
 function renderHome(app){
   setHeader(""); setActiveNav("/");
-  const F=[["📖","Books","#12A05C"],["🔍","Smart Search","#E0316E"],["🧠","Edu AI","#6B3FE0"],["🛡️","Safe & Secure","#F59E0B"],["☁️","Online Library","#1E7CF2"],["📱","Mobile Friendly","#0FB5B5"]];
-  app.innerHTML=`<div class="l2"><div class="phw"><div class="phc"><div class="ph wel">${flag()}</div></div><div class="logo">📖</div></div>
-   <div class="l2t"><small>Welcome to</small><h1>Edu <i>Library</i></h1><p class="tl">Learn • Grow • Build Your Future</p><p class="ds">Your all-in-one digital learning platform for Primary, Secondary and Tertiary education.</p><p class="mot" id="mot">✨ Education changes lives</p></div>
-   <div class="inside"><div class="fg3">${F.map(f=>`<div><span style="background:${f[2]}">${f[0]}</span><b>${f[1]}</b></div>`).join("")}</div><p class="insnote">These icons are just a preview. Tap <b>Get Started</b> and you will find all these features inside.</p></div>
+  const F=[[LS(BOOKP),"Books"],[LS('<circle cx="11" cy="11" r="6.5"/><path d="m16 16 4.5 4.5"/>'),"Smart Search"],[LS('<path d="M11 3.5l1.9 5.1 5.1 1.9-5.1 1.9L11 17.5l-1.9-5.1L4 10.5l5.1-1.9z"/><path d="M18.5 15.5l.7 1.8 1.8.7-1.8.7-.7 1.8-.7-1.8-1.8-.7 1.8-.7z"/>'),"Edu AI"],[LS('<path d="M12 3l7.5 3v5.5c0 4.5-3.2 8-7.5 9.5-4.3-1.5-7.5-5-7.5-9.5V6z"/><path d="m8.7 12 2.4 2.4 4.2-4.6"/>'),"Safe & Secure"],[LS('<path d="M7.5 18.5h10a4 4 0 0 0 .6-7.95A6 6 0 0 0 6.5 9.6a4.5 4.5 0 0 0 1 8.9z"/>'),"Online Library"],[LS('<rect x="7" y="2.5" width="10" height="19" rx="2.5"/><path d="M11 18.5h2"/>'),"Mobile Friendly"]];
+  app.innerHTML=`<div class="l2"><div class="hz"><div class="hzb"><div class="ph wel">${flag()}</div><div class="hzx"></div></div><div class="logo">${LS(BOOKP)}</div>
+   <div class="l2t"><small>Welcome to</small><h1>Edu <i>Library</i></h1><p class="tl">Learn • Grow • Build Your Future</p><p class="ds">Your all-in-one digital learning platform for Primary, Secondary and Tertiary education.</p><p class="mot" id="mot">${SPARK}<span>Education changes lives</span></p></div></div>
+   <div class="inside"><div class="fg3">${F.map(f=>`<div><span class="fi">${f[0]}</span><b>${f[1]}</b></div>`).join("")}</div><p class="insnote">These icons are just a preview. Tap <b>Get Started</b> and you will find all these features inside.</p></div>
    <a class="go2" href="#/library">Get Started →</a></div>`;
 }
 function renderStart(app){ renderLibrary(app); }
@@ -1528,7 +1565,7 @@ function renderExams(app, level, cls){
     const CL={Primary:"pri",Secondary:"sec",Tertiary:"ter"};
     app.innerHTML=`<div class="pagehead"><h2>Examinations</h2><p>Choose your education level to find exam papers for your class.</p></div>
       <div class="chooser">${Object.entries(LEVELS).map(([k,l])=>{const n=all.filter(b=>b.level===k).length;
-        return `<a class="lv ${CL[k]}" href="#/exams/${k}"><div class="orb2">${l.icon}</div><div><b>${esc(l.label)}</b><em>${n} exam paper${n!==1?"s":""}</em><p>${esc(l.sub||(l.classes[0]+" – "+l.classes[l.classes.length-1]))}</p></div><i class="chev">›</i></a>`;}).join("")}</div>`;
+        return `<a class="lv ${CL[k]}" href="#/exams/${k}"><div class="orb2">${LS(LVSVG[k]||BOOKP)}</div><div><b>${esc(l.label)}</b><em>${n} exam paper${n!==1?"s":""}</em><p>${esc(l.sub||(l.classes[0]+" – "+l.classes[l.classes.length-1]))}</p></div><i class="chev">›</i></a>`;}).join("")}</div>`;
     return;
   }
   const l=LEVELS[level];
@@ -1561,9 +1598,9 @@ function recentRows(){
 function renderLibrary(app){
   setHeader(""); setActiveNav("library");
   const D={Primary:["Build strong foundations for a brighter future.","pri"],Secondary:["Gain knowledge, develop skills, reach your goals.","sec"],Tertiary:["Advance your education, shape your career.","ter"]};
-  app.innerHTML=`<div class="phero"><div class="pt"><div class="brandline">📖 <b>Edu <i>Library</i></b></div><h2 style="margin-top:18px">Welcome Back!</h2><p>Your journey to knowledge continues here.</p></div><div class="ph wel">${flag()}</div></div><p class="mot" id="mot">✨ Education changes lives</p>
+  app.innerHTML=`<div class="phero"><div class="pt"><div class="brandline"><span class="bli">${LS(BOOKP)}</span><b>Edu <i>Library</i></b></div><h2 style="margin-top:18px">Welcome Back!</h2><p>Your journey to knowledge continues here.</p></div><div class="ph wel">${flag()}</div></div><p class="mot" id="mot">${SPARK}<span>Education changes lives</span></p>
    <div class="chooser"><h3>Choose Your Education Level</h3><p class="sub">Select your level to access classes and learning materials.</p>
-   ${Object.entries(LEVELS).map(([k,l])=>`<a class="lv ${D[k][1]}" href="#/level/${k}"><div class="orb2">${l.icon}</div><div><b>${esc(l.label)}</b><em>${l.sub||(l.classes[0]+" – "+l.classes[l.classes.length-1])}</em><p>${D[k][0]}</p></div><i class="chev">›</i></a>`).join("")}</div>${recentRows()}`;
+   ${Object.entries(LEVELS).map(([k,l])=>`<a class="lv ${D[k][1]}" href="#/level/${k}"><div class="orb2">${LS(LVSVG[k]||BOOKP)}</div><div><b>${esc(l.label)}</b><em>${l.sub||(l.classes[0]+" – "+l.classes[l.classes.length-1])}</em><p>${D[k][0]}</p></div><i class="chev">›</i></a>`).join("")}</div>${recentRows()}`;
 }
 
 const TAG={"Standard 1":"Start your learning journey","Standard 2":"Build your knowledge","Standard 3":"Learn and grow","Standard 4":"Explore new ideas","Standard 5":"Be curious, be great","Standard 6":"Stronger skills, bigger dreams","Standard 7":"Learn today, lead tomorrow","Standard 8":"Achieve your goals","Form 1":"Build your foundation for success.","Form 2":"Expand your knowledge and gain new skills.","Form 3":"Prepare for higher opportunities.","Form 4":"Step closer to your dreams.","Engineering":"Civil, mechanical, electrical, mining and more.","IT & Computing":"Computer science, software, networks and information systems.","Health Sciences":"Medicine, nursing, pharmacy, public health and lab sciences.","Education":"Teacher training, curriculum and education management.","Business & Management":"Accounting, finance, marketing, economics and HR.","Agriculture & Natural Resources":"Crops, animals, forestry, fisheries and environment.","Sciences":"Biology, chemistry, physics, maths and statistics.","Law":"Legal studies, human rights and justice.","Humanities & Social Sciences":"Languages, history, psychology, development and public administration.","Architecture & Construction":"Architecture, surveying, planning and building.","Tourism & Hospitality":"Tourism, hotel management, wildlife and heritage.","Media & Communication":"Journalism, media, public relations and communication.","Theology":"Theology, ministry and religious studies.","Other Courses":"Every other course, plus books added before the new categories."};
@@ -1573,7 +1610,7 @@ function tertCategory(x){for(const[c,r]of TERT_KEYS)if(r.test(x))return c;return
 const GR={Primary:["#F5B400,#FF8A00","#FF7A18,#F2590C","#F0284A,#C4102F","#E01FA0,#9B2BE0","#7B3FEA,#5B2BD0","#1E7CF2,#1550D0","#12C4C4,#0A8FA8","#22C55E,#0E9F3E"],Secondary:["#1E7CF2,#0F4FD0","#22C55E,#0E9F3E","#FF9A1F,#E06A00","#8B5CFF,#5B2BD0"],Tertiary:["#8B3FE8,#5B2BD0","#1E7CF2,#0F4FD0","#22C55E,#0E9F3E","#FF9A1F,#E06A00","#8B5CFF,#5B2BD0","#12C4C4,#0A8FA8"]};
 function renderLevel(app, level){
   const l=LEVELS[level], books=loadBooks(), t=l.label.split(" ");
-  setHeader(`<button class="back" onclick="location.hash='#/library'">←</button><div class="brandline">📖 <b>Edu <i>Library</i></b></div>`);
+  setHeader(`<button class="back" onclick="location.hash='#/library'">←</button><div class="brandline"><span class="bli">${LS(BOOKP)}</span><b>Edu <i>Library</i></b></div>`);
   setActiveNav("library");
   const cards=l.classes.map((c,i)=>{
     const n=new Set(books.filter(b=>inCls(b,level,c)).map(b=>b.subject||"General")).size, g=GR[level][i%GR[level].length];
@@ -2950,7 +2987,7 @@ window.addEventListener("hashchange", render);
 </script>
 <script>
 /* ---------- Reading mode + Settings ---------- */
-const APP_VERSION="1.4.6"; // <- change this when you release a new version
+const APP_VERSION="1.4.8"; // <- change this when you release a new version
 const APP_BUILD_NOTE="Mobile-friendly digital library for students in Malawi — navigation, Settings and account layout update";
 (function(){
   const EYE_SVG='<svg class="sic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-6.5 10-6.5S22 12 22 12s-3.6 6.5-10 6.5S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>',GEAR_SVG='<svg class="sic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h0a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51h0a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v0a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>';
