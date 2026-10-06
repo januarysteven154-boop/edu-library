@@ -842,9 +842,9 @@ body.sunset .go2{background:linear-gradient(90deg,#f25e1e,#f9b81f);box-shadow:0 
 body.sunset .mtm{color:#c8b18e}
 body.sunset .phero{background:radial-gradient(circle at 80% 10%,rgba(255,190,90,.35),transparent 40%),linear-gradient(180deg,#a8451b,#591a54)}
 body.sunset .phero p{color:#fcf0de}
-body.sunset .pri{background:linear-gradient(90deg,#0b6b3d,#531d4e)}
-body.sunset .sec{background:linear-gradient(90deg,#a83c0e,#7d2475);border-color:#f57138}
-body.sunset .ter{background:linear-gradient(90deg,#a83b2a,#82277b);border-color:#f77864}
+body.sunset .pri:not(.ph):not(.lv){background:linear-gradient(90deg,#0b6b3d,#531d4e)}
+body.sunset .sec:not(.ph):not(.lv){background:linear-gradient(90deg,#a83c0e,#7d2475);border-color:#f57138}
+body.sunset .ter:not(.ph):not(.lv){background:linear-gradient(90deg,#a83b2a,#82277b);border-color:#f77864}
 body.sunset .sec em{color:#f2b55a}
 body.sunset .ter em{color:#faaca0}
 body.sunset .chev{background:#f25e1e}
@@ -916,6 +916,10 @@ body.sunset:not(.light) .aishcard{background:#501f4c;color:#fef8ef}
 body.sunset:not(.light) .aishgrid button{background:#61285c}
 body.sunset #ctl{background:#5b1c56}
 body.sunset{background:linear-gradient(180deg,#2b1030 0%,#43183a 35%,#7a2d3a 70%,#a8472f 100%);background-attachment:fixed;--bg:#2b1030;--card:rgba(255,235,210,.08);--ink:#fff2e0;--sub:#e8b894;--line:rgba(255,176,96,.28);--neon:#ffb547;--neon2:#ff6b4a}
+/* SUNSET: pictures blend softly into the page (feathered edges instead of hard corners) */
+body.sunset .ph::after,body.sunset .phw .ph::after{background:none!important}
+body.sunset .phero .ph{-webkit-mask-image:linear-gradient(90deg,transparent 0,rgba(0,0,0,.6) 20%,#000 46%),linear-gradient(0deg,transparent 0,#000 16%);mask-image:linear-gradient(90deg,transparent 0,rgba(0,0,0,.6) 20%,#000 46%),linear-gradient(0deg,transparent 0,#000 16%);-webkit-mask-composite:source-in;mask-composite:intersect}
+body.sunset .phw .ph{-webkit-mask-image:linear-gradient(90deg,transparent 0,#000 9%,#000 91%,transparent 100%),linear-gradient(0deg,transparent 0,rgba(0,0,0,.6) 18%,#000 42%);mask-image:linear-gradient(90deg,transparent 0,#000 9%,#000 91%,transparent 100%),linear-gradient(0deg,transparent 0,rgba(0,0,0,.6) 18%,#000 42%);-webkit-mask-composite:source-in;mask-composite:intersect}
 </style>
 </head>
 <body><script>(function(){try{var t=localStorage.getItem("edu_theme2")||"sunset";document.body.classList.add(t==="light"?"light":t==="dark"?"dark":"sunset")}catch(e){document.body.classList.add("sunset")}})();</script>
@@ -2946,7 +2950,7 @@ window.addEventListener("hashchange", render);
 </script>
 <script>
 /* ---------- Reading mode + Settings ---------- */
-const APP_VERSION="1.4.5"; // <- change this when you release a new version
+const APP_VERSION="1.4.6"; // <- change this when you release a new version
 const APP_BUILD_NOTE="Mobile-friendly digital library for students in Malawi — navigation, Settings and account layout update";
 (function(){
   const EYE_SVG='<svg class="sic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-6.5 10-6.5S22 12 22 12s-3.6 6.5-10 6.5S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>',GEAR_SVG='<svg class="sic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h0a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51h0a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v0a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>';
