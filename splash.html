@@ -25,7 +25,12 @@ html,body{margin:0;height:100%;background:#1c2a12;overflow:hidden}
 #av.sw span{opacity:0;transform:scale(.4)}
 #av.win{box-shadow:0 0 calc(var(--u)*24) calc(var(--u)*6) rgba(255,210,31,.75)}
 .fl{position:absolute;left:0;top:0;pointer-events:none;width:calc(var(--u)*24);height:calc(var(--u)*24);will-change:transform}
-#rp{position:fixed;left:50%;bottom:6%;transform:translateX(-50%);padding:12px 26px;border:0;border-radius:99px;background:#ffd21f;font-weight:700;font-size:16px;display:none;z-index:5}
+#tr{position:fixed;inset:0;z-index:10;pointer-events:none;overflow:hidden;transition:opacity .9s ease}
+#trg{position:absolute;inset:0;background:radial-gradient(circle at 50% 45%,#fff0b8 0%,#ffc457 22%,#ff8a3a 48%,#b8443c 72%,#4a1b3c 100%);clip-path:circle(0% at 50% 45%);-webkit-clip-path:circle(0% at 50% 45%);transition:clip-path 1.5s cubic-bezier(.4,0,.2,1),-webkit-clip-path 1.5s cubic-bezier(.4,0,.2,1)}
+#tr.on #trg{clip-path:circle(150% at 50% 45%);-webkit-clip-path:circle(150% at 50% 45%)}
+#trl{position:absolute;left:50%;top:45%;border-radius:19%;background:url(splash4.jpg) no-repeat;box-shadow:0 0 60px rgba(255,200,90,.7);opacity:0;transform:translate(-50%,-50%) scale(.85);transition:opacity 1s ease .5s,transform 1.6s ease .3s}
+#tr.on #trl{opacity:1;transform:translate(-50%,-50%) scale(1.04)}
+#rp{position:fixed;left:50%;bottom:6%;transform:translateX(-50%);padding:12px 26px;border:0;border-radius:99px;background:#ffd21f;font-weight:700;font-size:16px;display:none;z-index:20}
 </style></head><body>
 <div id="st"><canvas id="cv"></canvas><img id="fb" src="splash4.jpg" alt="" style="display:none">
 <div id="sd"></div>
@@ -111,10 +116,18 @@ function loop(ts){if(t0===null)t0=ts;var t=Math.min((ts-t0)/1000/DUR,1),p=t*.7+t
  var i=0;while(p>=END[i])i++;if(i!==cur&&i<5)stage(i);
  if(t<1)requestAnimationFrame(loop);else finish()}
 function finish(){if(fin)return;fin=true;ns.forEach(function(n){n.className="n d"});ns[4].className="n a";
- var seq=["cap","brief","crown"],k=0;(function nx(){setAv(seq[k]);k++;if(k<3)setTimeout(nx,550);else setTimeout(leave,1300)})()}
-function leave(){try{sessionStorage.setItem("eduSplashSeen","1")}catch(e){}
- var app=navigator.userAgent.indexOf("EduLibraryApp")!==-1,b=document.getElementById("rp");
- if(app){b.textContent="Open Edu Library";b.onclick=function(){location.href="/?go=1"};location.replace("/?go=1");setTimeout(function(){b.style.display="block"},4000)}
- else b.style.display="block"}
+ var seq=["cap","brief","crown"],k=0;(function nx(){setAv(seq[k]);k++;if(k<3)setTimeout(nx,550);else setTimeout(leave,900)})()}
+/* cinematic golden transition -> Get Started (the library shows a matching golden arrival, then reveals) */
+function leave(){
+ try{sessionStorage.setItem("eduSplashSeen","1");sessionStorage.setItem("eduSplashHandoff","1");sessionStorage.setItem("eduSplashHandoffTime",String(Date.now()))}catch(e){}
+ var app=navigator.userAgent.indexOf("EduLibraryApp")!==-1,b=document.getElementById("rp"),tr=document.createElement("div"),lg,z=Math.min(innerWidth*.6,innerHeight*.4)/396;
+ tr.id="tr";tr.innerHTML='<div id="trg"></div><div id="trl"></div>';document.body.appendChild(tr);
+ lg=document.getElementById("trl");lg.style.width=lg.style.height=396*z+"px";
+ lg.style.backgroundSize=940*z+"px "+1673*z+"px";lg.style.backgroundPosition="-"+272*z+"px -"+196*z+"px";
+ void tr.offsetWidth;tr.className="on";
+ setTimeout(function(){
+  if(app){b.textContent="Open Edu Library";b.onclick=function(){location.href="/?go=1"};location.replace("/?go=1");setTimeout(function(){b.style.display="block"},4000)}
+  else{tr.style.opacity="0";b.style.display="block"}
+ },2000)}
 avs.innerHTML=ic("child");requestAnimationFrame(loop);
 </script></body></html>
