@@ -18,6 +18,20 @@
 (function(){try{if(sessionStorage.getItem("eduSplashSeen"))return;sessionStorage.setItem("eduSplashSeen","1");}catch(e){return;}
  window.stop();location.replace("/splash.html");throw new Error("EduLibrary: splash");})();
 </script>
+<script>
+/* ARRIVAL: continue the splash's golden glow while Get Started loads, then reveal it */
+(function(){var ok=false;try{ok=sessionStorage.getItem("eduSplashHandoff")==="1"&&Date.now()-(+sessionStorage.getItem("eduSplashHandoffTime")||0)<30000;sessionStorage.removeItem("eduSplashHandoff");sessionStorage.removeItem("eduSplashHandoffTime");}catch(e){}
+if(!ok)return;
+var k=Math.min(innerWidth*.6,innerHeight*.4)/396,o=document.createElement("div"),l=document.createElement("div"),done=false,mo;
+o.id="eduArrive";o.style.cssText="position:fixed;left:0;top:0;right:0;bottom:0;z-index:2147483647;overflow:hidden;background:radial-gradient(circle at 50% 45%,#fff0b8 0%,#ffc457 22%,#ff8a3a 48%,#b8443c 72%,#4a1b3c 100%);transition:opacity 1s ease";
+l.style.cssText="position:absolute;left:50%;top:45%;width:"+396*k+"px;height:"+396*k+"px;border-radius:19%;background:url(/splash4.jpg) no-repeat;background-size:"+940*k+"px "+1673*k+"px;background-position:-"+272*k+"px -"+196*k+"px;box-shadow:0 0 60px rgba(255,200,90,.7);transform:translate(-50%,-50%) scale(1.04);transition:opacity 1s ease,transform 1.2s ease";
+o.appendChild(l);document.documentElement.appendChild(o);
+function out(){if(done)return;done=true;if(mo)mo.disconnect();l.style.opacity="0";l.style.transform="translate(-50%,-50%) scale(1.15)";o.style.opacity="0";setTimeout(function(){if(o.parentNode)o.parentNode.removeChild(o)},1100)}
+function chk(){var a=document.getElementById("app");if(a&&a.querySelector(".l2")){setTimeout(out,600);return true}return false}
+document.addEventListener("DOMContentLoaded",function(){var a=document.getElementById("app");if(done||!a||chk())return;mo=new MutationObserver(function(){if(chk())mo.disconnect()});mo.observe(a,{childList:true,subtree:true})});
+setTimeout(out,7000);
+})();
+</script>
 <style>:root{--vh1:1vh}</style>
 <script>
 /* real screen height for every device/browser (old Chrome has no svh): --vh1 = 1% of the visible height */
@@ -2799,7 +2813,7 @@ window.addEventListener("hashchange", render);
 </script>
 <script>
 /* ---------- Reading mode + Settings ---------- */
-const APP_VERSION="1.4.3"; // <- change this when you release a new version
+const APP_VERSION="1.4.4"; // <- change this when you release a new version
 const APP_BUILD_NOTE="Mobile-friendly digital library for students in Malawi — navigation, Settings and account layout update";
 (function(){
   const EYE_SVG='<svg class="sic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-6.5 10-6.5S22 12 22 12s-3.6 6.5-10 6.5S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>',GEAR_SVG='<svg class="sic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h0a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51h0a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v0a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>';
