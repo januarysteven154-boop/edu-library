@@ -52,18 +52,60 @@ async function classify(file,info){
 }
 
 /* ---------- short titles ---------- */
-var SUBJ=["Further Mathematics","Additional Mathematics","Agricultural Science","Agriculture","Computer Studies","Civic Education","Bible Knowledge","Social Studies","Life Skills","Business Studies","Home Economics","Physical Science","English","Chichewa","Mathematics","Maths","Physics","Chemistry","Biology","Economics","Accounting","Government","Literature","Geography","History","Commerce","French","Yoruba","Igbo","Hausa"];
-function shortTitle(title,name,docType,subject){
-  var base=baseName(name),sub="",i,c,txt,cands=[subject,title,base];
-  for(c=0;c<cands.length&&!sub;c++){
-    txt=String(cands[c]||"");
-    for(i=0;i<SUBJ.length;i++){if(new RegExp("\\b"+SUBJ[i]+"\\b","i").test(txt)){sub=SUBJ[i];break;}}
+/* subject names and the short forms people use for them (bio, phys, chem, ...) */
+var SUBJMAP=[
+["Further Mathematics","further\\s*(?:mathematics|maths|math)"],
+["Additional Mathematics","add(?:itional)?\\s*(?:mathematics|maths|math)"],
+["Agricultural Science","agricultural\\s*science|agric\\s*sci\\w*"],
+["Agriculture","agriculture|agric|agri|agr"],
+["Computer Studies","computer\\s*studies|computer|comp|ict"],
+["Civic Education","civic\\s*education|civic"],
+["Bible Knowledge","bible\\s*knowledge|bible"],
+["Social Studies","social\\s*studies|social|soc\\s*stud\\w*"],
+["Life Skills","life\\s*skills"],
+["Business Studies","business\\s*studies|business|bus\\s*stud\\w*"],
+["Home Economics","home\\s*economics|home\\s*econ?"],
+["Physical Science","physical\\s*science|phys\\s*sci\\w*"],
+["Physics","physics|physic|physi|phys|phy|fizz\\w*|fiz"],
+["Chemistry","chemistry|chemistr|chemis|chemi|chem|chm"],
+["Biology","biology|biolog|biolo|biol|bios|bio"],
+["Mathematics","mathematics|maths|math"],
+["English","english|engl|eng"],
+["Chichewa","chichewa|chiche|chich"],
+["Economics","economics|econs|econ"],
+["Accounting","accounting|account|acc"],
+["Government","government|govt|gov"],
+["Literature","literature|lit"],
+["Geography","geography|geog|geo"],
+["History","history|hist"],
+["Commerce","commerce"],
+["French","french"],
+["Yoruba","yoruba"],["Igbo","igbo"],["Hausa","hausa"]
+];
+function findSubject(txt){
+  txt=String(txt||"");
+  for(var i=0;i<SUBJMAP.length;i++){
+    if(new RegExp("(^|[^a-z])(?:"+SUBJMAP[i][1]+")(?![a-z])","i").test(txt))return SUBJMAP[i][0];
   }
+  return "";
+}
+/* when the AI cannot read the file (scanned PDF), guess from the file name only */
+function guessFromName(name){
+  var t=baseName(name),g={};
+  g.subject=findSubject(t);
+  g.docType=/(^|[^a-z])(?:pp?\s*[1-3]|paper|exam\w*|mock|maneb|msce|jce|pslce|past\s*papers?)(?![a-z])/i.test(t)?"exam":"book";
+  if(/(^|[^a-z])msce(?![a-z])/i.test(t)){g.level="Secondary";g.cls0="Form 4";g.body="MSCE";}
+  else if(/(^|[^a-z])jce(?![a-z])/i.test(t)){g.level="Secondary";g.cls0="Form 2";g.body="JCE";}
+  else if(/pslce|(^|[^a-z])(?:std|standard)\s*8(?![0-9])/i.test(t)){g.level="Primary";g.cls0="Standard 8";g.body="MANEB";}
+  return g;
+}
+function shortTitle(title,name,docType,subject){
+  var base=baseName(name),sub=findSubject(subject)||findSubject(title)||findSubject(base);
   if(!sub&&subject)sub=String(subject).split(/\s+/).slice(0,3).join(" ");
   if(!sub)return String(title||base).split(/\s+/).slice(0,4).join(" ");
   if(docType!=="exam")return sub+" Book";
   var src=(title||"")+" "+base;
-  var pm=src.match(/paper[\s_-]*(\d|one|two|three|iii|ii|i)\b/i)||src.match(/\bp[\s-]?(iii|ii|i|[1-3])\b/i);
+  var pm=src.match(/paper[\s_-]*(\d|one|two|three|iii|ii|i)\b/i)||src.match(/\bp{1,2}[\s-]?(iii|ii|i|[1-3])\b/i);
   var map={one:1,two:2,three:3,i:1,ii:2,iii:3},k=pm?pm[1].toLowerCase():"",num=pm?(map[k]||k):"";
   var ym=src.match(/(?:^|\D)((?:19|20)\d{2})(?!\d)/);
   return sub+(pm?" Paper "+num:" Examination")+(ym?" ("+ym[1]+")":"");
@@ -71,7 +113,9 @@ function shortTitle(title,name,docType,subject){
 
 /* ---------- the editable proposal ---------- */
 function newEdit(r,name){
-  r=r||{};
+  r=r?Object.assign({},r):{};
+  if(!(r.level||r.docType||r.cls0||r.title)){var g=guessFromName(name);r={docType:g.docType,level:g.level,cls0:g.cls0,body:g.body,subject:g.subject};}
+  else if(!(r.subject||r.subjectSuggestion))r.subject=findSubject(baseName(name));
   var lv=LEVELS[r.level]?r.level:"Primary";
   var cl=LEVELS[lv].classes.indexOf(r.cls0)>=0?r.cls0:"";
   var bd=EXAM_BODIES[cl]||null,body="";
