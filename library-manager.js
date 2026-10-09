@@ -1,9 +1,11 @@
-/* Edu Library - AI Library Manager v0.3: AI proposes, you approve or reject, approved files upload. */
+/* Edu Library - AI Library Manager v0.4: AI proposes, you approve or reject, approved files upload. */
 (function(){
 "use strict";
 var URL_CLASSIFY="https://edu-ai-backend-three.vercel.app/api/book-link?classify=1";
 var GAP_MS=5500,UP_GAP_MS=7000,MAX_FILES=30,TAIL=1400,HEAD=5500,MAX_READ=15,ENOUGH=1500;
-var items=[],running=false,uploading=false,stopNow=false,bookServer="A";
+/* state is kept on window so it survives a screen redraw */
+var ST=window.__eduLM=window.__eduLM||{items:[],bookServer:"A"};
+var items=ST.items,running=false,uploading=false,stopNow=false,bookServer=ST.bookServer;
 
 function $(id){return document.getElementById(id);}
 function wait(ms){return new Promise(function(r){setTimeout(r,ms);});}
@@ -48,6 +50,20 @@ async function classify(file,info){
   }
 }
 
+/* ---------- short titles ---------- */
+var SUBJ=["Further Mathematics","Agricultural Science","Computer Studies","Civic Education","English","Mathematics","Maths","Physics","Chemistry","Biology","Economics","Accounting","Government","Literature","Geography","History","Commerce","French","Yoruba","Igbo","Hausa"];
+function shortTitle(title,name,docType){
+  var src=(title||"")+" "+baseName(name),sub="",i;
+  for(i=0;i<SUBJ.length;i++){if(new RegExp("\\b"+SUBJ[i]+"\\b","i").test(src)){sub=SUBJ[i];break;}}
+  if(!sub)return String(title||baseName(name)).split(/\s+/).slice(0,4).join(" ");
+  var pm=src.match(/paper\s*(\d|one|two|three)/i);
+  if(docType==="exam"){
+    var num=pm?({one:1,two:2,three:3}[pm[1].toLowerCase()]||pm[1]):"";
+    return sub+(pm?" Paper "+num:" Examination");
+  }
+  return sub+" Book";
+}
+
 /* ---------- the editable proposal ---------- */
 function newEdit(r,name){
   r=r||{};
@@ -56,7 +72,8 @@ function newEdit(r,name){
   var bd=EXAM_BODIES[cl]||null,body="";
   if(bd)body=bd.indexOf(r.body)>=0?r.body:(bd.length===1?bd[0]:"");
   var tier=TIERS.some(function(t){return t.k===r.tier;})?r.tier:"";
-  return {docType:r.docType==="exam"?"exam":"book",level:lv,cls0:cl,tier:tier,body:body,title:r.title||baseName(name),subject:r.subject||r.subjectSuggestion||""};
+  var dt=r.docType==="exam"?"exam":"book";
+  return {docType:dt,level:lv,cls0:cl,tier:tier,body:body,title:shortTitle(r.title,name,dt),subject:r.subject||r.subjectSuggestion||""};
 }
 function problems(it){
   var e=it.edit,p=[];
@@ -300,16 +317,26 @@ async function uploadAll(){
 }
 
 function pick(files){
-  var list=Array.prototype.slice.call(files||[]).filter(function(f){return /\.pdf$/i.test(f.name)||f.type==="application/pdf";});
-  if(!list.length){alert("Please choose PDF files.");return;}
-  var open=items.filter(function(x){return x.dec==="approved"&&x.up!=="done";}).length;
-  if(open&&!confirm(open+" approved file(s) have not been uploaded yet. Replace the list anyway?"))return;
-  if(list.length>MAX_FILES){alert("Choose at most "+MAX_FILES+" files at a time. Only the first "+MAX_FILES+" will be used.");list=list.slice(0,MAX_FILES);}
-  items=list.map(function(f,i){return {i:i,file:f,name:f.name,size:f.size,status:"wait",dups:[],dec:"",up:"",msg:""};});
-  fullDraw();run();
+  try{
+    var list=Array.prototype.slice.call(files||[]).filter(function(f){return /\.pdf$/i.test(f.name)||f.type==="application/pdf";});
+    if(!list.length){alert("Please choose PDF files.");return;}
+    var open=items.filter(function(x){return x.dec==="approved"&&x.up!=="done";}).length;
+    if(open&&!confirm(open+" approved file(s) have not been uploaded yet. Replace the list anyway?"))return;
+    if(list.length>MAX_FILES){alert("Choose at most "+MAX_FILES+" files at a time. Only the first "+MAX_FILES+" will be used.");list=list.slice(0,MAX_FILES);}
+    items=ST.items=list.map(function(f,i){return {i:i,file:f,name:f.name,size:f.size,status:"wait",dups:[],dec:"",up:"",msg:""};});
+    var s=$("lmStatus");if(s)s.textContent=list.length+" file(s) selected. Starting…";
+    fullDraw();
+    setTimeout(function(){
+      run().catch(function(e){
+        var m=$("lmStatus");if(m)m.textContent="Error: "+((e&&e.message)||e);
+        running=false;bar();
+      });
+    },50);
+  }catch(e){alert("Could not load the files: "+((e&&e.message)||e));}
 }
 
 function render(body){
+  items=ST.items;bookServer=ST.bookServer;
   var so=SERVERS.filter(function(x){return !x.exam;}).map(function(x){return "<option value='"+x.id+"'"+(x.ok?"":" disabled")+(x.id===bookServer?" selected":"")+">"+E(x.name)+(x.ok?"":" (not connected)")+"</option>";}).join("");
   body.innerHTML="<div class='note' style='margin-top:0'>AI Library — choose PDFs, the AI proposes where each belongs. Nothing uploads until you tap <b>Approve</b> and then <b>Upload approved</b>.</div>"
    +"<input id='lmFile' type='file' accept='application/pdf,.pdf' multiple style='display:none'>"
@@ -324,9 +351,13 @@ function render(body){
   $("lmStop").onclick=function(){stopNow=true;};
   $("lmAll").onclick=approveConfident;
   $("lmUp").onclick=uploadAll;
-  $("lmSrv").onchange=function(){bookServer=this.value;fullDraw();};
-  if(items.length)fullDraw();else bar();
+  $("lmSrv").onchange=function(){bookServer=ST.bookServer=this.value;fullDraw();};
+  if(items.length){
+    items.forEach(function(it){if(it.status==="work")it.status="wait";});
+    fullDraw();
+    if(items.some(function(x){return x.status==="wait";}))run();
+  }else bar();
 }
 
-window.EduLibraryManager={render:render,set:setField,decide:decide,hand:hand,retry:retry,version:"0.3"};
+window.EduLibraryManager={render:render,set:setField,decide:decide,hand:hand,retry:retry,version:"0.4"};
 })();
