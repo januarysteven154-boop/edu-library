@@ -1,4 +1,4 @@
-/* Edu Library - AI Library Manager v0.4: AI proposes, you approve or reject, approved files upload. */
+/* Edu Library - AI Library Manager v0.5 (debug log): AI proposes, you approve or reject, approved files upload. */
 (function(){
 "use strict";
 var URL_CLASSIFY="https://edu-ai-backend-three.vercel.app/api/book-link?classify=1";
@@ -6,6 +6,14 @@ var GAP_MS=5500,UP_GAP_MS=7000,MAX_FILES=30,TAIL=1400,HEAD=5500,MAX_READ=15,ENOU
 /* state is kept on window so it survives a screen redraw */
 var ST=window.__eduLM=window.__eduLM||{items:[],bookServer:"A"};
 var items=ST.items,running=false,uploading=false,stopNow=false,bookServer=ST.bookServer;
+var LOGK="lmdbg";
+function readLog(){try{return JSON.parse(localStorage.getItem(LOGK)||"[]").join("\n");}catch(e){return "";}}
+function dbg(m){try{var a=JSON.parse(localStorage.getItem(LOGK)||"[]");a.push(new Date().toLocaleTimeString()+" "+m);localStorage.setItem(LOGK,JSON.stringify(a.slice(-30)));}catch(e){}var d=document.getElementById("lmDbg");if(d)d.textContent=readLog();}
+window.addEventListener("error",function(e){dbg("JS error: "+(e&&e.message));});
+window.addEventListener("unhandledrejection",function(e){dbg("Promise error: "+((e&&e.reason&&e.reason.message)||e.reason));});
+document.addEventListener("visibilitychange",function(){dbg("visibility: "+document.visibilityState);});
+window.addEventListener("pagehide",function(){dbg("pagehide");});
+dbg("script loaded v0.5, saved items="+ST.items.length);
 
 function $(id){return document.getElementById(id);}
 function wait(ms){return new Promise(function(r){setTimeout(r,ms);});}
@@ -224,21 +232,22 @@ function approveConfident(){
 /* ---------- checking files with the AI ---------- */
 async function run(){
   if(running)return;
-  running=true;stopNow=false;bar();
+  running=true;stopNow=false;bar();dbg("run start");
   for(var k=0;k<items.length;k++){
     var it=items[k];
     if(stopNow)break;
     if(it.status!=="wait")continue;
     it.status="work";drawOne(k);
+    dbg("reading #"+(k+1)+" "+it.name);
     try{
-      var info=await readPdf(it.file);
+      var info=await readPdf(it.file);dbg("read ok, pages="+info.pages+", readable="+info.readable);
       it.pages=info.pages;it.hash=info.hash;it.read=info.read;
       if(!info.readable){it.status="noText";drawOne(k);continue;}
-      var j=await classify(it.file,info);
+      var j=await classify(it.file,info);dbg("AI answered #"+(k+1));
       if(j.noText){it.status="noText";}
       else if(j.result){it.result=j.result;it.provider=j.provider;it.status="done";it.edit=newEdit(j.result,it.name);it.dec="pending";}
       else{it.status="err";it.err=j.error||"No answer";}
-    }catch(e){it.status="err";it.err=(e&&e.message)||String(e);}
+    }catch(e){it.status="err";it.err=(e&&e.message)||String(e);dbg("error #"+(k+1)+": "+it.err);}
     drawOne(k);
     if(k<items.length-1&&!stopNow)await wait(GAP_MS);
   }
@@ -319,6 +328,7 @@ async function uploadAll(){
 function pick(files){
   try{
     var list=Array.prototype.slice.call(files||[]).filter(function(f){return /\.pdf$/i.test(f.name)||f.type==="application/pdf";});
+    dbg("pick(): "+list.length+" pdf files");
     if(!list.length){alert("Please choose PDF files.");return;}
     var open=items.filter(function(x){return x.dec==="approved"&&x.up!=="done";}).length;
     if(open&&!confirm(open+" approved file(s) have not been uploaded yet. Replace the list anyway?"))return;
@@ -345,9 +355,12 @@ function render(body){
    +"<div id='lmStatus' style='color:var(--sub);font-size:12.5px;margin:10px 0'></div>"
    +"<div style='display:flex;gap:8px;margin-bottom:10px'><button type='button' class='admchip' id='lmAll' style='flex:1'>Approve all confident</button><button type='button' class='admchip' id='lmStop' style='display:none'>Stop</button></div>"
    +"<div id='lmList'></div>"
-   +"<button type='button' class='btn green' id='lmUp' style='margin:6px 0 20px'>Upload approved (0)</button>";
-  $("lmPick").onclick=function(){if(running||uploading)return;$("lmFile").value="";$("lmFile").click();};
-  $("lmFile").onchange=function(){pick(this.files);};
+   +"<button type='button' class='btn green' id='lmUp' style='margin:6px 0 20px'>Upload approved (0)</button>"
+   +"<div style='font-size:11px;color:var(--sub);border-top:1px solid var(--line);padding-top:8px'><b>Debug log v0.5</b> (send me a screenshot of this)<div id='lmDbg' style='white-space:pre-wrap;word-break:break-word;margin-top:4px'></div></div>";
+  $("lmDbg").textContent=readLog();dbg("render called, items="+items.length);
+  $("lmPick").onclick=function(){if(running||uploading)return;dbg("picker opened");$("lmFile").value="";$("lmFile").click();};
+  $("lmFile").onchange=function(){dbg("change event: "+(this.files?this.files.length:0)+" files");pick(this.files);};
+  $("lmFile").addEventListener("input",function(){dbg("input event: "+(this.files?this.files.length:0));});
   $("lmStop").onclick=function(){stopNow=true;};
   $("lmAll").onclick=approveConfident;
   $("lmUp").onclick=uploadAll;
@@ -359,5 +372,5 @@ function render(body){
   }else bar();
 }
 
-window.EduLibraryManager={render:render,set:setField,decide:decide,hand:hand,retry:retry,version:"0.4"};
+window.EduLibraryManager={render:render,set:setField,decide:decide,hand:hand,retry:retry,version:"0.5"};
 })();
