@@ -1,4 +1,4 @@
-/* Edu Library - AI Library Manager v0.5 (debug log): AI proposes, you approve or reject, approved files upload. */
+/* Edu Library - AI Library Manager v0.6 (add files one by one, debug log): AI proposes, you approve or reject, approved files upload. */
 (function(){
 "use strict";
 var URL_CLASSIFY="https://edu-ai-backend-three.vercel.app/api/book-link?classify=1";
@@ -13,7 +13,7 @@ window.addEventListener("error",function(e){dbg("JS error: "+(e&&e.message));});
 window.addEventListener("unhandledrejection",function(e){dbg("Promise error: "+((e&&e.reason&&e.reason.message)||e.reason));});
 document.addEventListener("visibilitychange",function(){dbg("visibility: "+document.visibilityState);});
 window.addEventListener("pagehide",function(){dbg("pagehide");});
-dbg("script loaded v0.5, saved items="+ST.items.length);
+dbg("script loaded v0.6, saved items="+ST.items.length);
 
 function $(id){return document.getElementById(id);}
 function wait(ms){return new Promise(function(r){setTimeout(r,ms);});}
@@ -330,12 +330,25 @@ function pick(files){
     var list=Array.prototype.slice.call(files||[]).filter(function(f){return /\.pdf$/i.test(f.name)||f.type==="application/pdf";});
     dbg("pick(): "+list.length+" pdf files");
     if(!list.length){alert("Please choose PDF files.");return;}
-    var open=items.filter(function(x){return x.dec==="approved"&&x.up!=="done";}).length;
-    if(open&&!confirm(open+" approved file(s) have not been uploaded yet. Replace the list anyway?"))return;
-    if(list.length>MAX_FILES){alert("Choose at most "+MAX_FILES+" files at a time. Only the first "+MAX_FILES+" will be used.");list=list.slice(0,MAX_FILES);}
-    items=ST.items=list.map(function(f,i){return {i:i,file:f,name:f.name,size:f.size,status:"wait",dups:[],dec:"",up:"",msg:""};});
-    var s=$("lmStatus");if(s)s.textContent=list.length+" file(s) selected. Starting…";
+    /* tidy the list when nothing is busy: drop uploaded and rejected cards */
+    if(!running&&!uploading){
+      var keep=items.filter(function(x){return x.up!=="done"&&x.dec!=="rejected";});
+      items.length=0;
+      keep.forEach(function(x,n){x.i=n;items.push(x);});
+    }
+    var skipped=0,added=0;
+    list.forEach(function(f){
+      var dup=items.some(function(x){return x.name===f.name&&x.size===f.size;});
+      if(dup){skipped++;return;}
+      if(items.length>=MAX_FILES){skipped++;return;}
+      items.push({i:items.length,file:f,name:f.name,size:f.size,status:"wait",dups:[],dec:"",up:"",msg:""});
+      added++;
+    });
+    dbg("added "+added+", skipped "+skipped+", total "+items.length);
+    var s=$("lmStatus");
     fullDraw();
+    if(s&&!added)s.textContent="Nothing new added ("+skipped+" already in the list, or the list is full at "+MAX_FILES+").";
+    else if(s)s.textContent=added+" file(s) added. Starting…";
     setTimeout(function(){
       run().catch(function(e){
         var m=$("lmStatus");if(m)m.textContent="Error: "+((e&&e.message)||e);
@@ -348,7 +361,7 @@ function pick(files){
 function render(body){
   items=ST.items;bookServer=ST.bookServer;
   var so=SERVERS.filter(function(x){return !x.exam;}).map(function(x){return "<option value='"+x.id+"'"+(x.ok?"":" disabled")+(x.id===bookServer?" selected":"")+">"+E(x.name)+(x.ok?"":" (not connected)")+"</option>";}).join("");
-  body.innerHTML="<div class='note' style='margin-top:0'>AI Library — choose PDFs, the AI proposes where each belongs. Nothing uploads until you tap <b>Approve</b> and then <b>Upload approved</b>.</div>"
+  body.innerHTML="<div class='note' style='margin-top:0'>AI Library — choose PDFs, the AI proposes where each belongs. Nothing uploads until you tap <b>Approve</b> and then <b>Upload approved</b>.<br><b>Tip:</b> each time you choose PDFs they are <b>added</b> to the list. Pick one or a few at a time.</div>"
    +"<input id='lmFile' type='file' accept='application/pdf,.pdf' multiple style='display:none'>"
    +"<button type='button' class='btn' id='lmPick'>Choose PDF files</button>"
    +"<div class='field' style='margin:10px 0 0'><label>Save approved books to (exams always go to Server C)</label><select id='lmSrv'>"+so+"</select></div>"
@@ -356,7 +369,7 @@ function render(body){
    +"<div style='display:flex;gap:8px;margin-bottom:10px'><button type='button' class='admchip' id='lmAll' style='flex:1'>Approve all confident</button><button type='button' class='admchip' id='lmStop' style='display:none'>Stop</button></div>"
    +"<div id='lmList'></div>"
    +"<button type='button' class='btn green' id='lmUp' style='margin:6px 0 20px'>Upload approved (0)</button>"
-   +"<div style='font-size:11px;color:var(--sub);border-top:1px solid var(--line);padding-top:8px'><b>Debug log v0.5</b> (send me a screenshot of this)<div id='lmDbg' style='white-space:pre-wrap;word-break:break-word;margin-top:4px'></div></div>";
+   +"<div style='font-size:11px;color:var(--sub);border-top:1px solid var(--line);padding-top:8px'><b>Debug log v0.6</b> (send me a screenshot of this)<div id='lmDbg' style='white-space:pre-wrap;word-break:break-word;margin-top:4px'></div></div>";
   $("lmDbg").textContent=readLog();dbg("render called, items="+items.length);
   $("lmPick").onclick=function(){if(running||uploading)return;dbg("picker opened");$("lmFile").value="";$("lmFile").click();};
   $("lmFile").onchange=function(){dbg("change event: "+(this.files?this.files.length:0)+" files");pick(this.files);};
@@ -372,5 +385,5 @@ function render(body){
   }else bar();
 }
 
-window.EduLibraryManager={render:render,set:setField,decide:decide,hand:hand,retry:retry,version:"0.5"};
+window.EduLibraryManager={render:render,set:setField,decide:decide,hand:hand,retry:retry,version:"0.6"};
 })();
