@@ -1,8 +1,8 @@
-/* Edu Library - AI Library Manager. Step A: READ-ONLY PREVIEW (no uploads). v0.1 */
+/* Edu Library - AI Library Manager. Step A: READ-ONLY PREVIEW (no uploads). v0.2 */
 (function(){
 "use strict";
 var URL_CLASSIFY="https://edu-ai-backend-three.vercel.app/api/book-link?classify=1";
-var GAP_MS=5500,MAX_FILES=30,TAIL=1400,HEAD=5500;
+var GAP_MS=5500,MAX_FILES=30,TAIL=1400,HEAD=5500,MAX_READ=15,ENOUGH=1500;
 var items=[],running=false,stopNow=false,host=null;
 
 function $(id){return document.getElementById(id);}
@@ -15,20 +15,18 @@ async function readPdf(file){
   var buf=await file.arrayBuffer(),hash="";
   try{if(window.crypto&&crypto.subtle)hash=hex(await crypto.subtle.digest("SHA-256",buf));}catch(e){}
   var pdf=await pdfjsLib.getDocument({data:new Uint8Array(buf)}).promise;
-  var n=pdf.numPages,head="",tail="",p,pg,tc;
-  for(p=1;p<=Math.min(3,n);p++){
-    pg=await pdf.getPage(p);tc=await pg.getTextContent();
-    head+="\n[Page "+p+"]\n"+tc.items.map(function(x){return x.str;}).join(" ");
+  var n=pdf.numPages,head="",tail="",p,pg,tc,maxp=Math.min(n,MAX_READ);
+  function pageText(num){return pdf.getPage(num).then(function(g){return g.getTextContent();}).then(function(t){return "\n[Page "+num+"]\n"+t.items.map(function(x){return x.str;}).join(" ");});}
+  for(p=1;p<=maxp;p++){
+    try{head+=await pageText(p);}catch(e){}
+    if(p>=3&&head.replace(/\[Page \d+\]|\s/g,"").length>=ENOUGH)break;
   }
-  if(n>3){
-    pg=await pdf.getPage(n);tc=await pg.getTextContent();
-    tail="\n[Page "+n+"]\n"+tc.items.map(function(x){return x.str;}).join(" ");
-  }
+  if(n>p){try{tail=await pageText(n);}catch(e){}}
   try{pdf.destroy();}catch(e){}
   head=head.replace(/[ \t]+/g," ").trim();tail=tail.replace(/[ \t]+/g," ").trim();
   var excerpt=(head.slice(0,HEAD)+(tail?"\n"+tail.slice(0,TAIL):"")).slice(0,7000);
   var readable=excerpt.replace(/\[Page \d+\]|\s/g,"").length>=80;
-  return {pages:n,hash:hash,excerpt:excerpt,readable:readable};
+  return {pages:n,hash:hash,excerpt:excerpt,readable:readable,read:p>maxp?maxp:p};
 }
 
 async function classify(file,info){
@@ -82,7 +80,7 @@ function card(it){
   }
   var lead=it.status==="done"?st:"<span style='color:"+c+"'>"+st+"</span>";
   return "<div style='border:1px solid var(--line);border-left:5px solid "+c+";border-radius:9px;padding:10px 12px;margin:0 0 10px;font-size:13px;word-break:break-word'>"
-    +"<div style='color:var(--sub);font-size:12px'>#"+(it.i+1)+" · "+E(it.name)+" · "+mb(it.size)+(it.pages?" · "+it.pages+" pages":"")+"</div>"
+    +"<div style='color:var(--sub);font-size:12px'>#"+(it.i+1)+" · "+E(it.name)+" · "+mb(it.size)+(it.pages?" · "+it.pages+" pages"+(it.read?" (read "+it.read+")":""):"")+"</div>"
     +"<div style='margin-top:4px'>"+lead+"</div>"+h+"</div>";
 }
 
@@ -105,7 +103,7 @@ async function run(){
     it.status="work";draw();
     try{
       var info=await readPdf(it.file);
-      it.pages=info.pages;it.hash=info.hash;
+      it.pages=info.pages;it.hash=info.hash;it.read=info.read;
       if(!info.readable){it.status="noText";draw();continue;}
       var j=await classify(it.file,info);
       if(j.noText){it.status="noText";}
@@ -133,16 +131,4 @@ function pick(files){
 function render(body){
   host=body;
   body.innerHTML="<div class='note' style='margin-top:0'>AI Library — <b>preview only</b>. Nothing is uploaded. Choose PDFs and the AI will propose where each one belongs.</div>"
-   +"<input id='lmFile' type='file' accept='application/pdf,.pdf' multiple style='display:none'>"
-   +"<button type='button' class='btn' id='lmPick'>Choose PDF files</button>"
-   +"<div id='lmStatus' style='color:var(--sub);font-size:12.5px;margin:10px 0'></div>"
-   +"<button type='button' class='admchip' id='lmStop' style='display:none;margin-bottom:10px'>Stop</button>"
-   +"<div id='lmList'></div>";
-  $("lmPick").onclick=function(){if(running)return;$("lmFile").value="";$("lmFile").click();};
-  $("lmFile").onchange=function(){pick(this.files);};
-  $("lmStop").onclick=function(){stopNow=true;};
-  if(items.length)draw();
-}
-
-window.EduLibraryManager={render:render,version:"0.1"};
-})();
+   +"<input id='lmFile' type='file' accept='application/pdf,.pdf' multiple s
