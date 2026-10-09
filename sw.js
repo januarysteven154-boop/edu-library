@@ -1,7 +1,8 @@
-/* EDU Library service worker (1.6.0)
+/* EDU Library service worker (1.6.1)
    Goal: the app must open with NO internet.
    - Pages: try the network first (so updates arrive), fall back to the saved copy.
    - Own files (splash, images, PDF reader files): saved the first time they are used.
+   - Admin tool script (library-manager.js): always the newest copy, saved copy only when offline.
    - Libraries and fonts from CDNs: saved the first time they load.
    - Books, accounts, Edu AI and catalog calls are never touched here. */
 const VER = "edu-v160";
@@ -58,6 +59,18 @@ async function savedFirst(req, cacheName) {
   return hit || (await net) || Response.error();
 }
 
+/* Admin tool script: always ask the network for the newest copy; use the saved one only when offline */
+async function freshFirst(req) {
+  const c = await caches.open(SHELL);
+  try {
+    const res = await Promise.race([fetch(req, { cache: "no-cache" }), timeout(6000)]);
+    if (res && res.ok) c.put(req, res.clone()).catch(() => {});
+    return res;
+  } catch (e) {
+    return (await c.match(req)) || Response.error();
+  }
+}
+
 self.addEventListener("fetch", e => {
   const req = e.request;
   if (req.method !== "GET") return;
@@ -68,6 +81,7 @@ self.addEventListener("fetch", e => {
   if (url.origin === self.location.origin) {
     if (url.pathname === "/sw.js") return;
     if (req.mode === "navigate") { e.respondWith(pageRequest(req)); return; }
+    if (url.pathname === "/library-manager.js") { e.respondWith(freshFirst(req)); return; }
     e.respondWith(savedFirst(req, SHELL));
     return;
   }
