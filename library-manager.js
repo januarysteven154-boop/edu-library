@@ -1,4 +1,4 @@
-/* Edu Library - AI Library Manager v0.8: the AI sorts each PDF. 80% sure or more = uploads by itself. Below 80% = waits for your Approve. */
+/* Edu Library - AI Library Manager v0.9: the AI sorts each PDF. 80% sure or more = uploads by itself. Below 80% = waits for your Approve. Stops cleanly when the AI limit is reached. */
 (function(){
 "use strict";
 var URL_CLASSIFY="https://edu-ai-backend-three.vercel.app/api/book-link?classify=1";
@@ -43,12 +43,14 @@ async function readPdf(file){
   var readable=excerpt.replace(/\[Page \d+\]|\s/g,"").length>=80;
   return {pages:n,hash:hash,excerpt:excerpt,readable:readable,read:p>maxp?maxp:p};
 }
+/* limit:true from the server means the AI allowance is used up: do NOT retry, stop the batch */
 async function classify(file,info){
   var tok=await token();
   for(var a=0;a<2;a++){
     var r=await fetch(URL_CLASSIFY,{method:"POST",headers:{"Authorization":"Bearer "+tok,"Content-Type":"application/json"},body:JSON.stringify({filename:file.name,pages:info.pages,excerpt:info.excerpt})});
-    if(r.status===429&&a===0){await wait(20000);continue;}
     var j={};try{j=await r.json();}catch(e){}
+    if(r.status===429&&j&&j.limit){var le=new Error("AI limit reached");le.limit=true;throw le;}
+    if(r.status===429&&a===0){await wait(20000);continue;}
     if(!r.ok)throw new Error(j.error||("Server answered "+r.status));
     return j;
   }
@@ -216,6 +218,7 @@ function fullCard(it){
   if(it.dec==="rejected")c="#777";
   if(it.status==="err"){c="#d9534f";h+="<div style='color:#d9534f;margin-top:4px'>Problem: "+E(it.err)+"</div>";}
   else if(it.status==="wait")h+="<div style='margin-top:4px'>Waiting…</div>";
+  else if(it.status==="paused"){c="#e0a030";h+="<div style='color:#e0a030;margin-top:4px'>Paused — the AI limit was reached. Not checked yet.</div>";}
   else if(it.status==="work")h+="<div style='margin-top:4px'>Reading and asking AI…</div>";
   else if(it.status==="noText"){c="#e0a030";h+="<div style='color:#e0a030;margin-top:4px'>No readable text (maybe a scanned PDF).</div>";}
   else if(it.status==="done"&&p){
@@ -248,7 +251,7 @@ function colorOf(it){
   if(it.up==="done")return "#2FA36B";
   if(it.up==="err"||it.status==="err")return "#d9534f";
   if(it.dec==="rejected")return "#777";
-  if(it.status==="noText")return "#e0a030";
+  if(it.status==="noText"||it.status==="paused")return "#e0a030";
   if(it.status==="done"&&it.result)return (it.dec==="approved"||sure(it))?"#2FA36B":"#e0a030";
   return "#888";
 }
@@ -260,6 +263,7 @@ function miniCard(it){
   if(!e){
     if(it.status==="err")h+="<div style='color:#d9534f;margin-top:3px'>Problem: "+E(it.err)+"</div>";
     else if(it.status==="wait")h+="<div style='margin-top:3px'>Waiting…</div>";
+    else if(it.status==="paused")h+="<div style='color:#e0a030;margin-top:3px'>Paused — the AI limit was reached. Not checked yet.</div>";
     else if(it.status==="work")h+="<div style='margin-top:3px'>Reading and asking AI…</div>";
     else if(it.status==="noText")h+="<div style='color:#e0a030;margin-top:3px'>No readable text (maybe scanned).</div>";
     if(it.status==="err"||it.status==="noText")h+="<div style='display:flex;margin-top:6px'>"+miniBtn("Fill in by hand","EduLibraryManager.hand("+i+")")+"</div>";
@@ -307,6 +311,7 @@ function bar(){
   if(s&&items.length)s.textContent=fin+" of "+items.length+" checked · "+dn+" uploaded · "+need+" need your OK · "+rj+" rejected"+(running?" — checking, keep this screen open":(uploading?" — uploading, keep this screen open":""));
   else if(s)s.textContent="";
   var st=$("lmStop");if(st)st.style.display=(running||uploading)?"":"none";
+  var rs=$("lmResume");if(rs)rs.style.display=(!running&&items.some(function(x){return x.status==="paused";}))?"":"none";
 }
 
 /* ---------- your actions ---------- */
@@ -352,7 +357,7 @@ function setAuto(on){
 async function run(){
   if(running)return;
   running=true;if(!uploading)stopNow=false;bar();
-  var stopped=false;
+  var stopped=false,limitHit=false;
   for(var k=0;k<items.length;k++){
     var it=items[k];
     if(stopNow){stopped=true;break;}
@@ -366,16 +371,35 @@ async function run(){
       if(j.noText){it.status="noText";}
       else if(j.result){it.result=j.result;it.provider=j.provider;it.status="done";it.edit=newEdit(j.result,it.name);it.dec="pending";}
       else{it.status="err";it.err=j.error||"No answer";}
-    }catch(e){it.status="err";it.err=(e&&e.message)||String(e);}
+    }catch(e){
+      if(e&&e.limit){limitHit=true;it.status="paused";break;}
+      it.status="err";it.err=(e&&e.message)||String(e);
+    }
     if(autoCheck(it))kick();
     drawOne(k);
     if(k<items.length-1&&!stopNow)await wait(GAP_MS);
   }
-  var left=items.filter(function(x){return x.status==="wait";}).length;
+  /* AI limit reached: keep every unchecked file as "paused" (not an error) so you can check them later */
+  if(limitHit)items.forEach(function(x){if(x.status==="wait")x.status="paused";});
+  var left=items.filter(function(x){return x.status==="wait"||x.status==="paused";}).length;
   running=false;
   if(!uploading)stopNow=false;
   fullDraw();
-  if(stopped&&left){var m=$("lmStatus");if(m)m.textContent="Stopped. "+left+" file(s) were not checked.";}
+  var m=$("lmStatus");
+  if(m&&limitHit)m.textContent="Stopped: the AI limit was reached. "+left+" file(s) were not checked. Wait a while, then tap Check remaining files.";
+  else if(m&&stopped&&left)m.textContent="Stopped. "+left+" file(s) were not checked.";
+}
+/* continue with the files that were paused by the AI limit */
+function resume(){
+  if(running)return;
+  var n=0;
+  items.forEach(function(x){if(x.status==="paused"){x.status="wait";n++;}});
+  if(!n)return;
+  fullDraw();
+  run().catch(function(e){
+    var m=$("lmStatus");if(m)m.textContent="Error: "+((e&&e.message)||e);
+    running=false;bar();
+  });
 }
 
 /* ---------- uploading (same steps as the normal upload forms) ---------- */
@@ -500,12 +524,13 @@ function render(body){
    +"<label style='display:flex;gap:10px;align-items:center;margin:12px 0 0;font-size:13.5px'><input type='checkbox' id='lmAuto'"+(ST.auto?" checked":"")+" style='width:20px;height:20px;flex:none'> <span>Upload automatically when the AI is "+pct(AUTO_MIN)+" sure or more</span></label>"
    +"<div class='field' style='margin:10px 0 0'><label>Save books to (exams always go to Server C)</label><select id='lmSrv'>"+so+"</select></div>"
    +"<div id='lmStatus' style='color:var(--sub);font-size:12.5px;margin:10px 0'></div>"
-   +"<div style='display:flex;gap:8px;margin-bottom:10px'><button type='button' class='admchip' id='lmAll' style='flex:1'>Approve all confident</button><button type='button' class='admchip' id='lmStop' style='display:none'>Stop</button></div>"
+   +"<div style='display:flex;gap:8px;margin-bottom:10px'><button type='button' class='admchip' id='lmAll' style='flex:1'>Approve all confident</button><button type='button' class='admchip' id='lmStop' style='display:none'>Stop</button><button type='button' class='admchip' id='lmResume' style='display:none'>Check remaining files</button></div>"
    +"<button type='button' class='btn green' id='lmUp' style='margin:0 0 12px'>Upload approved (0)</button>"
    +"<div id='lmList'></div>";
   $("lmPick").onclick=function(){$("lmFile").value="";$("lmFile").click();};
   $("lmFile").onchange=function(){pick(this.files);};
   $("lmStop").onclick=function(){stopNow=true;};
+  $("lmResume").onclick=resume;
   $("lmAll").onclick=approveConfident;
   $("lmUp").onclick=kick;
   $("lmAuto").onchange=function(){setAuto(this.checked);};
@@ -518,5 +543,5 @@ function render(body){
   }else bar();
 }
 
-window.EduLibraryManager={render:render,set:setField,decide:decide,hand:hand,retry:retry,toggle:toggle,version:"0.8"};
+window.EduLibraryManager={render:render,set:setField,decide:decide,hand:hand,retry:retry,toggle:toggle,resume:resume,version:"0.9"};
 })();
