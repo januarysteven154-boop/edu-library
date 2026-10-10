@@ -1029,7 +1029,7 @@ body.admpanel .wrap{padding-bottom:160px}
 .admtop .logout{background:rgba(179,38,30,.85);color:#fff;text-shadow:none}
 .admgrid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:6px}
 .admcard{border:1px solid rgba(255,214,120,.55);border-radius:22px;min-height:150px;color:#fff;font-weight:800;font-size:15px;letter-spacing:.4px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);box-shadow:0 8px 24px rgba(0,0,0,.35),0 0 18px rgba(249,184,31,.3);text-shadow:0 2px 6px rgba(0,0,0,.5)}
-.admcard i{font-style:normal;font-size:46px;line-height:1}.admcard:active{transform:scale(.97)}
+.admcard svg{width:46px;height:46px;stroke-width:1.6}.admcard:active{transform:scale(.97)}
 .admcard.c1{background:linear-gradient(135deg,rgba(76,95,212,.82),rgba(139,92,255,.78))}
 .admcard.c2{background:linear-gradient(135deg,rgba(31,138,84,.85),rgba(22,160,92,.75))}
 .admcard.c3{background:linear-gradient(135deg,rgba(224,70,50,.85),rgba(249,140,40,.78))}
@@ -1039,7 +1039,7 @@ body.admpanel #tabBody.glass .card{background:rgba(255,255,255,.08);color:#fdf5e
 #admNav{position:fixed;left:0;right:0;bottom:0;z-index:60;display:none;padding:6px 6px calc(6px + env(safe-area-inset-bottom,0px));background:rgba(40,12,38,.86);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-top:1px solid rgba(249,184,31,.45);border-radius:22px 22px 0 0}
 body.admpanel #admNav{display:flex}
 #admNav button{flex:1;min-width:0;background:none;border:0;color:#e9cfa0;font-size:9.5px;font-weight:700;letter-spacing:.3px;padding:5px 1px;display:flex;flex-direction:column;align-items:center;gap:3px;transition:color .2s,transform .2s}
-#admNav button i{font-style:normal;font-size:22px;line-height:1}
+#admNav button svg{width:24px;height:24px}
 #admNav button.on{color:#f9b81f;text-shadow:0 0 10px rgba(249,184,31,.8);transform:translateY(-2px)}
 #admAi{position:fixed;right:12px;bottom:calc(84px + env(safe-area-inset-bottom,0px));z-index:61;display:none;flex-direction:column;align-items:center;gap:3px;background:none;border:0;padding:0}
 body.admpanel #admAi{display:flex}
@@ -1083,7 +1083,7 @@ const TIERS=[
 function clsOf(b){return String(b.class||"").split(TIER_SEP)[0];}
 const IC_EYE='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z"/><circle cx="12" cy="12" r="3"/></svg>';
 const IC_DL='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11"/><path d="m7 11 5 5 5-5"/><path d="M5 20h14"/></svg>';
-/* Settings slot: two quick swipes to the right turn Settings into Admin, and again back to Settings. */
+/* Settings slot: three quick swipes to the right turn Settings into Admin, and again back to Settings. */
 const NAV_MODES={
   settings:{href:"#/settings",r:"settings",label:"Settings",svg:'<svg class="nic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 .33-1.82V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51h0a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l.06.06a1.65 1.65 0 0 0 .33 1.82v0a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>'},
   admin:{href:"#/admin",r:"admin",label:"Admin",svg:'<svg class="nic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="3.8"/><path d="M4.5 20c.7-3.700 3.900-5.800 7.500-5.800s6.800 2.100 7.500 5.800"/></svg>'}
@@ -1102,18 +1102,19 @@ function setNavMode(m){
   const a=document.getElementById("navX");if(!a)return;
   let saved="settings";try{saved=sessionStorage.getItem("edu_navmode")||"settings";}catch(e){}
   setNavMode(saved);
-  let sx=0,sy=0,st=0,down=false,last=0,block=0;
+  let sx=0,sy=0,st=0,down=false,last=0,block=0,cnt=0;
   a.addEventListener("pointerdown",e=>{down=true;sx=e.clientX;sy=e.clientY;st=Date.now();try{a.setPointerCapture(e.pointerId);}catch(_){}});
   a.addEventListener("pointerup",e=>{
     if(!down)return;down=false;
     const dx=e.clientX-sx,dy=e.clientY-sy,now=Date.now();
     if(dx>=40&&Math.abs(dy)<Math.max(30,dx*0.6)&&now-st<700){
       block=now+500;
-      if(now-last<1600){
-        last=0;
+      cnt=(last&&now-last<1600)?cnt+1:1;last=now;
+      if(cnt>=3){
+        cnt=0;last=0;
         setNavMode(a.dataset.mode==="admin"?"settings":"admin");
         try{if(navigator.vibrate)navigator.vibrate(25);}catch(_){}
-      }else last=now;
+      }
     }
   });
   a.addEventListener("pointercancel",()=>{down=false;});
@@ -1910,6 +1911,12 @@ function renderAdmin(app){
         <div class="msg" id="loginMsg"></div>
       </form>
     </div></div>`;
+  {const f0=document.getElementById("loginForm");let t0=0,tried="";
+    const auto=()=>{clearTimeout(t0);const em=f0.user.value.trim(),pw=f0.pass.value;
+      if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(em)||pw.length<6)return;
+      const k=em+"\n"+pw;if(k===tried)return;
+      t0=setTimeout(()=>{if(f0.querySelector("button").disabled)return;tried=k;f0.requestSubmit();},1500);};
+    ["input","change"].forEach(ev=>{f0.user.addEventListener(ev,auto);f0.pass.addEventListener(ev,auto);});}
   document.getElementById("loginForm").onsubmit = async e => {
     e.preventDefault();
     const f = e.target, msg = document.getElementById("loginMsg"), btn = f.querySelector("button");
@@ -1938,6 +1945,8 @@ function loadLibraryManager(){
   return new Promise(function(ok,bad){var s=document.createElement("script");s.src="https://edu-library.januarysteven154.workers.dev/library-manager.js?v="+Date.now();s.onload=ok;s.onerror=function(){bad(new Error("Could not load library-manager.js"));};document.head.appendChild(s);});
 }
 let adminTab = "home";
+const ADMI={exit:'<path d="M9 4H5.5A1.5 1.5 0 0 0 4 5.5v13A1.5 1.5 0 0 0 5.5 20H9"/><path d="m15 8 4 4-4 4"/><path d="M19 12H9"/>',dashboard:'<path d="M4 20h16"/><rect x="5.5" y="11" width="3" height="9" rx=".6"/><rect x="10.5" y="5.5" width="3" height="14.5" rx=".6"/><rect x="15.5" y="13" width="3" height="7" rx=".6"/>',upload:'<path d="M12 16V4.5"/><path d="m7.5 9 4.5-4.5L16.5 9"/><path d="M5 20h14"/>',book:'<path d="M12 6.5C10 5 7 4.5 3.5 5v13c3.5-.5 6.5 0 8.5 1.5 2-1.5 5-2 8.5-1.5V5c-3.5-.5-6.5 0-8.5 1.5z"/><path d="M12 6.5v13"/>',exams:'<path d="M6.5 3h8l4 4v14h-12z"/><path d="M14.5 3v4h4"/><path d="M9.5 12h6M9.5 16h6"/>',server:'<circle cx="12" cy="12" r="9"/><path d="M3 12h18"/><path d="M12 3c3 3.2 3 14.8 0 18"/><path d="M12 3c-3 3.2-3 14.8 0 18"/>'};
+function admIc(k){return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+ADMI[k]+'</svg>';}
 function admGo(t){adminTab=t;renderAdminPanel(document.getElementById("app"));window.scrollTo(0,0);}
 function admExit(){let h=window.ADM_BACK;try{h=h||sessionStorage.getItem("edu_admback");}catch(e){}location.hash=h||"#/library";}
 function renderAdminPanel(app){
@@ -1952,7 +1961,7 @@ function renderAdminPanel(app){
     <div id="tabBody"></div>`;
   document.querySelectorAll("#admNav,#admAi").forEach(n=>n.remove());
   const nv=document.createElement("nav");nv.id="admNav";
-  nv.innerHTML=[["exit","🚪","EXIT"],["dashboard","📊","DASHBOARD"],["upload","📤","UPLOAD PDF"],["exams","📝","UPLOAD EXAMS"],["server","🌐","SERVER"]].map(x=>`<button data-t="${x[0]}" class="${adminTab===x[0]?'on':''}"><i>${x[1]}</i>${x[2]}</button>`).join("");
+  nv.innerHTML=[["exit","EXIT"],["dashboard","DASHBOARD"],["upload","UPLOAD PDF"],["exams","UPLOAD EXAMS"],["server","SERVER"]].map(x=>`<button data-t="${x[0]}" class="${adminTab===x[0]?'on':''}">${admIc(x[0])}${x[1]}</button>`).join("");
   nv.onclick=e=>{const b=e.target.closest("button");if(!b)return;if(b.dataset.t==="exit")admExit();else admGo(b.dataset.t);};
   document.body.appendChild(nv);
   const fb=document.createElement("button");fb.id="admAi";fb.type="button";fb.setAttribute("aria-label","Edu Library AI");
@@ -1965,10 +1974,10 @@ function renderAdminPanel(app){
 
   if(adminTab==="home"){
     body.innerHTML=`<div class="admgrid">
-      <button class="admcard c1" onclick="admGo('dashboard')"><i>📊</i>DASHBOARD</button>
-      <button class="admcard c2" onclick="admGo('upload')"><i>📚</i>UPLOAD PDF</button>
-      <button class="admcard c3" onclick="admGo('exams')"><i>📝</i>UPLOAD EXAMS</button>
-      <button class="admcard c4" onclick="admGo('server')"><i>🌐</i>SERVER</button></div>`;
+      <button class="admcard c1" onclick="admGo('dashboard')">${admIc('dashboard')}DASHBOARD</button>
+      <button class="admcard c2" onclick="admGo('upload')">${admIc('book')}UPLOAD PDF</button>
+      <button class="admcard c3" onclick="admGo('exams')">${admIc('exams')}UPLOAD EXAMS</button>
+      <button class="admcard c4" onclick="admGo('server')">${admIc('server')}SERVER</button></div>`;
   } else if(adminTab==="dashboard"){
     body.innerHTML = `<div class="statgrid">
         <div class="stat" style="background:linear-gradient(135deg,#1F8A54,#16A05C)"><b id="admS1">0</b><span>Books uploaded</span></div>
