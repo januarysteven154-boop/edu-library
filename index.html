@@ -1083,7 +1083,7 @@ const TIERS=[
 function clsOf(b){return String(b.class||"").split(TIER_SEP)[0];}
 const IC_EYE='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z"/><circle cx="12" cy="12" r="3"/></svg>';
 const IC_DL='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11"/><path d="m7 11 5 5 5-5"/><path d="M5 20h14"/></svg>';
-/* Settings slot: three quick swipes to the right turn Settings into Admin, and again back to Settings. */
+/* Settings slot: hold the Settings icon for 1.5 seconds (or three quick swipes to the right) to turn Settings into Admin, and again back to Settings. */
 const NAV_MODES={
   settings:{href:"#/settings",r:"settings",label:"Settings",svg:'<svg class="nic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 .33-1.82V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51h0a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l.06.06a1.65 1.65 0 0 0 .33 1.82v0a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>'},
   admin:{href:"#/admin",r:"admin",label:"Admin",svg:'<svg class="nic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="3.8"/><path d="M4.5 20c.7-3.700 3.900-5.800 7.500-5.800s6.800 2.100 7.500 5.800"/></svg>'}
@@ -1102,10 +1102,14 @@ function setNavMode(m){
   const a=document.getElementById("navX");if(!a)return;
   let saved="settings";try{saved=sessionStorage.getItem("edu_navmode")||"settings";}catch(e){}
   setNavMode(saved);
-  let sx=0,sy=0,st=0,down=false,last=0,block=0,cnt=0;
-  a.addEventListener("pointerdown",e=>{down=true;sx=e.clientX;sy=e.clientY;st=Date.now();try{a.setPointerCapture(e.pointerId);}catch(_){}});
+  let sx=0,sy=0,st=0,down=false,last=0,block=0,cnt=0,lp=0;
+  a.addEventListener("pointerdown",e=>{down=true;sx=e.clientX;sy=e.clientY;st=Date.now();try{a.setPointerCapture(e.pointerId);}catch(_){}
+    clearTimeout(lp);lp=setTimeout(()=>{if(!down)return;down=false;block=Date.now()+900;cnt=0;last=0;setNavMode(a.dataset.mode==="admin"?"settings":"admin");try{if(navigator.vibrate)navigator.vibrate(40);}catch(_){}},1500);});
+  a.addEventListener("pointermove",e=>{if(down&&(Math.abs(e.clientX-sx)>14||Math.abs(e.clientY-sy)>14))clearTimeout(lp);});
+  a.addEventListener("contextmenu",e=>e.preventDefault());
+  a.style.webkitTouchCallout="none";a.style.userSelect="none";
   a.addEventListener("pointerup",e=>{
-    if(!down)return;down=false;
+    clearTimeout(lp);if(!down)return;down=false;
     const dx=e.clientX-sx,dy=e.clientY-sy,now=Date.now();
     if(dx>=40&&Math.abs(dy)<Math.max(30,dx*0.6)&&now-st<700){
       block=now+500;
@@ -1117,7 +1121,7 @@ function setNavMode(m){
       }
     }
   });
-  a.addEventListener("pointercancel",()=>{down=false;});
+  a.addEventListener("pointercancel",()=>{clearTimeout(lp);down=false;});
   a.addEventListener("click",e=>{if(Date.now()<block){e.preventDefault();e.stopPropagation();}},true);
 })();
 function isExam(b){return tierOf(b)==="Exam";}
