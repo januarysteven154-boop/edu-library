@@ -1,4 +1,4 @@
-/* Edu Library - AI Examination Room, Admin side: Exam Builder v1.3. Builds checked multiple-choice questions (two AIs must agree) from the text of an exam paper (PDF with text, SCANNED PDF read by AI, Word .docx, or .txt) and saves them to Supabase table exam_questions. Includes an accuracy test with maths questions whose answers are known. */
+/* Edu Library - AI Examination Room, Admin side: Exam Builder v1.4 (fills Class, Subject, Title and Year from the file by itself). Builds checked multiple-choice questions (two AIs must agree) from the text of an exam paper (PDF with text, SCANNED PDF read by AI, Word .docx, or .txt) and saves them to Supabase table exam_questions. Includes an accuracy test with maths questions whose answers are known. */
 (function(){
 "use strict";
 var URL_BUILD="https://edu-ai-backend-three.vercel.app/api/book-link?exambuild=1";
@@ -209,7 +209,7 @@ async function buildPaper(){
   if(ST.busy)return;
   var f=$("ebFile").files[0],c=ctxNow();
   if(!f){say("ebSt","Choose a file first (PDF, Word .docx or .txt).");return;}
-  if(!c.cls||!c.subject||!c.title){say("ebSt","Fill in class, subject and title first.");return;}
+  if(!c.cls||!c.subject||!c.title){var ms=[];if(!c.cls)ms.push("Class");if(!c.subject)ms.push("Subject");if(!c.title)ms.push("Paper title");say("ebSt","Please fill in: "+ms.join(", ")+".");return;}
   ST.busy=true;ST.built=[];ST.meta=null;drawResults();
   var found=0,limitHit=false;
   try{
@@ -278,6 +278,96 @@ async function save(){
   ST.busy=false;
 }
 
+/* ---------- auto-fill the boxes from the file name and first page (plain code, no AI) ---------- */
+var AUTO={};
+var SUBJECTS=[
+  ["Additional Mathematics",/additional\s*(maths?|mathematics)/],
+  ["Mathematics",/mathematics|\bmaths?\b/],
+  ["Physical Science",/physical\s*science/],
+  ["Biology",/biology/],["Chemistry",/chemistry/],["Physics",/physics/],
+  ["Agriculture",/agricultur/],["Geography",/geography/],["History",/history/],
+  ["Bible Knowledge",/bible\s*knowledge|\bbk\b/],["Social Studies",/social\s*studies/],
+  ["Life Skills",/life\s*skills/],["Computer Studies",/computer\s*(studies|science)/],
+  ["Business Studies",/business\s*studies/],["Accounting",/accounting/],["Economics",/economics/],
+  ["Home Economics",/home\s*economics/],["Chichewa",/chichewa/],["English",/english/],
+  ["Science",/\bscience\b/]
+];
+function guessClass(t){
+  var m;
+  if((m=t.match(/form\s*([1-4])\b/)))return "Form "+m[1];
+  if((m=t.match(/(?:standard|std)\.?\s*([1-8])\b/)))return "Standard "+m[1];
+  if(/\bmsce\b/.test(t))return "Form 4";
+  if(/\bjce\b/.test(t))return "Form 2";
+  if(/\bpsl?ce\b/.test(t))return "Standard 8";
+  return "";
+}
+function guessSubject(t){
+  for(var i=0;i<SUBJECTS.length;i++)if(SUBJECTS[i][1].test(t))return SUBJECTS[i][0];
+  return "";
+}
+function guessYear(t){var m=t.match(/\b(19[89]\d|20[0-3]\d)\b/);return m?m[1]:"";}
+function guessTitle(name){
+  var t=String(name||"").replace(/\.[A-Za-z0-9]{2,5}$/,"").replace(/[_]+/g," ").replace(/\s*\(\d+\)\s*$/,"").replace(/\s+/g," ").trim();
+  return t.slice(0,80);
+}
+function guessFrom(name,text){
+  var n=String(name||"").toLowerCase().replace(/[_\-.]+/g," "),x=String(text||"").toLowerCase().replace(/\s+/g," ");
+  return {
+    cls:guessClass(n)||guessClass(x),
+    subject:guessSubject(n)||guessSubject(x),
+    year:guessYear(n)||guessYear(x),
+    title:guessTitle(name)
+  };
+}
+async function peekText(file){
+  try{
+    var n=(file.name||"").toLowerCase();
+    if(/\.(docx|txt)$/.test(n)){var r=await readFileText(file);return String(r.pages[0]||"").slice(0,1500);}
+    if(/\.pdf$/.test(n)){
+      var buf=await file.arrayBuffer();
+      var pdf=await pdfjsLib.getDocument({data:new Uint8Array(buf)}).promise;
+      var g=await pdf.getPage(1),t=await g.getTextContent();
+      var out=t.items.map(function(i){return i.str;}).join(" ").slice(0,1500);
+      try{pdf.destroy();}catch(e){}
+      return out;
+    }
+  }catch(e){}
+  return "";
+}
+function setClassGuess(name){
+  var keys=Object.keys(LEVELS);
+  for(var i=0;i<keys.length;i++){
+    var cl=(LEVELS[keys[i]]&&LEVELS[keys[i]].classes)||[];
+    for(var j=0;j<cl.length;j++){
+      if(norm(cl[j])===norm(name)){$("ebLevel").value=keys[i];fillClasses();$("ebClass").value=cl[j];return true;}
+    }
+  }
+  return false;
+}
+function setAuto(id,key,val){
+  var el=$(id);if(!el)return;
+  if(val){el.value=val;AUTO[key]=true;}
+  else if(AUTO[key]){el.value="";AUTO[key]=false;}
+}
+async function onFile(){
+  var f=$("ebFile").files[0];if(!f)return;
+  say("ebSt","Reading the file to fill in the boxes…");
+  var g=guessFrom(f.name,""),need=!g.cls||!g.subject||!g.year;
+  if(need){var g2=guessFrom(f.name,await peekText(f));g.cls=g2.cls;g.subject=g2.subject;g.year=g2.year;}
+  var gotClass=g.cls?setClassGuess(g.cls):false;
+  setAuto("ebSubj","subj",g.subject);
+  setAuto("ebYear","year",g.year);
+  setAuto("ebTitle","title",g.title);
+  var got=[];
+  if(gotClass)got.push($("ebClass").value);
+  if(g.subject)got.push(g.subject);
+  if(g.year)got.push(g.year);
+  var miss=[];
+  if(!gotClass)miss.push("Class");
+  if(!g.subject)miss.push("Subject");
+  say("ebSt","Filled in from the file: "+(got.length?got.join(", "):"nothing found")+". These are guesses, please check the boxes"+(miss.length?" and fill in: "+miss.join(", "):"")+".");
+}
+
 /* ---------- screen ---------- */
 function render(body){
   var lv=Object.keys(LEVELS).map(function(k){return "<option value=\""+E(k)+"\">"+E(LEVELS[k].label||k)+"</option>";}).join("");
@@ -296,10 +386,14 @@ function render(body){
    +"<div id='ebSt' style='color:var(--sub);font-size:12.5px;margin:10px 0'></div><div id='ebList'></div>";
   fillClasses();
   $("ebLevel").onchange=fillClasses;
+  $("ebFile").onchange=onFile;
+  $("ebSubj").oninput=function(){AUTO.subj=false;};
+  $("ebTitle").oninput=function(){AUTO.title=false;};
+  $("ebYear").oninput=function(){AUTO.year=false;};
   $("ebAcc").onclick=accuracyTest;
   $("ebGo").onclick=buildPaper;
   drawResults();
 }
 
-window.EduExamBuilder={render:render,version:"1.3",_readFileText:readFileText};
+window.EduExamBuilder={render:render,version:"1.4",_readFileText:readFileText,_guess:guessFrom};
 })();
