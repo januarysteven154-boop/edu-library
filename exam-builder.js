@@ -61,4 +61,128 @@ function chunkPages(pages){
 function rnd(a,b){return a+Math.floor(Math.random()*(b-a+1));}
 function shuf(a){a=a.slice();for(var i=a.length-1;i>0;i--){var j=rnd(0,i),t=a[i];a[i]=a[j];a[j]=t;}return a;}
 function makeSet(){
-  va
+  var qs=[],i;
+  function add(stem,ans){
+    var wrong=shuf([ans+1,ans-1,ans+2,ans-2,ans+5,ans-5,ans*2,ans+10,ans-10]).filter(function(v,k,arr){return v>0&&v!==ans&&arr.indexOf(v)===k;}).slice(0,3);
+    qs.push({stem:stem,ans:ans,opts:shuf([ans].concat(wrong))});
+  }
+  for(i=0;i<3;i++){var P=[10,15,20,25,30,40,50,60][rnd(0,7)],N=rnd(2,40)*20;add("What is "+P+"% of "+N+"?",P*N/100);}
+  for(i=0;i<3;i++){var a=rnd(2,9),x=rnd(2,12),b=rnd(1,20);add("Solve for x: "+a+"x + "+b+" = "+(a*x+b),x);}
+  for(i=0;i<3;i++){var L=rnd(5,30),W=rnd(3,20);add("A rectangle has length "+L+" cm and width "+W+" cm. What is its area in square centimetres?",L*W);}
+  for(i=0;i<3;i++){var m=rnd(10,60),d=[rnd(-6,6),rnd(-6,6),rnd(-6,6)];d.push(-(d[0]+d[1]+d[2]));var nums=[m+d[0],m+d[1],m+d[2],m+d[3]].concat([m]);add("Find the mean of these numbers: "+nums.join(", ")+".",m);}
+  return shuf(qs);
+}
+async function accuracyTest(){
+  if(ST.busy)return;ST.busy=true;
+  var out=$("ebAccOut");if(out)out.innerHTML="";
+  try{
+    var set=makeSet(),text="MALAWI SCHOOL PRACTICE PAPER - MATHEMATICS\nAnswer all questions.\n";
+    set.forEach(function(q,i){text+="\n"+(i+1)+". "+q.stem+"\n"+q.opts.map(function(o,k){return "ABCD"[k]+". "+o;}).join("\n")+"\n";});
+    say("ebAccSt","Running the test (about 20 seconds)…");
+    var j=await build(text,{level:"Secondary",cls:"Form 4",subject:"Mathematics"});
+    var kept=j.questions||[],right=0,wrong=0,unk=0;
+    kept.forEach(function(k){
+      var qn=norm(k.q),hit=set.filter(function(s){return qn.indexOf(norm(s.stem))>=0;})[0];
+      if(!hit){unk++;return;}
+      if(norm(k.options[k.correct])===norm(hit.ans))right++;else wrong++;
+    });
+    var asked=set.length,dropped=asked-kept.length;
+    say("ebAccSt","Test finished.");
+    if(out)out.innerHTML="<div style='font-size:13.5px;line-height:1.6'>Questions asked: <b>"+asked+"</b><br>Found by the AI: <b>"+(j.found||0)+"</b><br>Kept (both AIs agreed): <b>"+kept.length+"</b><br>Kept and <b style='color:#2FA36B'>correct</b>: <b>"+right+"</b><br>Kept but <b style='color:#d9534f'>wrong</b>: <b>"+wrong+"</b>"+(unk?"<br>Could not match: "+unk:"")+"<br>Dropped (AIs disagreed or unsure): <b>"+dropped+"</b></div><div class='note'>Wrong kept answers are the dangerous ones. Aim for 0 here. This test is easy maths, so real papers will be a little less accurate. Run it 2 or 3 times for a fair picture.</div>";
+  }catch(e){say("ebAccSt","Test stopped: "+((e&&e.message)||e));}
+  ST.busy=false;
+}
+
+/* ---------- build from a paper ---------- */
+function ctxNow(){return {level:$("ebLevel").value,cls:$("ebClass").value,subject:clean($("ebSubj").value),title:clean($("ebTitle").value),year:clean($("ebYear").value)};}
+function fillClasses(){
+  var lv=$("ebLevel").value,cl=(LEVELS[lv]&&LEVELS[lv].classes)||[];
+  $("ebClass").innerHTML="<option value=''>— choose —</option>"+cl.map(function(c){return "<option value=\""+E(c)+"\">"+E(c)+"</option>";}).join("");
+}
+async function buildPaper(){
+  if(ST.busy)return;
+  var f=$("ebFile").files[0],c=ctxNow();
+  if(!f){say("ebSt","Choose a PDF first.");return;}
+  if(!c.cls||!c.subject||!c.title){say("ebSt","Fill in class, subject and title first.");return;}
+  ST.busy=true;ST.built=[];ST.meta=null;drawResults();
+  var found=0,limitHit=false;
+  try{
+    say("ebSt","Reading the PDF…");
+    var rd=await readPages(f),chunks=chunkPages(rd.pages);
+    if(!chunks.length){say("ebSt","No readable text (maybe a scanned PDF). Scanned papers are not supported yet.");ST.busy=false;return;}
+    var seen={};
+    for(var k=0;k<chunks.length;k++){
+      say("ebSt","Part "+(k+1)+" of "+chunks.length+" (pages read: "+rd.pages.length+" of "+rd.total+")… kept so far: "+ST.built.length);
+      try{
+        var j=await build(chunks[k],c);
+        found+=j.found||0;
+        (j.questions||[]).forEach(function(q){var key=norm(q.q);if(seen[key])return;seen[key]=1;ST.built.push(q);});
+      }catch(e){
+        if(e&&e.limit){limitHit=true;break;}
+        throw e;
+      }
+      drawResults();
+      if(k<chunks.length-1)await wait(GAP_MS);
+    }
+    ST.meta=c;
+    say("ebSt",(limitHit?"Stopped: the AI limit was reached. ":"Done. ")+"Questions found: "+found+" · kept (both AIs agreed): "+ST.built.length+" · dropped: "+(found-ST.built.length)+".");
+  }catch(e){say("ebSt","Stopped: "+((e&&e.message)||e));}
+  ST.busy=false;drawResults();
+}
+function drawResults(){
+  var box=$("ebList");if(!box)return;
+  var q=ST.built,h="";
+  if(q.length){
+    h+="<button type='button' class='btn green' id='ebSave' style='margin:0 0 10px'>Save "+q.length+" questions</button>";
+    q.forEach(function(it,i){
+      h+="<div style='border:1px solid var(--line);border-radius:9px;padding:8px 12px;margin:0 0 8px;font-size:13px;word-break:break-word'><b>"+(i+1)+". "+E(it.q)+"</b>"
+        +it.options.map(function(o,k){return "<div style='"+(k===it.correct?"color:#2FA36B;font-weight:700":"color:var(--sub)")+"'>"+"ABCD"[k]+". "+E(o)+(k===it.correct?" ✓":"")+"</div>";}).join("")+"</div>";
+    });
+  }
+  box.innerHTML=h;
+  var b=$("ebSave");if(b)b.onclick=save;
+}
+async function save(){
+  if(ST.busy||!ST.built.length||!ST.meta)return;
+  ST.busy=true;var m=ST.meta;
+  try{
+    var pk=[m.level,m.cls,m.subject,m.title,m.year].join("|").toLowerCase().replace(/\s+/g," ").slice(0,200);
+    var ex=await sb.from("exam_questions").select("q_text").eq("paper_key",pk).limit(1000);
+    if(ex.error)throw ex.error;
+    var have={};(ex.data||[]).forEach(function(r){have[norm(r.q_text)]=1;});
+    var rows=ST.built.filter(function(q){return !have[norm(q.q)];}).map(function(q){
+      return {paper_key:pk,level:m.level,class:m.cls,subject:m.subject,source_title:m.title,source_year:m.year,q_text:q.q,options:q.options,correct_index:q.correct,verified_by:q.verifiedBy||"mistral+gemini"};
+    });
+    var skipped=ST.built.length-rows.length;
+    if(rows.length){var r=await sb.from("exam_questions").insert(rows);if(r.error)throw r.error;}
+    say("ebSt","Saved "+rows.length+" question(s)."+(skipped?" "+skipped+" already saved before, skipped.":""));
+    ST.built=[];drawResults();
+  }catch(e){say("ebSt","Could not save: "+((e&&e.message)||e));}
+  ST.busy=false;
+}
+
+/* ---------- screen ---------- */
+function render(body){
+  var lv=Object.keys(LEVELS).map(function(k){return "<option value=\""+E(k)+"\">"+E(LEVELS[k].label||k)+"</option>";}).join("");
+  body.innerHTML="<div class='note' style='margin-top:0'><b>AI Examination Room — Exam Builder.</b> Two different AIs answer each question separately. A question is kept only if both agree. Nothing is saved until you tap Save.</div>"
+   +"<div style='font-weight:700;margin:10px 0 6px'>1. Accuracy test</div>"
+   +"<button type='button' class='btn' id='ebAcc'>Run accuracy test (12 maths questions)</button>"
+   +"<div id='ebAccSt' style='color:var(--sub);font-size:12.5px;margin:8px 0'></div><div id='ebAccOut'></div>"
+   +"<div style='font-weight:700;margin:16px 0 6px'>2. Build from a paper</div>"
+   +"<input id='ebFile' type='file' accept='application/pdf,.pdf' style='margin:0 0 10px;max-width:100%'>"
+   +"<div class='row2'><div class='field' style='margin:0 0 8px'><label>Level</label><select id='ebLevel'>"+lv+"</select></div>"
+   +"<div class='field' style='margin:0 0 8px'><label>Class</label><select id='ebClass'></select></div></div>"
+   +"<div class='field' style='margin:0 0 8px'><label>Subject</label><input id='ebSubj' placeholder='e.g. Biology'></div>"
+   +"<div class='row2'><div class='field' style='margin:0 0 8px'><label>Paper title</label><input id='ebTitle' placeholder='e.g. Biology Paper 1'></div>"
+   +"<div class='field' style='margin:0 0 8px'><label>Year (optional)</label><input id='ebYear' placeholder='e.g. 2019'></div></div>"
+   +"<button type='button' class='btn' id='ebGo'>Read paper and build questions</button>"
+   +"<div id='ebSt' style='color:var(--sub);font-size:12.5px;margin:10px 0'></div><div id='ebList'></div>";
+  fillClasses();
+  $("ebLevel").onchange=fillClasses;
+  $("ebAcc").onclick=accuracyTest;
+  $("ebGo").onclick=buildPaper;
+  drawResults();
+}
+
+window.EduExamBuilder={render:render,version:"1.0"};
+})();
