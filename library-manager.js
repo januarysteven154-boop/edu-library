@@ -15,6 +15,8 @@ try{localStorage.removeItem("lmdbg");}catch(e){}
 function $(id){return document.getElementById(id);}
 function wait(ms){return new Promise(function(r){setTimeout(r,ms);});}
 function E(s){return typeof esc==="function"?esc(s):String(s==null?"":s).replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c];});}
+function ic(p){return "<svg viewBox='0 0 24 24' width='14' height='14' fill='none' stroke='currentColor' stroke-width='2.3' stroke-linecap='round' stroke-linejoin='round' style='vertical-align:-2px;flex:none'>"+p+"</svg>";}
+var IC={ok:ic("<path d='m5 12.5 4.5 4.5L19 7'/>"),no:ic("<path d='M6 6l12 12M18 6 6 18'/>"),warn:ic("<path d='M12 3 2.5 20h19z'/><path d='M12 10v4M12 17v.5'/>"),edit:ic("<path d='M4 20h4L19 9l-4-4L4 16z'/>"),exam:ic("<path d='M6 3h9l4 4v14H6z'/><path d='M14 3v5h5'/><path d='M9 13h7M9 17h5'/>")};
 function hex(buf){return Array.prototype.map.call(new Uint8Array(buf),function(x){return ("0"+x.toString(16)).slice(-2);}).join("");}
 function mb(n){return (n/1048576).toFixed(1)+" MB";}
 function clean(s){return String(s||"").replace(/[\\\/]+/g,"-").replace(/~+/g,"-").replace(/\s+/g," ").trim();}
@@ -284,23 +286,23 @@ function fullCard(it){
   else if(it.status==="done"&&p){
     c=it.dec==="rejected"?"#777":(sure(it)?"#2FA36B":"#e0a030");
     h+="<div style='margin-top:4px'>AI confidence: <b>"+pct(p.confidence)+"</b> · "+E(it.provider||"")+"</div>";
-    (p.flags||[]).forEach(function(f){h+="<div style='color:#e0a030;margin-top:3px'>⚠ "+E(f)+"</div>";});
+    (p.flags||[]).forEach(function(f){h+="<div style='color:#e0a030;margin-top:3px'>"+IC.warn+" "+E(f)+"</div>";});
     if(p.reasons&&p.reasons.length)h+="<div style='color:var(--sub);margin-top:4px;font-size:12px'>"+E(p.reasons.slice(0,2).join(" · "))+"</div>";
   }
   if(!it.edit&&(it.status==="noText"||it.status==="err"))h+="<div style='display:flex;margin-top:8px'>"+btn("Fill in by hand","EduLibraryManager.hand("+i+")")+"</div>";
   if(it.edit){
     h+=editH(it);
-    if(it.up!=="done")it.dups.forEach(function(f){h+="<div style='color:#d9534f;margin-bottom:4px'>⛔ "+E(f)+"</div>";});
+    if(it.up!=="done")it.dups.forEach(function(f){h+="<div style='color:#d9534f;margin-bottom:4px'>"+IC.no+" "+E(f)+"</div>";});
     if(it.msg)h+="<div style='color:#d9534f;margin-bottom:6px'>"+E(it.msg)+"</div>";
-    if(it.up==="done"){c="#2FA36B";h+="<div style='color:#2FA36B;font-weight:700'>✓ Uploaded"+(it.auto?" automatically":"")+"</div>";}
+    if(it.up==="done"){c="#2FA36B";h+="<div style='color:#2FA36B;font-weight:700'>"+IC.ok+" Uploaded"+(it.auto?" automatically":"")+"</div>";}
     else if(it.up==="uploading")h+="<div style='color:var(--sub)'>Uploading…</div>";
     else if(it.up==="err")h+="<div style='color:#d9534f;margin-bottom:6px'>Upload failed: "+E(it.upErr)+"</div><div style='display:flex'>"+btn("Try again","EduLibraryManager.retry("+i+")")+"</div>";
-    else if(it.dec==="approved")h+="<div style='display:flex;gap:8px;align-items:center'><b style='color:#2FA36B;flex:1'>✓ "+(it.auto?"Auto-approved":"Approved")+" — uploading soon</b>"+btn("Undo","EduLibraryManager.decide("+i+",'pending')")+"</div>";
-    else if(it.dec==="rejected")h+="<div style='display:flex;gap:8px;align-items:center'><b style='color:#d9534f;flex:1'>✗ Rejected — will not be uploaded</b>"+btn("Undo","EduLibraryManager.decide("+i+",'pending')")+"</div>";
+    else if(it.dec==="approved")h+="<div style='display:flex;gap:8px;align-items:center'><b style='color:#2FA36B;flex:1'>"+IC.ok+" "+(it.auto?"Auto-approved":"Approved")+" — uploading soon</b>"+btn("Undo","EduLibraryManager.decide("+i+",'pending')")+"</div>";
+    else if(it.dec==="rejected")h+="<div style='display:flex;gap:8px;align-items:center'><b style='color:#d9534f;flex:1'>"+IC.no+" Rejected — will not be uploaded</b>"+btn("Undo","EduLibraryManager.decide("+i+",'pending')")+"</div>";
     else{
       var wn=whyNot(it);
       if(wn)h+="<div style='color:#e0a030;margin-bottom:6px'>Needs your OK: "+E(wn)+"</div>";
-      h+="<div style='display:flex;gap:8px'>"+btn("✅ Approve","EduLibraryManager.decide("+i+",'approved')","#2FA36B")+btn("❌ Reject","EduLibraryManager.decide("+i+",'rejected')","#d9534f")+"</div>";
+      h+="<div style='display:flex;gap:8px'>"+btn(""+IC.ok+" Approve","EduLibraryManager.decide("+i+",'approved')","#2FA36B")+btn(""+IC.no+" Reject","EduLibraryManager.decide("+i+",'rejected')","#d9534f")+"</div>";
     }
   }
   if(it.edit)h+="<div style='display:flex;margin-top:8px'>"+btn("▲ Close details","EduLibraryManager.toggle("+i+")")+"</div>";
@@ -326,25 +328,25 @@ function miniCard(it){
     else if(it.status==="paused")h+="<div style='color:#e0a030;margin-top:3px'>Paused — the AI limit was reached. Not checked yet.</div>";
     else if(it.status==="work")h+="<div style='margin-top:3px'>Reading and asking AI…</div>";
     else if(it.status==="noText")h+="<div style='color:#e0a030;margin-top:3px'>No readable text"+(it.word?".":" (maybe scanned).")+"</div>";
-    else if(it.status==="dupe")h+="<div style='color:#777;font-weight:700;margin-top:3px'>⛔ "+E(it.msg)+"</div><div style='font-size:12px;color:var(--sub);margin-top:2px'>"+(it.tdupe?"Matched by title and class. Nothing uploaded.":"Not sent to the AI. Nothing uploaded.")+"</div><div style='display:flex;margin-top:6px'>"+miniBtn("Check anyway","EduLibraryManager.force("+i+")")+"</div>";
+    else if(it.status==="dupe")h+="<div style='color:#777;font-weight:700;margin-top:3px'>"+IC.no+" "+E(it.msg)+"</div><div style='font-size:12px;color:var(--sub);margin-top:2px'>"+(it.tdupe?"Matched by title and class. Nothing uploaded.":"Not sent to the AI. Nothing uploaded.")+"</div><div style='display:flex;margin-top:6px'>"+miniBtn("Check anyway","EduLibraryManager.force("+i+")")+"</div>";
     if(it.status==="err"||it.status==="noText")h+="<div style='display:flex;margin-top:6px'>"+miniBtn("Fill in by hand","EduLibraryManager.hand("+i+")")+"</div>";
   }else{
     var bits=[];
     if(p&&p.confidence!=null)bits.push("AI "+pct(p.confidence));
-    if(p&&p.flags&&p.flags.length)bits.push("⚠ "+p.flags.length+" flag"+(p.flags.length>1?"s":""));
+    if(p&&p.flags&&p.flags.length)bits.push(p.flags.length+" flag"+(p.flags.length>1?"s":""));
     h+="<div style='font-weight:700;margin-top:3px'>"+E(clean(e.title)||"(no title)")+"</div>"
       +"<div style='font-size:12px;color:var(--sub)'>"+E(destText(it))+"</div>";
     if(bits.length)h+="<div style='font-size:12px;color:var(--sub);margin-top:2px'>"+E(bits.join(" · "))+"</div>";
     if(it.msg)h+="<div style='color:#d9534f;margin-top:3px'>"+E(it.msg)+"</div>";
-    if(it.up==="done")h+="<div style='color:#2FA36B;font-weight:700;margin-top:4px'>✓ Uploaded"+(it.auto?" automatically":"")+"</div>";
+    if(it.up==="done")h+="<div style='color:#2FA36B;font-weight:700;margin-top:4px'>"+IC.ok+" Uploaded"+(it.auto?" automatically":"")+"</div>";
     else if(it.up==="uploading")h+="<div style='color:var(--sub);margin-top:4px'>Uploading…</div>";
     else if(it.up==="err")h+="<div style='color:#d9534f;margin-top:4px'>Upload failed: "+E(it.upErr)+"</div><div style='display:flex;margin-top:6px'>"+miniBtn("Try again","EduLibraryManager.retry("+i+")")+"</div>";
-    else if(it.dec==="approved")h+="<div style='display:flex;gap:8px;align-items:center;margin-top:6px'><b style='color:#2FA36B;flex:1'>✓ "+(it.auto?"Auto-approved":"Approved")+" — uploading soon</b>"+miniBtn("Undo","EduLibraryManager.decide("+i+",'pending')")+"</div>";
-    else if(it.dec==="rejected")h+="<div style='display:flex;gap:8px;align-items:center;margin-top:6px'><b style='color:#d9534f;flex:1'>✗ Rejected</b>"+miniBtn("Undo","EduLibraryManager.decide("+i+",'pending')")+"</div>";
+    else if(it.dec==="approved")h+="<div style='display:flex;gap:8px;align-items:center;margin-top:6px'><b style='color:#2FA36B;flex:1'>"+IC.ok+" "+(it.auto?"Auto-approved":"Approved")+" — uploading soon</b>"+miniBtn("Undo","EduLibraryManager.decide("+i+",'pending')")+"</div>";
+    else if(it.dec==="rejected")h+="<div style='display:flex;gap:8px;align-items:center;margin-top:6px'><b style='color:#d9534f;flex:1'>"+IC.no+" Rejected</b>"+miniBtn("Undo","EduLibraryManager.decide("+i+",'pending')")+"</div>";
     else{
       var wn=whyNot(it);
-      if(wn)h+="<div style='color:#e0a030;font-size:12.5px;margin-top:3px'>⚠ Needs your OK: "+E(wn)+"</div>";
-      h+="<div style='display:flex;gap:6px;margin-top:6px'>"+miniBtn("✅ Approve","EduLibraryManager.decide("+i+",'approved')","#2FA36B")+miniBtn("❌ Reject","EduLibraryManager.decide("+i+",'rejected')","#d9534f")+miniBtn("✏️ Details","EduLibraryManager.toggle("+i+")")+"</div>";
+      if(wn)h+="<div style='color:#e0a030;font-size:12.5px;margin-top:3px'>"+IC.warn+" Needs your OK: "+E(wn)+"</div>";
+      h+="<div style='display:flex;gap:6px;margin-top:6px'>"+miniBtn(""+IC.ok+" Approve","EduLibraryManager.decide("+i+",'approved')","#2FA36B")+miniBtn(""+IC.no+" Reject","EduLibraryManager.decide("+i+",'rejected')","#d9534f")+miniBtn(""+IC.edit+" Details","EduLibraryManager.toggle("+i+")")+"</div>";
     }
   }
   return "<div style='border:1px solid var(--line);border-left:5px solid "+colorOf(it)+";border-radius:9px;padding:8px 12px;margin:0 0 8px;font-size:13px;word-break:break-word'>"+head+h+"</div>";
@@ -366,9 +368,9 @@ function fullDraw(){
   var h="";
   if(need.length){
     h+="<div style='border:2px solid #e0a030;border-radius:11px;padding:10px 10px 4px;margin:0 0 14px'>"
-      +"<div style='font-weight:700;font-size:14px;margin:0 0 4px'>⚠ Waiting for your OK ("+need.length+")</div>"
+      +"<div style='font-weight:700;font-size:14px;margin:0 0 4px'>"+IC.warn+" Waiting for your OK ("+need.length+")</div>"
       +"<div style='font-size:12px;color:var(--sub);margin:0 0 8px'>All files the AI is not sure about are collected here. Approve or reject them all at once, or one by one below.</div>"
-      +"<div style='display:flex;gap:8px;margin:0 0 10px'>"+btn("✅ Approve all ("+need.length+")","EduLibraryManager.bulkApprove()","#2FA36B")+btn("❌ Reject all ("+need.length+")","EduLibraryManager.bulkReject()","#d9534f")+"</div>"
+      +"<div style='display:flex;gap:8px;margin:0 0 10px'>"+btn(""+IC.ok+" Approve all ("+need.length+")","EduLibraryManager.bulkApprove()","#2FA36B")+btn(""+IC.no+" Reject all ("+need.length+")","EduLibraryManager.bulkReject()","#d9534f")+"</div>"
       +need.map(wrap).join("")+"</div>";
   }
   if(rest.length){
@@ -712,7 +714,7 @@ function render(body){
     try{
       var b=document.createElement("button");
       b.type="button";b.className="btn";b.style.margin="0 0 12px";
-      b.textContent="📝 AI Examination Room builder";
+      b.innerHTML=IC.exam+" AI Examination Room builder";
       b.onclick=function(){
         body.innerHTML="<p style='color:var(--sub);font-size:13px'>Loading…</p>";
         var go=function(){window.EduExamBuilder.render(body);};
