@@ -1,22 +1,22 @@
-/* Edu Library: AI Examination Room (student screen) v1.0
+/* Edu Library: AI Examination Room (student screen) v1.1
    Loaded on demand from index.html when a student opens #/room.
-   Reads active questions from the exam_questions table (read-only), shuffles the options every time,
-   marks by comparing with the saved key, shows percentage + our own band, saved on the phone. */
+   v1.1: papers come from server C (and D when C is full) through the backend, are saved on the phone
+   (so practice works again offline), and questions can show a diagram picture. Options are shuffled every time,
+   marking compares with the saved key, percentage + our own band, saved on the phone. */
 (function(){
 "use strict";
 if(window.EduRoom)return;
-var SB="https://uozxdopexjbxjpatodpl.supabase.co";
-var KEY="sb_publishable_7WBlnIk-CDi-nSiUT9JDBg_7iRT8j-V";
-var HK="edu_room_hist",RK="edu_room_rep";
+var API="https://edu-ai-backend-three.vercel.app/api/book-link?room=";
+var HK="edu_room_hist",RK="edu_room_rep",IK="edu_room_idx",PK="edu_room_p_",PL="edu_room_plist";
 var APP=null;
-var S={screen:"setup",lv:"",cls:"",sub:"",cat:null,qs:[],i:0,sel:[],res:null,busy:false,err:"",exp:{}};
+var S={screen:"setup",lv:"",cls:"",sub:"",cat:null,papers:[],qs:[],i:0,sel:[],res:null,busy:false,err:"",exp:{}};
 
 function e(s){return String(s==null?"":s).replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c];});}
-function rest(path,o){
-  o=o||{};
-  var h={apikey:KEY,Authorization:"Bearer "+KEY};
-  if(o.body)h["Content-Type"]="application/json";
-  return fetch(SB+"/rest/v1/"+path,{method:o.method||"GET",headers:h,body:o.body});
+async function api(action,payload,extra){
+  var r=await fetch(API+action+(extra||""),{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload||{})});
+  var j=null;try{j=await r.json();}catch(x){}
+  if(!r.ok)throw new Error((j&&j.error)||("Server answered "+r.status));
+  return j;
 }
 function shuffle(a){for(var i=a.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=a[i];a[i]=a[j];a[j]=t;}return a;}
 function band(p){return p>=80?"Excellent":p>=65?"Very good":p>=50?"Good":p>=40?"Fair":"Keep practising";}
@@ -67,21 +67,49 @@ function css(){
 ".rm .ex{margin-top:8px;font-size:14px;line-height:1.5;color:var(--ink);white-space:pre-wrap;word-wrap:break-word}"+
 ".rm .hist{display:flex;justify-content:space-between;gap:8px;font-size:13px;color:var(--ink);border-bottom:1px solid var(--line);padding:7px 0}"+
 ".rm .hist span{color:var(--sub)}"+
-".rm .lbl{font-size:12px;color:var(--sub);text-align:center;margin:12px 0}";
+".rm .lbl{font-size:12px;color:var(--sub);text-align:center;margin:12px 0}"+
+".rm .qimg{display:block;max-width:100%;max-height:340px;margin:10px auto;border-radius:10px;background:#fff;border:1px solid var(--line)}"+
+".rmzoom{position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,.92);display:flex;align-items:center;justify-content:center;padding:10px}"+
+".rmzoom img{max-width:100%;max-height:100%;background:#fff;border-radius:8px}";
   document.head.appendChild(s);
 }
 
 /* ---------- loading the list of papers that have questions ---------- */
 async function loadCat(){
-  var r=await rest("exam_questions?select=level,class,subject&status=eq.active&limit=5000");
-  if(!r.ok)throw new Error("Server answered "+r.status);
-  var rows=await r.json(),c={};
-  rows.forEach(function(x){
-    var l=x.level||"?",k=x.class||"?",s=x.subject||"General";
+  var idx=null;
+  try{idx=await api("index",{});writeJSON(IK,idx);}
+  catch(x){idx=readJSON(IK,null);if(!idx)throw x;}
+  S.papers=(idx&&idx.papers)||[];
+  var c={};
+  S.papers.forEach(function(p){
+    var l=p.level||"?",k=p.class||"?",su=p.subject||"General";
     if(!c[l])c[l]={};if(!c[l][k])c[l][k]={};
-    c[l][k][s]=(c[l][k][s]||0)+1;
+    c[l][k][su]=(c[l][k][su]||0)+(p.count||0);
   });
   S.cat=c;
+}
+/* a paper is kept on the phone; papers with pictures are fetched again after 5 hours (picture links expire) */
+function cacheSet(id,obj){
+  var list=readJSON(PL,[]).filter(function(x){return x!==id;});list.push(id);
+  while(list.length>30){try{localStorage.removeItem(PK+list.shift());}catch(x){}}
+  try{localStorage.setItem(PK+id,JSON.stringify(obj));}
+  catch(x){list.forEach(function(k){if(k!==id){try{localStorage.removeItem(PK+k);}catch(y){}}});list=[id];try{localStorage.setItem(PK+id,JSON.stringify(obj));}catch(y){}}
+  writeJSON(PL,list);
+}
+async function loadPaper(p){
+  var c=readJSON(PK+p.id,null);
+  if(c&&c.updated===p.updated&&c.data){
+    var hasImg=(c.data.questions||[]).some(function(q){return q.img;});
+    if(!hasImg||Date.now()-(c.at||0)<5*3600*1000)return c.data;
+  }
+  try{
+    var d=await api("paper",{},"&id="+encodeURIComponent(p.id));
+    cacheSet(p.id,{updated:p.updated,at:Date.now(),data:d});
+    return d;
+  }catch(x){
+    if(c&&c.data)return c.data;
+    throw x;
+  }
 }
 
 /* ---------- screens ---------- */
@@ -130,11 +158,12 @@ function setupHtml(){
   return h+"<div class='lbl'>AI-marked practice. Not an official exam result.</div>";
 }
 
+function imgHtml(q){return q.img?"<img class='qimg' alt='Diagram or table for this question' src=\""+e(q.img)+"\" onclick='EduRoom.zoom(this.src)'>":"";}
 function quizHtml(){
   var n=S.qs.length,q=S.qs[S.i],sel=S.sel[S.i];
   var h="<div class='top'><span>Question "+(S.i+1)+" of "+n+"</span><button type='button' onclick='EduRoom.quit()'>Quit</button></div>"+
     "<div class='bar'><i style='width:"+Math.round((S.i/n)*100)+"%'></i></div>"+
-    "<div class='q'>"+e(q.q)+"</div>";
+    "<div class='q'>"+e(q.q)+"</div>"+imgHtml(q);
   q.opts.forEach(function(o,k){
     h+="<button type='button' class='ch"+(sel===k?" sel":"")+"' onclick='EduRoom.choose("+k+")'><b>"+letter(k)+"</b><span>"+e(o)+"</span></button>";
   });
@@ -156,7 +185,7 @@ function reviewHtml(){
   var h="<div class='top'><span>Review: "+S.res.pct+"% \u00B7 "+S.res.c+" of "+S.res.n+"</span><button type='button' onclick='EduRoom.result()'>Back</button></div>";
   S.qs.forEach(function(q,i){
     var sel=S.sel[i];
-    h+="<div class='card'><div class='q' style='font-size:15px'>"+(i+1)+". "+e(q.q)+"</div>";
+    h+="<div class='card'><div class='q' style='font-size:15px'>"+(i+1)+". "+e(q.q)+"</div>"+imgHtml(q);
     q.opts.forEach(function(o,k){
       var cls=k===q.ci?" ok":(k===sel?" bad":"");
       h+="<div class='ch"+cls+"'><b>"+letter(k)+"</b><span>"+e(o)+"</span></div>";
@@ -184,17 +213,18 @@ async function begin(count){
   if(S.busy)return;
   S.busy=true;S.err="";draw();
   try{
-    var f="exam_questions?select=id,q_text,options,correct_index&status=eq.active&level=eq."+encodeURIComponent(S.lv)+"&class=eq."+encodeURIComponent(S.cls)+"&subject=eq."+encodeURIComponent(S.sub)+"&limit=1000";
-    var r=await rest(f);
-    if(!r.ok)throw new Error("Server answered "+r.status);
-    var rows=await r.json(),good=[];
-    rows.forEach(function(x){
-      var o=x.options,ci=x.correct_index;
-      if(!Array.isArray(o)||o.length!==4||typeof ci!=="number"||ci<0||ci>3)return;
-      if(!x.q_text||o.some(function(t){return typeof t!=="string"||!t.trim();}))return;
-      var order=shuffle([0,1,2,3]);
-      good.push({id:x.id,q:x.q_text,opts:order.map(function(k){return o[k];}),ci:order.indexOf(ci)});
-    });
+    var ps=S.papers.filter(function(p){return p.level===S.lv&&p.class===S.cls&&p.subject===S.sub;});
+    var good=[];
+    for(var pi=0;pi<ps.length;pi++){
+      var pd=await loadPaper(ps[pi]);
+      (pd.questions||[]).forEach(function(x){
+        var o=x.options,ci=x.correct;
+        if(!Array.isArray(o)||o.length!==4||typeof ci!=="number"||ci<0||ci>3)return;
+        if(!x.q||o.some(function(t){return typeof t!=="string"||!t.trim();}))return;
+        var order=shuffle([0,1,2,3]);
+        good.push({id:x.id,pid:pd.id,img:x.img||"",q:x.q,opts:order.map(function(k){return o[k];}),ci:order.indexOf(ci)});
+      });
+    }
     if(!good.length)throw new Error("No questions found for this choice.");
     S.qs=shuffle(good).slice(0,Math.max(1,count));
     S.sel=S.qs.map(function(){return -1;});
@@ -238,18 +268,23 @@ async function explain(i){
   var b2=document.getElementById("rmex"+i);if(b2)b2.textContent=S.exp[i];
 }
 async function report(i){
-  var q=S.qs[i],btn=document.getElementById("rmrep"+i);
+  var q=S.qs[i],btn=document.getElementById("rmrep"+i),rk=q.pid+":"+q.id;
   var done=readJSON(RK,[]);
-  if(done.indexOf(q.id)>-1){if(btn)btn.textContent="Already reported";return;}
+  if(done.indexOf(rk)>-1){if(btn)btn.textContent="Already reported";return;}
   if(btn){btn.disabled=true;btn.textContent="Sending...";}
   try{
-    var r=await rest("rpc/report_exam_question",{method:"POST",body:JSON.stringify({qid:q.id})});
-    if(!r.ok)throw new Error("status "+r.status);
-    done.push(q.id);writeJSON(RK,done.slice(-200));
+    await api("report",{id:q.pid,q:q.id});
+    done.push(rk);writeJSON(RK,done.slice(-200));
     if(btn)btn.textContent="Reported. Thank you.";
   }catch(x){
     if(btn){btn.disabled=false;btn.textContent="Could not send. Try again";}
   }
+}
+function zoom(src){
+  var d=document.createElement("div");d.className="rmzoom";
+  d.innerHTML="<img alt='' src=\""+e(src)+"\">";
+  d.onclick=function(){if(d.parentNode)d.parentNode.removeChild(d);};
+  document.body.appendChild(d);
 }
 
 window.EduRoom={
@@ -289,7 +324,8 @@ window.EduRoom={
   home:function(){S.screen="setup";S.qs=[];S.sel=[];S.res=null;S.exp={};S.lv="";S.cls="";S.sub="";S.err="";draw();},
   explain:explain,
   report:report,
-  version:"1.0",
+  zoom:zoom,
+  version:"1.1",
   _t:{band:band,shuffle:shuffle,S:S}
 };
 })();

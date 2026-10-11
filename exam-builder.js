@@ -1,4 +1,4 @@
-/* Edu Library - AI Examination Room, Admin side: Exam Builder v1.5 (fills Class, Subject, Title and Year from the file by itself). Builds checked multiple-choice questions (two AIs must agree) from the text of an exam paper (PDF with text, SCANNED PDF read by AI, Word .docx, or .txt) and saves them to Supabase table exam_questions. Includes an accuracy test with maths questions whose answers are known. */
+/* Edu Library - AI Examination Room, Admin side: Exam Builder v1.6 (saves papers to server C, with a space meter; fills Class, Subject, Title and Year from the file by itself). Builds checked multiple-choice questions (two AIs must agree) from the text of an exam paper (PDF with text, SCANNED PDF read by AI, Word .docx, or .txt) and saves them to Supabase table exam_questions. Includes an accuracy test with maths questions whose answers are known. */
 (function(){
 "use strict";
 var URL_BUILD="https://edu-ai-backend-three.vercel.app/api/book-link?exambuild=1";
@@ -259,34 +259,47 @@ function drawResults(){
   box.innerHTML=h;
   var b=$("ebSave");if(b)b.onclick=save;
 }
-/* asks the server the same way a student phone does (publishable key only), so we know the Room can really read the saved questions */
-async function studentsCanSee(pk){
-  try{
-    var u=sb.supabaseUrl,k=sb.supabaseKey;
-    var r=await fetch(u+"/rest/v1/exam_questions?select=id&status=eq.active&paper_key=eq."+encodeURIComponent(pk)+"&limit=1000",{headers:{apikey:k,Authorization:"Bearer "+k}});
-    if(!r.ok)return 0;
-    var j=await r.json();return Array.isArray(j)?j.length:0;
-  }catch(e){return 0;}
+/* ---------- Examination Room storage (server C, with server D as back-up space) ---------- */
+var URL_ROOM="https://edu-ai-backend-three.vercel.app/api/book-link?room=";
+var URL_USAGE="https://edu-ai-backend-three.vercel.app/api/book-link?usage=1";
+async function roomCall(action,payload,extra){
+  var tok=await token();
+  var r=await fetch(URL_ROOM+action+(extra||""),{method:"POST",headers:{"Authorization":"Bearer "+tok,"Content-Type":"application/json"},body:JSON.stringify(payload||{})});
+  var j={};try{j=await r.json();}catch(e){}
+  if(!r.ok)throw new Error(j.error||("Server answered "+r.status));
+  return j;
+}
+function fmtBytes(n){return n>=1073741824?(n/1073741824).toFixed(2)+" GB":(n/1048576).toFixed(1)+" MB";}
+async function showSpace(){
+  var el=$("ebSpace");if(!el)return;
+  var tok;try{tok=await token();}catch(e){return;}
+  var parts=[];
+  var list=[["C","",5],["D","&s=d",10]];
+  for(var i=0;i<list.length;i++){
+    try{
+      var r=await fetch(URL_USAGE+list[i][1],{method:"POST",headers:{"Authorization":"Bearer "+tok,"Content-Type":"application/json"},body:"{}"});
+      var j=await r.json();
+      if(!r.ok)throw new Error("x");
+      var pct=Math.round(j.bytes/(list[i][2]*1073741824)*100);
+      parts.push("Server "+list[i][0]+": "+fmtBytes(j.bytes)+" of "+list[i][2]+" GB ("+pct+"%)"+(pct>=80?" - nearly full, new papers go to the next server":""));
+    }catch(e){parts.push("Server "+list[i][0]+": not available");}
+  }
+  el.textContent="Space used: "+parts.join("  |  ");
 }
 async function save(){
   if(ST.busy||!ST.built.length||!ST.meta)return;
   ST.busy=true;var m=ST.meta;
   try{
-    var pk=[m.level,m.cls,m.subject,m.title,m.year].join("|").toLowerCase().replace(/\s+/g," ").slice(0,200);
-    var ex=await sb.from("exam_questions").select("q_text").eq("paper_key",pk).limit(1000);
-    if(ex.error)throw ex.error;
-    var have={};(ex.data||[]).forEach(function(r){have[norm(r.q_text)]=1;});
-    var rows=ST.built.filter(function(q){return !have[norm(q.q)];}).map(function(q){
-      return {paper_key:pk,level:m.level,class:m.cls,subject:m.subject,source_title:m.title,source_year:m.year,q_text:q.q,options:q.options,correct_index:q.correct,status:"active",verified_by:q.verifiedBy||"mistral+gemini"};
-    });
-    var skipped=ST.built.length-rows.length;
-    if(rows.length){var r=await sb.from("exam_questions").insert(rows);if(r.error)throw r.error;}
-    var seen=await studentsCanSee(pk);
-    var msg="Saved "+rows.length+" question(s)."+(skipped?" "+skipped+" already saved before, skipped.":"");
-    if(seen>0)msg+=" Check passed: students can see "+seen+" question(s) of this paper in the Examination Room.";
-    else msg+=" WARNING: students CANNOT see them yet (the Room reads only rows marked active). Run the SQL fix, then save again.";
+    say("ebSt","Saving...");
+    var j=await roomCall("save",{level:m.level,class:m.cls,subject:m.subject,title:m.title,year:m.year,
+      questions:ST.built.map(function(q){return {q:q.q,options:q.options,correct:q.correct,verifiedBy:q.verifiedBy||"mistral+gemini"};})});
+    var seen=0;
+    try{var p=await roomCall("paper",{},"&id="+encodeURIComponent(j.id));seen=(p.questions||[]).length;}catch(e){}
+    var msg="Saved on server "+j.server+": "+j.added+" new question(s)"+(j.skipped?", "+j.skipped+" already saved before (skipped)":"")+".";
+    if(seen>0){msg+=" Check passed: students can read "+seen+" question(s) of this paper.";ST.built=[];drawResults();}
+    else msg+=" WARNING: the check could not read the paper back. Do not save again, send this message to Claude.";
     say("ebSt",msg);
-    if(seen>0){ST.built=[];drawResults();}
+    showSpace();
   }catch(e){say("ebSt","Could not save: "+((e&&e.message)||e));}
   ST.busy=false;
 }
@@ -385,6 +398,7 @@ async function onFile(){
 function render(body){
   var lv=Object.keys(LEVELS).map(function(k){return "<option value=\""+E(k)+"\">"+E(LEVELS[k].label||k)+"</option>";}).join("");
   body.innerHTML="<div class='note' style='margin-top:0'><b>AI Examination Room — Exam Builder.</b> Two different AIs answer each question separately. A question is kept only if both agree. Nothing is saved until you tap Save.</div>"
+   +"<div id='ebSpace' style='color:var(--sub);font-size:12px;margin:8px 0 0'>Checking space...</div>"
    +"<div style='font-weight:700;margin:10px 0 6px'>1. Accuracy test</div>"
    +"<button type='button' class='btn' id='ebAcc'>Run accuracy test (12 maths questions)</button>"
    +"<div id='ebAccSt' style='color:var(--sub);font-size:12.5px;margin:8px 0'></div><div id='ebAccOut'></div>"
@@ -406,7 +420,8 @@ function render(body){
   $("ebAcc").onclick=accuracyTest;
   $("ebGo").onclick=buildPaper;
   drawResults();
+  showSpace();
 }
 
-window.EduExamBuilder={render:render,version:"1.5",_readFileText:readFileText,_guess:guessFrom};
+window.EduExamBuilder={render:render,version:"1.6",_readFileText:readFileText,_guess:guessFrom};
 })();
