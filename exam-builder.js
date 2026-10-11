@@ -1,9 +1,11 @@
-/* Edu Library - AI Examination Room, Admin side: Exam Builder v1.6 (saves papers to server C, with a space meter; fills Class, Subject, Title and Year from the file by itself). Builds checked multiple-choice questions (two AIs must agree) from the text of an exam paper (PDF with text, SCANNED PDF read by AI, Word .docx, or .txt) and saves them to Supabase table exam_questions. Includes an accuracy test with maths questions whose answers are known. */
+/* Edu Library - AI Examination Room, Admin side: Exam Builder v1.7 (saves papers to server C, with a space meter; fills Class, Subject, Title and Year from the file by itself). Builds checked multiple-choice questions (two AIs must agree) from the text of an exam paper (PDF with text, SCANNED PDF read by AI, Word .docx, or .txt) and saves them to server C through the backend. Includes an accuracy test with maths questions whose answers are known.
+   v1.7: (1) "Scanned paper" box (turns on by itself when the PDF was made by a scanner): the page pictures are read by AI instead of the hidden scan text, which is often full of mistakes and mixed-up lines; the AI reading is kept in memory so a second run does not read the pictures again. (2) A report after every run: which question numbers were kept, which need a picture (held, not saved yet), which were dropped and why, and which numbers were not found at all. (3) Failed parts are tried again once, and the real reason of a failure is shown. */
 (function(){
 "use strict";
 var URL_BUILD="https://edu-ai-backend-three.vercel.app/api/book-link?exambuild=1";
 var CHUNK=3500,MAX_PAGES=30,GAP_MS=11000,OCR_BATCH=2,OCR_GAP_MS=9000;
 var ST=window.__eduEB=window.__eduEB||{built:[],meta:null,busy:false};
+ST.held=ST.held||[];ST.lost=ST.lost||[];
 
 function $(id){return document.getElementById(id);}
 function wait(ms){return new Promise(function(r){setTimeout(r,ms);});}
@@ -91,6 +93,14 @@ async function readScanned(file,ctx){
     }
   }finally{try{pdf.destroy();}catch(e){}}
   return {text:texts.join("\n"),total:total,read:n,limitHit:limitHit};
+}
+/* the AI reading of the page pictures is kept in memory, so running the same file again does not read the pictures again */
+async function getScanned(file,ctx){
+  var key=(file.name||"")+"|"+file.size+"|"+file.lastModified;
+  if(ST.ocr&&ST.ocr.key===key&&ST.ocr.text){return {text:ST.ocr.text,total:ST.ocr.total,read:ST.ocr.read,limitHit:false,again:true};}
+  var sc=await readScanned(file,ctx);
+  if(!sc.limitHit&&sc.text.trim())ST.ocr={key:key,text:sc.text,total:sc.total,read:sc.read};
+  return sc;
 }
 
 /* ---------- reading a Word .docx (no library needed) ---------- */
@@ -205,50 +215,99 @@ function fillClasses(){
   var lv=$("ebLevel").value,cl=(LEVELS[lv]&&LEVELS[lv].classes)||[];
   $("ebClass").innerHTML="<option value=''>— choose —</option>"+cl.map(function(c){return "<option value=\""+E(c)+"\">"+E(c)+"</option>";}).join("");
 }
+var WHY={options_not_in_file:"its options were not found in the file text",disagree:"the two AIs gave different answers",unsure:"one AI was not sure of the answer"};
+/* the report: which question numbers were kept, held for a picture, dropped (and why), and not found at all */
+function reportLines(built,held,lost){
+  var kn=[],hn=[],all={},i;
+  built.forEach(function(q){if(q.n){kn.push(q.n);all[q.n]=1;}});
+  held.forEach(function(q){if(q.n){hn.push(q.n);all[q.n]=1;}});
+  var shown=lost.filter(function(d){return !(d.n&&kn.indexOf(d.n)>=0);});
+  shown.forEach(function(d){if(d.n)all[d.n]=1;});
+  var nums=Object.keys(all).map(Number),max=nums.length?Math.max.apply(null,nums):0,miss=[];
+  for(i=1;i<=max;i++)if(!all[i])miss.push(i);
+  var srt=function(a){return a.slice().sort(function(x,y){return x-y;});};
+  var out=[];
+  if(!built.length&&!held.length&&!shown.length)return out;
+  out.push("Kept and ready to save: "+built.length+(kn.length?" (No. "+srt(kn).join(", ")+")":""));
+  if(held.length)out.push("Need a picture, not saved yet: "+held.length+(hn.length?" (No. "+srt(hn).join(", ")+")":"")+". Picture support is the next update.");
+  shown.slice(0,40).forEach(function(d){out.push("Dropped No. "+(d.n||"?")+": "+(WHY[d.reason]||d.reason)+". "+String(d.q||"").slice(0,70));});
+  if(shown.length>40)out.push("... and "+(shown.length-40)+" more dropped.");
+  if(miss.length)out.push("Not found by the AI at all (numbers between 1 and "+max+"): "+miss.join(", ")+". Run the same file again to try them.");
+  return out;
+}
 async function buildPaper(){
   if(ST.busy)return;
   var f=$("ebFile").files[0],c=ctxNow();
   if(!f){say("ebSt","Choose a file first (PDF, Word .docx or .txt).");return;}
   if(!c.cls||!c.subject||!c.title){var ms=[];if(!c.cls)ms.push("Class");if(!c.subject)ms.push("Subject");if(!c.title)ms.push("Paper title");say("ebSt","Please fill in: "+ms.join(", ")+".");return;}
-  ST.busy=true;ST.built=[];ST.meta=null;drawResults();
-  var found=0,notIn=0,limitHit=false;
+  ST.busy=true;ST.built=[];ST.held=[];ST.lost=[];ST.meta=null;drawResults();
+  var limitHit=false;
   try{
-    say("ebSt","Reading the file…");
-    var rd=await readFileText(f),chunks=chunkPages(rd.pages),scanNote="";
     var isPdf=!/\.(docx|txt|doc)$/i.test(f.name||"");
-    if(!chunks.length&&isPdf){
-      var sc=await readScanned(f,c);
-      rd=textToPages(sc.text,60);
-      chunks=chunkPages(rd.pages);
-      scanNote=" (scanned paper, "+sc.read+" of "+sc.total+" pages read"+(sc.limitHit?", AI limit reached while reading":"")+")";
+    var useScan=isPdf&&$("ebScan")&&$("ebScan").checked;
+    var rd,chunks,scanNote="";
+    if(useScan){
+      say("ebSt","Reading the page pictures with AI…");
+      var sc0=await getScanned(f,c);
+      rd=textToPages(sc0.text,60);chunks=chunkPages(rd.pages);
+      scanNote=" (scanned paper, "+sc0.read+" of "+sc0.total+" pages read"+(sc0.again?" before, reused":"")+(sc0.limitHit?", AI limit reached while reading":"")+")";
+    }else{
+      say("ebSt","Reading the file…");
+      rd=await readFileText(f);chunks=chunkPages(rd.pages);
+      if(!chunks.length&&isPdf){
+        var sc=await getScanned(f,c);
+        rd=textToPages(sc.text,60);chunks=chunkPages(rd.pages);
+        scanNote=" (scanned paper, "+sc.read+" of "+sc.total+" pages read"+(sc.limitHit?", AI limit reached while reading":"")+")";
+      }
     }
     if(!chunks.length){
       say("ebSt",isPdf?"Could not read any text from the page pictures. The scan may be too faint or blank.":"No readable text found in this file.");
       ST.busy=false;return;
     }
-    var seen={},failed=0,lastErr="";
+    var seenQ={},seenH={},seenL={},failedIdx=[],lastErr="";
     ST.meta=c;
+    var runChunk=async function(k){
+      var j=await buildRetry(chunks[k],c);
+      (j.questions||[]).forEach(function(q){var key=norm(q.q);if(seenQ[key])return;seenQ[key]=1;ST.built.push(q);});
+      (j.held||[]).forEach(function(h){var key=norm(h.q);if(seenH[key])return;seenH[key]=1;ST.held.push(h);});
+      (j.droppedList||[]).forEach(function(d){var key=norm(d.q);if(seenL[key])return;seenL[key]=1;ST.lost.push(d);});
+    };
     for(var k=0;k<chunks.length;k++){
       say("ebSt","Part "+(k+1)+" of "+chunks.length+" (parts of the file read: "+rd.pages.length+" of "+rd.total+")… kept so far: "+ST.built.length);
-      try{
-        var j=await buildRetry(chunks[k],c);
-        found+=j.found||0;notIn+=j.notInFile||0;
-        (j.questions||[]).forEach(function(q){var key=norm(q.q);if(seen[key])return;seen[key]=1;ST.built.push(q);});
-      }catch(e){
+      try{await runChunk(k);}
+      catch(e){
         if(e&&e.limit){limitHit=true;break;}
-        failed++;lastErr=(e&&e.message)||String(e);
+        failedIdx.push(k);lastErr=(e&&e.message)||String(e);
       }
       drawResults();
       if(k<chunks.length-1)await wait(GAP_MS);
     }
+    /* second chance for the parts that failed */
+    if(failedIdx.length&&!limitHit){
+      var again=failedIdx.slice();failedIdx=[];
+      for(var r2=0;r2<again.length;r2++){
+        say("ebSt","Trying part "+(again[r2]+1)+" again after a failure… kept so far: "+ST.built.length);
+        await wait(GAP_MS+9000);
+        try{await runChunk(again[r2]);}
+        catch(e2){
+          if(e2&&e2.limit){limitHit=true;break;}
+          failedIdx.push(again[r2]);lastErr=(e2&&e2.message)||String(e2);
+        }
+        drawResults();
+      }
+    }
     ST.meta=c;
-    say("ebSt",(limitHit?"Stopped: the AI limit was reached. ":(failed?"Finished with problems. ":"Done. "))+"Questions found: "+found+" · kept (both AIs agreed): "+ST.built.length+" · dropped: "+(found-ST.built.length)+"."+scanNote+(notIn?" "+notIn+" dropped because their options are not written in the file (the AI may not invent options).":"")+(failed?" "+failed+" part(s) failed ("+lastErr+"). You can still Save what was kept. Run the same file again later to try the failed parts; Save skips questions already saved.":"")+(found===0?" No multiple-choice questions were found. If this paper only has written (structured) questions, that is expected.":""));
+    var nDrop=ST.lost.filter(function(d){return !(d.n&&ST.built.some(function(b){return b.n===d.n;}));}).length;
+    say("ebSt",(limitHit?"Stopped: the AI limit was reached. ":(failedIdx.length?"Finished with problems. ":"Done. "))+"Kept (both AIs agreed): "+ST.built.length+" · need a picture: "+ST.held.length+" · dropped: "+nDrop+"."+scanNote+(failedIdx.length?" "+failedIdx.length+" part(s) still failed after a second try. Last reason: "+lastErr+". You can still Save what was kept. Run the same file again later to try the failed parts; Save skips questions already saved.":"")+(!ST.built.length&&!ST.held.length&&!nDrop?" No multiple-choice questions were found. If this paper only has written (structured) questions, that is expected.":""));
   }catch(e){say("ebSt","Stopped: "+((e&&e.message)||e));}
   ST.busy=false;drawResults();
 }
 function drawResults(){
   var box=$("ebList");if(!box)return;
-  var q=ST.built,h="";
+  var q=ST.built,h="",rep=reportLines(ST.built,ST.held,ST.lost);
+  if(rep.length){
+    h+="<div style='border:1px solid var(--line);border-radius:9px;padding:8px 12px;margin:0 0 10px;font-size:12.5px;line-height:1.55;color:var(--sub);word-break:break-word'><b style='color:var(--ink)'>Report</b>"+rep.map(function(l){return "<div>"+E(l)+"</div>";}).join("")+"</div>";
+  }
   if(q.length){
     h+="<button type='button' class='btn green' id='ebSave' style='margin:0 0 10px'>Save "+q.length+" questions</button>";
     q.forEach(function(it,i){
@@ -259,6 +318,7 @@ function drawResults(){
   box.innerHTML=h;
   var b=$("ebSave");if(b)b.onclick=save;
 }
+
 /* ---------- Examination Room storage (server C, with server D as back-up space) ---------- */
 var URL_ROOM="https://edu-ai-backend-three.vercel.app/api/book-link?room=";
 var URL_USAGE="https://edu-ai-backend-three.vercel.app/api/book-link?usage=1";
@@ -360,6 +420,34 @@ async function peekText(file){
   }catch(e){}
   return "";
 }
+/* does this PDF look like a scan? (made by a scanner program, or page 1 is one big picture). A wrong guess only means the Scanned box is ticked or not; you can change it. */
+async function looksScanned(file){
+  var res=false;
+  try{
+    if(!/\.pdf$/i.test(file.name||""))return false;
+    var buf=await file.arrayBuffer();
+    var pdf=await pdfjsLib.getDocument({data:new Uint8Array(buf)}).promise;
+    try{
+      var md=await pdf.getMetadata(),inf=(md&&md.info)||{};
+      var tag=String((inf.Producer||"")+" "+(inf.Creator||"")).toLowerCase();
+      if(/scan|camscanner|office lens|canon|epson|xerox|ricoh|konica|kyocera|brother|samsung|fujitsu|sharp|toshiba|lexmark/.test(tag))res=true;
+      if(!res&&pdfjsLib.OPS){
+        var pg=await pdf.getPage(1),vp=pg.getViewport({scale:1}),pageArea=vp.width*vp.height;
+        var ol=await pg.getOperatorList(),O=pdfjsLib.OPS,det=1,stack=[];
+        for(var i=0;i<ol.fnArray.length;i++){
+          var fn=ol.fnArray[i],a=ol.argsArray[i];
+          if(fn===O.save)stack.push(det);
+          else if(fn===O.restore){if(stack.length)det=stack.pop();}
+          else if(fn===O.transform&&a&&a.length>=4)det*=(a[0]*a[3]-a[1]*a[2]);
+          else if(fn===O.paintImageXObject||fn===O.paintJpegXObject||fn===O.paintInlineImageXObject){
+            if(Math.abs(det)>=0.6*pageArea){res=true;break;}
+          }
+        }
+      }
+    }finally{try{pdf.destroy();}catch(e){}}
+  }catch(e){}
+  return res;
+}
 function setClassGuess(name){
   var keys=Object.keys(LEVELS);
   for(var i=0;i<keys.length;i++){
@@ -391,7 +479,9 @@ async function onFile(){
   var miss=[];
   if(!gotClass)miss.push("Class");
   if(!g.subject)miss.push("Subject");
-  say("ebSt","Filled in from the file: "+(got.length?got.join(", "):"nothing found")+". These are guesses, please check the boxes"+(miss.length?" and fill in: "+miss.join(", "):"")+".");
+  var sc=await looksScanned(f);
+  var sb=$("ebScan");if(sb)sb.checked=sc;
+  say("ebSt","Filled in from the file: "+(got.length?got.join(", "):"nothing found")+". These are guesses, please check the boxes"+(miss.length?" and fill in: "+miss.join(", "):"")+"."+(sc?" This looks like a scanned paper, so the Scanned box is ticked.":""));
 }
 
 /* ---------- screen ---------- */
@@ -404,6 +494,7 @@ function render(body){
    +"<div id='ebAccSt' style='color:var(--sub);font-size:12.5px;margin:8px 0'></div><div id='ebAccOut'></div>"
    +"<div style='font-weight:700;margin:16px 0 6px'>2. Build from a paper</div>"
    +"<input id='ebFile' type='file' accept='application/pdf,.pdf,.docx,.txt,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain' style='margin:0 0 10px;max-width:100%'>"
+   +"<label style='display:flex;gap:8px;align-items:flex-start;font-size:13px;line-height:1.4;margin:0 0 10px'><input type='checkbox' id='ebScan' style='margin-top:3px'><span>Scanned or photographed paper. The AI reads the page pictures (slower, but much more accurate than the hidden scan text). It ticks itself when the PDF looks like a scan.</span></label>"
    +"<div class='row2'><div class='field' style='margin:0 0 8px'><label>Level</label><select id='ebLevel'>"+lv+"</select></div>"
    +"<div class='field' style='margin:0 0 8px'><label>Class</label><select id='ebClass'></select></div></div>"
    +"<div class='field' style='margin:0 0 8px'><label>Subject</label><input id='ebSubj' placeholder='e.g. Biology'></div>"
@@ -423,5 +514,5 @@ function render(body){
   showSpace();
 }
 
-window.EduExamBuilder={render:render,version:"1.6",_readFileText:readFileText,_guess:guessFrom};
+window.EduExamBuilder={render:render,version:"1.7",_readFileText:readFileText,_guess:guessFrom,_report:reportLines,_looksScanned:looksScanned};
 })();
