@@ -1,4 +1,4 @@
-/* Edu Library - AI Examination Room, Admin side: Exam Builder v1.4 (fills Class, Subject, Title and Year from the file by itself). Builds checked multiple-choice questions (two AIs must agree) from the text of an exam paper (PDF with text, SCANNED PDF read by AI, Word .docx, or .txt) and saves them to Supabase table exam_questions. Includes an accuracy test with maths questions whose answers are known. */
+/* Edu Library - AI Examination Room, Admin side: Exam Builder v1.5 (fills Class, Subject, Title and Year from the file by itself). Builds checked multiple-choice questions (two AIs must agree) from the text of an exam paper (PDF with text, SCANNED PDF read by AI, Word .docx, or .txt) and saves them to Supabase table exam_questions. Includes an accuracy test with maths questions whose answers are known. */
 (function(){
 "use strict";
 var URL_BUILD="https://edu-ai-backend-three.vercel.app/api/book-link?exambuild=1";
@@ -211,7 +211,7 @@ async function buildPaper(){
   if(!f){say("ebSt","Choose a file first (PDF, Word .docx or .txt).");return;}
   if(!c.cls||!c.subject||!c.title){var ms=[];if(!c.cls)ms.push("Class");if(!c.subject)ms.push("Subject");if(!c.title)ms.push("Paper title");say("ebSt","Please fill in: "+ms.join(", ")+".");return;}
   ST.busy=true;ST.built=[];ST.meta=null;drawResults();
-  var found=0,limitHit=false;
+  var found=0,notIn=0,limitHit=false;
   try{
     say("ebSt","Reading the file…");
     var rd=await readFileText(f),chunks=chunkPages(rd.pages),scanNote="";
@@ -232,7 +232,7 @@ async function buildPaper(){
       say("ebSt","Part "+(k+1)+" of "+chunks.length+" (parts of the file read: "+rd.pages.length+" of "+rd.total+")… kept so far: "+ST.built.length);
       try{
         var j=await buildRetry(chunks[k],c);
-        found+=j.found||0;
+        found+=j.found||0;notIn+=j.notInFile||0;
         (j.questions||[]).forEach(function(q){var key=norm(q.q);if(seen[key])return;seen[key]=1;ST.built.push(q);});
       }catch(e){
         if(e&&e.limit){limitHit=true;break;}
@@ -242,7 +242,7 @@ async function buildPaper(){
       if(k<chunks.length-1)await wait(GAP_MS);
     }
     ST.meta=c;
-    say("ebSt",(limitHit?"Stopped: the AI limit was reached. ":(failed?"Finished with problems. ":"Done. "))+"Questions found: "+found+" · kept (both AIs agreed): "+ST.built.length+" · dropped: "+(found-ST.built.length)+"."+scanNote+(failed?" "+failed+" part(s) failed ("+lastErr+"). You can still Save what was kept. Run the same file again later to try the failed parts; Save skips questions already saved.":"")+(found===0?" No multiple-choice questions were found. If this paper only has written (structured) questions, that is expected.":""));
+    say("ebSt",(limitHit?"Stopped: the AI limit was reached. ":(failed?"Finished with problems. ":"Done. "))+"Questions found: "+found+" · kept (both AIs agreed): "+ST.built.length+" · dropped: "+(found-ST.built.length)+"."+scanNote+(notIn?" "+notIn+" dropped because their options are not written in the file (the AI may not invent options).":"")+(failed?" "+failed+" part(s) failed ("+lastErr+"). You can still Save what was kept. Run the same file again later to try the failed parts; Save skips questions already saved.":"")+(found===0?" No multiple-choice questions were found. If this paper only has written (structured) questions, that is expected.":""));
   }catch(e){say("ebSt","Stopped: "+((e&&e.message)||e));}
   ST.busy=false;drawResults();
 }
@@ -395,5 +395,5 @@ function render(body){
   drawResults();
 }
 
-window.EduExamBuilder={render:render,version:"1.4",_readFileText:readFileText,_guess:guessFrom};
+window.EduExamBuilder={render:render,version:"1.5",_readFileText:readFileText,_guess:guessFrom};
 })();
