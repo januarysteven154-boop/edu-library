@@ -1,8 +1,8 @@
-/* Edu Library - AI Examination Room, Admin side: Exam Builder v1.1. Builds checked multiple-choice questions (two AIs must agree) from the text of an exam paper (PDF with text, Word .docx, or .txt) and saves them to Supabase table exam_questions. Includes an accuracy test with maths questions whose answers are known. */
+/* Edu Library - AI Examination Room, Admin side: Exam Builder v1.2. Builds checked multiple-choice questions (two AIs must agree) from the text of an exam paper (PDF with text, SCANNED PDF read by AI, Word .docx, or .txt) and saves them to Supabase table exam_questions. Includes an accuracy test with maths questions whose answers are known. */
 (function(){
 "use strict";
 var URL_BUILD="https://edu-ai-backend-three.vercel.app/api/book-link?exambuild=1";
-var CHUNK=3500,MAX_PAGES=30,GAP_MS=11000;
+var CHUNK=3500,MAX_PAGES=30,GAP_MS=11000,OCR_BATCH=2,OCR_GAP_MS=9000;
 var ST=window.__eduEB=window.__eduEB||{built:[],meta:null,busy:false};
 
 function $(id){return document.getElementById(id);}
@@ -19,10 +19,10 @@ async function token(){
 }
 
 /* ---------- ask the backend ---------- */
-async function build(text,ctx){
+async function post(payload){
   var tok=await token();
   for(var a=0;a<2;a++){
-    var r=await fetch(URL_BUILD,{method:"POST",headers:{"Authorization":"Bearer "+tok,"Content-Type":"application/json"},body:JSON.stringify({text:text,level:ctx.level,class:ctx.cls,subject:ctx.subject})});
+    var r=await fetch(URL_BUILD,{method:"POST",headers:{"Authorization":"Bearer "+tok,"Content-Type":"application/json"},body:JSON.stringify(payload)});
     var j={};try{j=await r.json();}catch(e){}
     if(r.status===429&&j&&j.limit){var le=new Error(j.error||"AI limit reached");le.limit=true;throw le;}
     if(r.status===429&&a===0){await wait(20000);continue;}
@@ -31,6 +31,8 @@ async function build(text,ctx){
   }
   throw new Error("Too many requests. Wait a minute and try again.");
 }
+async function build(text,ctx){return post({text:text,level:ctx.level,class:ctx.cls,subject:ctx.subject});}
+async function ocr(images,ctx){var j=await post({images:images,level:ctx.level,class:ctx.cls,subject:ctx.subject});return String(j.text||"");}
 
 /* ---------- reading a PDF ---------- */
 async function readPdf(file){
@@ -46,6 +48,41 @@ async function readPdf(file){
   var total=pdf.numPages;
   try{pdf.destroy();}catch(e){}
   return {pages:pages,total:total};
+}
+
+/* ---------- reading a SCANNED PDF: page pictures, Gemini copies the words ---------- */
+async function pageImage(pdf,num){
+  var g=await pdf.getPage(num),v1=g.getViewport({scale:1});
+  var sc=Math.min(2,1400/Math.max(v1.width,v1.height));
+  var vp=g.getViewport({scale:sc}),cv=document.createElement("canvas");
+  cv.width=Math.floor(vp.width);cv.height=Math.floor(vp.height);
+  var cx=cv.getContext("2d");cx.fillStyle="#fff";cx.fillRect(0,0,cv.width,cv.height);
+  await g.render({canvasContext:cx,viewport:vp}).promise;
+  var d=cv.toDataURL("image/jpeg",0.72);
+  cv.width=0;cv.height=0;
+  return d.split(",")[1];
+}
+async function readScanned(file,ctx){
+  var buf=await file.arrayBuffer();
+  var pdf=await pdfjsLib.getDocument({data:new Uint8Array(buf)}).promise;
+  var total=pdf.numPages,n=Math.min(total,MAX_PAGES),texts=[],p=1,limitHit=false;
+  try{
+    while(p<=n){
+      var last=Math.min(p+OCR_BATCH-1,n),imgs=[];
+      say("ebSt","Scanned paper: AI is reading page pictures "+p+(last>p?"–"+last:"")+" of "+n+". This is slow, keep the screen on…");
+      for(var q=p;q<=last;q++)imgs.push(await pageImage(pdf,q));
+      try{
+        var t=await ocr(imgs,ctx);
+        if(t.trim())texts.push(t);
+      }catch(e){
+        if(e&&e.limit){limitHit=true;break;}
+        throw e;
+      }
+      p=last+1;
+      if(p<=n)await wait(OCR_GAP_MS);
+    }
+  }finally{try{pdf.destroy();}catch(e){}}
+  return {text:texts.join("\n"),total:total,read:n,limitHit:limitHit};
 }
 
 /* ---------- reading a Word .docx (no library needed) ---------- */
@@ -83,7 +120,7 @@ function xmlToText(xml){
     .replace(/&#(\d+);/g,function(m,d){return String.fromCharCode(parseInt(d,10));})
     .replace(/&amp;/g,"&");
 }
-function textToPages(text){
+function textToPages(text,cap){
   var paras=text.split(/\r?\n/).map(function(s){return s.replace(/[ \t]+/g," ").trim();}).filter(Boolean);
   var pages=[],cur="";
   paras.forEach(function(p){
@@ -91,7 +128,7 @@ function textToPages(text){
     cur+=(cur?"\n":"")+p;
   });
   if(cur)pages.push(cur);
-  return {pages:pages.slice(0,MAX_PAGES),total:pages.length};
+  return {pages:pages.slice(0,cap||MAX_PAGES),total:pages.length};
 }
 async function readDocx(file){
   var buf=await file.arrayBuffer();
@@ -169,10 +206,16 @@ async function buildPaper(){
   var found=0,limitHit=false;
   try{
     say("ebSt","Reading the file…");
-    var rd=await readFileText(f),chunks=chunkPages(rd.pages);
+    var rd=await readFileText(f),chunks=chunkPages(rd.pages),scanNote="";
+    var isPdf=!/\.(docx|txt|doc)$/i.test(f.name||"");
+    if(!chunks.length&&isPdf){
+      var sc=await readScanned(f,c);
+      rd=textToPages(sc.text,60);
+      chunks=chunkPages(rd.pages);
+      scanNote=" (scanned paper, "+sc.read+" of "+sc.total+" pages read"+(sc.limitHit?", AI limit reached while reading":"")+")";
+    }
     if(!chunks.length){
-      var isPdf=!/\.(docx|txt)$/i.test(f.name||"");
-      say("ebSt",isPdf?"No readable text (maybe a scanned PDF). Scanned papers are not supported yet.":"No readable text found in this file.");
+      say("ebSt",isPdf?"Could not read any text from the page pictures. The scan may be too faint or blank.":"No readable text found in this file.");
       ST.busy=false;return;
     }
     var seen={};
@@ -190,7 +233,7 @@ async function buildPaper(){
       if(k<chunks.length-1)await wait(GAP_MS);
     }
     ST.meta=c;
-    say("ebSt",(limitHit?"Stopped: the AI limit was reached. ":"Done. ")+"Questions found: "+found+" · kept (both AIs agreed): "+ST.built.length+" · dropped: "+(found-ST.built.length)+".");
+    say("ebSt",(limitHit?"Stopped: the AI limit was reached. ":"Done. ")+"Questions found: "+found+" · kept (both AIs agreed): "+ST.built.length+" · dropped: "+(found-ST.built.length)+"."+scanNote+(found===0?" No multiple-choice questions were found. If this paper only has written (structured) questions, that is expected.":""));
   }catch(e){say("ebSt","Stopped: "+((e&&e.message)||e));}
   ST.busy=false;drawResults();
 }
@@ -249,5 +292,5 @@ function render(body){
   drawResults();
 }
 
-window.EduExamBuilder={render:render,version:"1.1",_readFileText:readFileText};
+window.EduExamBuilder={render:render,version:"1.2",_readFileText:readFileText};
 })();
