@@ -1,4 +1,4 @@
-/* Edu Library - AI Library Manager v0.9: the AI sorts each PDF. 80% sure or more = uploads by itself. Below 80% = waits for your Approve. Stops cleanly when the AI limit is reached. */
+/* Edu Library - AI Library Manager v1.1: the AI sorts each PDF. 80% sure or more = uploads by itself. Below 80% = waits for your Approve. Stops cleanly when the AI limit is reached. Exact duplicates (same file content + size) are skipped automatically, without using the AI. */
 (function(){
 "use strict";
 var URL_CLASSIFY="https://edu-ai-backend-three.vercel.app/api/book-link?classify=1";
@@ -54,6 +54,26 @@ async function classify(file,info){
     if(!r.ok)throw new Error(j.error||("Server answered "+r.status));
     return j;
   }
+}
+
+/* ---------- fingerprints: exact duplicates ---------- */
+/* is a file with this content (hash) AND the same size already in the library? If the check fails for any reason, answer null (do not block the file). */
+async function libraryHit(hash,size){
+  try{
+    var r=await sb.from("file_fingerprints").select("hash,size,title").eq("hash",hash).limit(1);
+    if(r.error||!r.data||!r.data.length)return null;
+    var row=r.data[0];
+    if(Number(row.size)===Number(size))return row;
+  }catch(e){}
+  return null;
+}
+/* after a successful upload, remember the file's fingerprint; errors are ignored */
+async function saveFingerprint(it){
+  try{
+    if(!it||!it.hash||!it.edit)return;
+    var e=it.edit;
+    await sb.from("file_fingerprints").insert({hash:it.hash,size:it.size,title:clean(e.title),level:e.level,class:e.cls0,doc_type:e.docType,server:(e.docType==="exam"?"C":bookServer)});
+  }catch(x){}
 }
 
 /* ---------- short titles ---------- */
@@ -266,6 +286,7 @@ function miniCard(it){
     else if(it.status==="paused")h+="<div style='color:#e0a030;margin-top:3px'>Paused — the AI limit was reached. Not checked yet.</div>";
     else if(it.status==="work")h+="<div style='margin-top:3px'>Reading and asking AI…</div>";
     else if(it.status==="noText")h+="<div style='color:#e0a030;margin-top:3px'>No readable text (maybe scanned).</div>";
+    else if(it.status==="dupe")h+="<div style='color:#777;font-weight:700;margin-top:3px'>⛔ "+E(it.msg)+"</div><div style='font-size:12px;color:var(--sub);margin-top:2px'>Not sent to the AI. Nothing uploaded.</div><div style='display:flex;margin-top:6px'>"+miniBtn("Check anyway","EduLibraryManager.force("+i+")")+"</div>";
     if(it.status==="err"||it.status==="noText")h+="<div style='display:flex;margin-top:6px'>"+miniBtn("Fill in by hand","EduLibraryManager.hand("+i+")")+"</div>";
   }else{
     var bits=[];
@@ -304,11 +325,12 @@ function bar(){
   var rj=items.filter(function(x){return x.dec==="rejected";}).length;
   var dn=items.filter(function(x){return x.up==="done";}).length;
   var need=items.filter(function(x){return x.edit&&x.dec==="pending"&&!x.up;}).length;
-  var fin=items.filter(function(x){return x.status==="done"||x.status==="noText"||x.status==="err";}).length;
+  var nd=items.filter(function(x){return x.status==="dupe";}).length;
+  var fin=items.filter(function(x){return x.status==="done"||x.status==="noText"||x.status==="err"||x.status==="dupe";}).length;
   var u=$("lmUp");if(u){u.textContent="Upload approved ("+ok+")";u.disabled=!ok||uploading;}
   var a=$("lmAll");if(a)a.disabled=!items.length;
   var s=$("lmStatus");
-  if(s&&items.length)s.textContent=fin+" of "+items.length+" checked · "+dn+" uploaded · "+need+" need your OK · "+rj+" rejected"+(running?" — checking, keep this screen open":(uploading?" — uploading, keep this screen open":""));
+  if(s&&items.length)s.textContent=fin+" of "+items.length+" checked"+(nd?" ("+nd+" identical cop"+(nd>1?"ies":"y")+")":"")+" · "+dn+" uploaded · "+need+" need your OK · "+rj+" rejected"+(running?" — checking, keep this screen open":(uploading?" — uploading, keep this screen open":""));
   else if(s)s.textContent="";
   var st=$("lmStop");if(st)st.style.display=(running||uploading)?"":"none";
   var rs=$("lmResume");if(rs)rs.style.display=(!running&&items.some(function(x){return x.status==="paused";}))?"":"none";
@@ -337,6 +359,18 @@ function decide(i,d){
 function hand(i){var it=items[i];if(!it||it.edit)return;it.edit=newEdit(null,it.name);it.dec="pending";it.open=true;drawOne(i);}
 function toggle(i){var it=items[i];if(!it)return;it.open=!isOpen(it);drawOne(i);}
 function retry(i){var it=items[i];if(!it)return;it.up="";it.upErr="";it.dec="approved";drawOne(i);kick();}
+/* "Check anyway": put a skipped file back in the queue and ignore the fingerprint checks for it */
+function force(i){
+  var it=items[i];if(!it||it.status!=="dupe")return;
+  it.forceCheck=true;it.status="wait";it.dec="";it.auto=false;it.msg="";it.result=null;it.edit=null;it.err="";
+  drawOne(i);
+  if(!running){
+    run().catch(function(e){
+      var m=$("lmStatus");if(m)m.textContent="Error: "+((e&&e.message)||e);
+      running=false;bar();
+    });
+  }
+}
 function approveConfident(){
   var n=0;
   checkDuplicates();
@@ -357,7 +391,7 @@ function setAuto(on){
 async function run(){
   if(running)return;
   running=true;if(!uploading)stopNow=false;bar();
-  var stopped=false,limitHit=false;
+  var stopped=false,limitHit=false,lastAi=0;
   for(var k=0;k<items.length;k++){
     var it=items[k];
     if(stopNow){stopped=true;break;}
@@ -366,8 +400,29 @@ async function run(){
     try{
       var info=await readPdf(it.file);
       it.pages=info.pages;it.hash=info.hash;it.read=info.read;
+      /* exact duplicates are skipped BEFORE any AI request (and with no waiting) */
+      if(it.hash&&!it.forceCheck){
+        var tw=-1;
+        for(var q=0;q<k;q++){
+          if(items[q].hash&&items[q].hash===it.hash&&items[q].size===it.size){tw=q;break;}
+        }
+        if(tw>=0){
+          it.status="dupe";it.dec="rejected";it.auto=true;
+          it.msg="Skipped automatically: identical copy of #"+(tw+1);
+          drawOne(k);continue;
+        }
+        var hit=await libraryHit(it.hash,it.size);
+        if(hit){
+          it.status="dupe";it.dec="rejected";it.auto=true;
+          it.msg="Already in the library ("+(clean(hit.title)||"no title")+")";
+          drawOne(k);continue;
+        }
+      }
       if(!info.readable){it.status="noText";drawOne(k);continue;}
-      var j=await classify(it.file,info);
+      /* keep a gap between AI requests (only AI requests count) */
+      if(lastAi){var d=Date.now()-lastAi;if(d<GAP_MS)await wait(GAP_MS-d);}
+      var j;
+      try{j=await classify(it.file,info);}finally{lastAi=Date.now();}
       if(j.noText){it.status="noText";}
       else if(j.result){it.result=j.result;it.provider=j.provider;it.status="done";it.edit=newEdit(j.result,it.name);it.dec="pending";}
       else{it.status="err";it.err=j.error||"No answer";}
@@ -377,7 +432,6 @@ async function run(){
     }
     if(autoCheck(it))kick();
     drawOne(k);
-    if(k<items.length-1&&!stopNow)await wait(GAP_MS);
   }
   /* AI limit reached: keep every unchecked file as "paused" (not an error) so you can check them later */
   if(limitHit)items.forEach(function(x){if(x.status==="wait")x.status="paused";});
@@ -388,6 +442,13 @@ async function run(){
   var m=$("lmStatus");
   if(m&&limitHit)m.textContent="Stopped: the AI limit was reached. "+left+" file(s) were not checked. Wait a while, then tap Check remaining files.";
   else if(m&&stopped&&left)m.textContent="Stopped. "+left+" file(s) were not checked.";
+  /* a file put back with "Check anyway" while this loop was past it: go round again */
+  if(!stopped&&!limitHit&&items.some(function(x){return x.status==="wait";})){
+    run().catch(function(e){
+      var m2=$("lmStatus");if(m2)m2.textContent="Error: "+((e&&e.message)||e);
+      running=false;bar();
+    });
+  }
 }
 /* continue with the files that were paused by the AI limit */
 function resume(){
@@ -463,7 +524,7 @@ async function uploadLoop(){
       }
       var S=srv(bookServer);
       it.up="uploading";it.upErr="";drawOne(it.i);
-      try{await uploadRetry(it,S);it.up="done";ok++;}
+      try{await uploadRetry(it,S);it.up="done";ok++;await saveFingerprint(it);}
       catch(e){it.up="err";it.upErr=(e&&e.message)||String(e);fail++;}
       did=true;
       drawOne(it.i);
@@ -518,7 +579,7 @@ function pick(files){
 function render(body){
   items=ST.items;bookServer=ST.bookServer;
   var so=SERVERS.filter(function(x){return !x.exam;}).map(function(x){return "<option value='"+x.id+"'"+(x.ok?"":" disabled")+(x.id===bookServer?" selected":"")+">"+E(x.name)+(x.ok?"":" (not connected)")+"</option>";}).join("");
-  body.innerHTML="<div class='note' style='margin-top:0'>AI Library — choose PDFs. The AI works out where each one belongs. <b>If it is "+pct(AUTO_MIN)+" sure or more, the file uploads by itself.</b> Below "+pct(AUTO_MIN)+", or if it sees a problem or a possible duplicate, it waits for your <b>Approve</b>.<br><b>Tip:</b> each time you choose PDFs they are <b>added</b> to the list. Tap <b>Details</b> on a card to edit it.</div>"
+  body.innerHTML="<div class='note' style='margin-top:0'>AI Library — choose PDFs. The AI works out where each one belongs. <b>If it is "+pct(AUTO_MIN)+" sure or more, the file uploads by itself.</b> Below "+pct(AUTO_MIN)+", or if it sees a problem or a possible duplicate, it waits for your <b>Approve</b>. <b>Exact copies of files already uploaded are skipped automatically.</b><br><b>Tip:</b> each time you choose PDFs they are <b>added</b> to the list. Tap <b>Details</b> on a card to edit it.</div>"
    +"<input id='lmFile' type='file' accept='application/pdf,.pdf' multiple style='display:none'>"
    +"<button type='button' class='btn' id='lmPick'>Choose PDF files</button>"
    +"<label style='display:flex;gap:10px;align-items:center;margin:12px 0 0;font-size:13.5px'><input type='checkbox' id='lmAuto'"+(ST.auto?" checked":"")+" style='width:20px;height:20px;flex:none'> <span>Upload automatically when the AI is "+pct(AUTO_MIN)+" sure or more</span></label>"
@@ -543,5 +604,5 @@ function render(body){
   }else bar();
 }
 
-window.EduLibraryManager={render:render,set:setField,decide:decide,hand:hand,retry:retry,toggle:toggle,resume:resume,version:"0.9"};
+window.EduLibraryManager={render:render,set:setField,decide:decide,hand:hand,retry:retry,toggle:toggle,resume:resume,force:force,version:"1.1"};
 })();
