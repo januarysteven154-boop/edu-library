@@ -1,4 +1,6 @@
-/* Edu Library - AI Examination Room, Admin side: Exam Builder v1.7 (saves papers to server C, with a space meter; fills Class, Subject, Title and Year from the file by itself). Builds checked multiple-choice questions (two AIs must agree) from the text of an exam paper (PDF with text, SCANNED PDF read by AI, Word .docx, or .txt) and saves them to server C through the backend. Includes an accuracy test with maths questions whose answers are known.
+/* Edu Library - AI Examination Room, Admin side: Exam Builder v2.0 (saves papers to server C, with a space meter; fills Class, Subject, Title and Year from the file by itself). Builds checked multiple-choice questions (two AIs must agree) from the text of an exam paper (PDF with text, SCANNED PDF read by AI, Word .docx, or .txt) and saves them to server C through the backend. Includes an accuracy test with maths questions whose answers are known.
+   v2.0: FULLY AUTOMATIC. Choosing the file starts everything by itself (read, questions, pictures); only Save is left for you. A question whose figure sits on the next page is found by a second look with shifted pages.
+   v1.9: ONE RUN. Reading the paper, making the questions AND adding the pictures now happen in the same run with one button (no separate \"Add pictures\" step). The report is now one short line (Ready / Held / Dropped / Not found); the long list is behind a \"Details\" tap.
    v1.8: PICTURES. After a run, the button "Add pictures" finds the diagram / map / table of every held question on the page pictures, cuts it out, shows a small preview next to the question, lets BOTH AIs look at it, and Save stores the picture on the same server as the paper (the students' Exam Room already shows it above the question).
    v1.7: (1) "Scanned paper" box (turns on by itself when the PDF was made by a scanner): the page pictures are read by AI instead of the hidden scan text, which is often full of mistakes and mixed-up lines; the AI reading is kept in memory so a second run does not read the pictures again. (2) A report after every run: which question numbers were kept, which need a picture (held, not saved yet), which were dropped and why, and which numbers were not found at all. (3) Failed parts are tried again once, and the real reason of a failure is shown. */
 (function(){
@@ -218,6 +220,16 @@ function fillClasses(){
 }
 var WHY={options_not_in_file:"its options were not found in the file text",disagree:"the two AIs gave different answers",unsure:"one AI was not sure of the answer"};
 /* the report: which question numbers were kept, held for a picture, dropped (and why), and not found at all */
+function reportCounts(built,held,lost){
+  var kn={},all={},i;
+  built.forEach(function(q){if(q.n){kn[q.n]=1;all[q.n]=1;}});
+  held.forEach(function(q){if(q.n)all[q.n]=1;});
+  var shown=lost.filter(function(d){return !(d.n&&kn[d.n]);});
+  shown.forEach(function(d){if(d.n)all[d.n]=1;});
+  var nums=Object.keys(all).map(Number),max=nums.length?Math.max.apply(null,nums):0,miss=0;
+  for(i=1;i<=max;i++)if(!all[i])miss++;
+  return {kept:built.length,held:held.length,dropped:shown.length,missing:miss};
+}
 function reportLines(built,held,lost){
   var kn=[],hn=[],all={},i;
   built.forEach(function(q){if(q.n){kn.push(q.n);all[q.n]=1;}});
@@ -230,7 +242,7 @@ function reportLines(built,held,lost){
   var out=[];
   if(!built.length&&!held.length&&!shown.length)return out;
   out.push("Kept and ready to save: "+built.length+(kn.length?" (No. "+srt(kn).join(", ")+")":""));
-  if(held.length)out.push("Need a picture, not saved yet: "+held.length+(hn.length?" (No. "+srt(hn).join(", ")+")":"")+". Tap the Add pictures button below.");
+  if(held.length)out.push("Held (no picture yet): "+held.length+(hn.length?" (No. "+srt(hn).join(", ")+")":"")+".");
   shown.slice(0,40).forEach(function(d){out.push("Dropped No. "+(d.n||"?")+": "+(WHY[d.reason]||d.reason)+". "+String(d.q||"").slice(0,70));});
   if(shown.length>40)out.push("... and "+(shown.length-40)+" more dropped.");
   if(miss.length)out.push("Not found by the AI at all (numbers between 1 and "+max+"): "+miss.join(", ")+". Run the same file again to try them.");
@@ -299,8 +311,18 @@ async function buildPaper(){
       }
     }
     ST.meta=c;
-    var nDrop=ST.lost.filter(function(d){return !(d.n&&ST.built.some(function(b){return b.n===d.n;}));}).length;
-    say("ebSt",(limitHit?"Stopped: the AI limit was reached. ":(failedIdx.length?"Finished with problems. ":"Done. "))+"Kept (both AIs agreed): "+ST.built.length+" · need a picture: "+ST.held.length+" · dropped: "+nDrop+"."+scanNote+(failedIdx.length?" "+failedIdx.length+" part(s) still failed after a second try. Last reason: "+lastErr+". You can still Save what was kept. Run the same file again later to try the failed parts; Save skips questions already saved.":"")+(!ST.built.length&&!ST.held.length&&!nDrop?" No multiple-choice questions were found. If this paper only has written (structured) questions, that is expected.":""));
+    /* pictures: same run, no extra button */
+    var picNote="";
+    if(ST.held.length&&ST.pdfFile&&!limitHit){
+      say("ebSt","Questions done. Now adding the pictures ("+ST.held.length+" question(s) need one)…");
+      await wait(GAP_MS);
+      var pr=await picturesCore();
+      picNote=picLine(pr);
+    }
+    ST.busy=false;drawResults();
+    var cn=reportCounts(ST.built,ST.held,ST.lost),withPic=ST.built.filter(function(b){return b.img;}).length;
+    say("ebSt",(limitHit?"Stopped: the AI limit was reached. ":(failedIdx.length?"Finished with problems. ":"Done. "))+"Ready to save: "+cn.kept+(withPic?" ("+withPic+" with a picture)":"")+" · Held: "+cn.held+" · Dropped: "+cn.dropped+(cn.missing?" · Not found: "+cn.missing:"")+"."+(picNote?" "+picNote:"")+scanNote+(failedIdx.length?" "+failedIdx.length+" part(s) failed twice ("+lastErr+"). Save what is ready, then run the same file again later; Save skips questions already saved.":"")+(!ST.built.length&&!ST.held.length&&!cn.dropped?" No multiple-choice questions were found. If this paper only has written (structured) questions, that is expected.":"")+(ST.built.length?" Everything is ready: look at the pictures, then tap Save.":""));
+    try{var sv=$("ebSave");if(sv&&sv.scrollIntoView)sv.scrollIntoView({behavior:"smooth",block:"start"});}catch(e9){}
   }catch(e){say("ebSt","Stopped: "+((e&&e.message)||e));}
   ST.busy=false;drawResults();
 }
@@ -328,26 +350,40 @@ async function cropPage(pdf,pageNum,box){
   out.width=0;out.height=0;
   return {jpeg:jpeg.split(",")[1],save:web.split(",")[1],ext:ext,bytes:dataBytes(web),preview:web};
 }
+function picLine(r){
+  return "Pictures: "+r.added+" added"+(r.textOnly?", "+r.textOnly+" needed none":"")+(r.reasons.length?". Problem: "+r.reasons.join("; "):"")+".";
+}
 async function addPictures(){
   if(ST.busy||!ST.held.length||!ST.pdfFile||!ST.meta)return;
   ST.busy=true;drawResults();
+  var r=await picturesCore();
+  say("ebSt",picLine(r)+" Still held: "+ST.held.length+". Look at each picture below before you tap Save.");
+  ST.busy=false;drawResults();
+}
+async function picturesCore(){
   var c=ST.meta,found={},groups={},reasons=[],added=0,textOnly=0,limitHit=false,pdf=null;
   try{
     var buf=await ST.pdfFile.arrayBuffer();
     pdf=await pdfjsLib.getDocument({data:new Uint8Array(buf)}).promise;
     var n=Math.min(pdf.numPages,MAX_PAGES),withNum=ST.held.filter(function(h){return h.n;});
     /* 1. where is the picture of each held question? (the AI looks at 2 pages at a time) */
-    var p=1;
+    for(var pass=0;pass<2&&!limitHit;pass++){
+    var p=1+pass;
+    if(pass>0){
+      if(!withNum.filter(function(h){return !found[h.n];}).length)break;
+      await wait(OCR_GAP_MS);
+    }
     while(p<=n&&!limitHit){
       var left=withNum.filter(function(h){return !found[h.n];});
       if(!left.length)break;
       var last=Math.min(p+OCR_BATCH-1,n),imgs=[];
-      say("ebSt","Looking for the pictures: pages "+p+(last>p?"–"+last:"")+" of "+n+". Questions still to find: "+left.length+"…");
+      say("ebSt","Looking for the pictures"+(pass?" (second look)":"")+": pages "+p+(last>p?"–"+last:"")+" of "+n+". Questions still to find: "+left.length+"…");
       for(var q=p;q<=last;q++)imgs.push(await pageImage(pdf,q));
       try{
         var j=await post({figures:true,images:imgs,qs:left.map(function(h){return {n:h.n,q:h.q};}),level:c.level,class:c.cls,subject:c.subject});
         (j.items||[]).forEach(function(it){
           if(!it.found||found[it.n])return;
+          if(!(it.needsPicture===false||(it.box&&it.image)))return;
           found[it.n]={noPic:it.needsPicture===false,page:it.image?p+it.image-1:0,box:it.box};
         });
       }catch(e){
@@ -356,6 +392,7 @@ async function addPictures(){
       }
       p=last+1;
       if(p<=n)await wait(OCR_GAP_MS);
+    }
     }
     if(limitHit)reasons.push("the AI limit was reached while looking for pictures");
     /* 2. group the questions: same picture together, questions that need no picture together */
@@ -399,10 +436,10 @@ async function addPictures(){
     var noBox=ST.held.filter(function(h){return h.n&&found[h.n]&&!found[h.n].noPic&&!(found[h.n].box&&found[h.n].page);}).map(function(h){return h.n;});
     if(noFound.length)reasons.push("No. "+noFound.join(", ")+(noFound.length>1?" were":" was")+" not found on the page pictures");
     if(noBox.length)reasons.push("the picture of No. "+noBox.join(", ")+" could not be located");
-    say("ebSt","Pictures: "+added+" question(s) now have a picture, "+textOnly+" more did not need one. Still held: "+ST.held.length+(reasons.length?". Reasons: "+reasons.join("; ")+".":".")+" Look at each picture below before you tap Save. Tap Don't save under a picture that is wrong.");
-  }catch(e){say("ebSt","Pictures stopped: "+((e&&e.message)||e));}
+  }catch(e){reasons.push("stopped: "+((e&&e.message)||e));}
   try{if(pdf)pdf.destroy();}catch(e3){}
-  ST.busy=false;drawResults();
+  drawResults();
+  return {added:added,textOnly:textOnly,reasons:reasons};
 }
 function dropBuilt(i){
   if(ST.busy)return;
@@ -411,11 +448,12 @@ function dropBuilt(i){
 }
 function drawResults(){
   var box=$("ebList");if(!box)return;
-  var q=ST.built,h="",rep=reportLines(ST.built,ST.held,ST.lost);
+  var q=ST.built,h="",rep=reportLines(ST.built,ST.held,ST.lost),cn=reportCounts(ST.built,ST.held,ST.lost);
   if(rep.length){
-    h+="<div style='border:1px solid var(--line);border-radius:9px;padding:8px 12px;margin:0 0 10px;font-size:12.5px;line-height:1.55;color:var(--sub);word-break:break-word'><b style='color:var(--ink)'>Report</b>"+rep.map(function(l){return "<div>"+E(l)+"</div>";}).join("")+"</div>";
+    h+="<div style='border:1px solid var(--line);border-radius:9px;padding:8px 12px;margin:0 0 10px;font-size:13px;line-height:1.5;color:var(--sub);word-break:break-word'><b style='color:var(--ink)'>Ready "+cn.kept+"</b> · Held "+cn.held+" · Dropped "+cn.dropped+(cn.missing?" · Not found "+cn.missing:"")
+      +"<details style='margin-top:6px'><summary style='cursor:pointer;color:var(--ink)'>Details</summary><div style='font-size:12.5px;line-height:1.55;margin-top:6px'>"+rep.map(function(l){return "<div>"+E(l)+"</div>";}).join("")+"</div></details></div>";
   }
-  if(ST.held.length&&ST.pdfFile&&!ST.busy)h+="<button type='button' class='btn' id='ebPics' style='margin:0 0 10px'>Add pictures to the "+ST.held.length+" question(s) that need one</button>";
+  if(ST.held.length&&ST.pdfFile&&!ST.busy)h+="<button type='button' class='btn' id='ebPics' style='margin:0 0 10px'>Try pictures again ("+ST.held.length+" held)</button>";
   if(ST.held.length&&!ST.pdfFile&&!ST.busy)h+="<div style='font-size:12.5px;color:var(--sub);margin:0 0 10px'>Pictures can only be added from a PDF paper for now.</div>";
   if(q.length){
     h+="<button type='button' class='btn green' id='ebSave' style='margin:0 0 10px'>Save "+q.length+" questions</button>";
@@ -602,7 +640,15 @@ async function onFile(){
   if(!g.subject)miss.push("Subject");
   var sc=await looksScanned(f);
   var sb=$("ebScan");if(sb)sb.checked=sc;
-  say("ebSt","Filled in from the file: "+(got.length?got.join(", "):"nothing found")+". These are guesses, please check the boxes"+(miss.length?" and fill in: "+miss.join(", "):"")+"."+(sc?" This looks like a scanned paper, so the Scanned box is ticked.":""));
+  var info="Filled in from the file: "+(got.length?got.join(", "):"nothing found")+(sc?" (scanned paper)":"")+".";
+  var cc=ctxNow();
+  if(cc.cls&&cc.subject&&cc.title&&!ST.busy){
+    say("ebSt",info+" Starting by itself. Do not close this screen; only Save is left for you at the end.");
+    await wait(600);
+    buildPaper();
+  }else{
+    say("ebSt",info+" Please fill in: "+miss.join(", ")+", then tap the button.");
+  }
 }
 
 /* ---------- screen ---------- */
@@ -635,5 +681,5 @@ function render(body){
   showSpace();
 }
 
-window.EduExamBuilder={render:render,version:"1.8",_readFileText:readFileText,_guess:guessFrom,_report:reportLines,_looksScanned:looksScanned};
+window.EduExamBuilder={render:render,version:"2.0",_readFileText:readFileText,_counts:reportCounts,_guess:guessFrom,_report:reportLines,_looksScanned:looksScanned};
 })();
