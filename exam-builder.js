@@ -1,4 +1,5 @@
-/* Edu Library - AI Examination Room, Admin side: Exam Builder v2.0 (saves papers to server C, with a space meter; fills Class, Subject, Title and Year from the file by itself). Builds checked multiple-choice questions (two AIs must agree) from the text of an exam paper (PDF with text, SCANNED PDF read by AI, Word .docx, or .txt) and saves them to server C through the backend. Includes an accuracy test with maths questions whose answers are known.
+/* Edu Library - AI Examination Room, Admin side: Exam Builder v2.1 (saves papers to server C, with a space meter; fills Class, Subject, Title and Year from the file by itself). Builds checked multiple-choice questions (two AIs must agree) from the text of an exam paper (PDF with text, SCANNED PDF read by AI, Word .docx, or .txt) and saves them to server C through the backend. Includes an accuracy test with maths questions whose answers are known.
+   v2.1: (1) a paper with only written (structured / essay) questions now says so clearly instead of \"Not found: N\"; (2) shorter waits between AI calls (faster runs); works with backend examBuild.js v6, which no longer turns a written question into a fake multiple-choice question.
    v2.0: FULLY AUTOMATIC. Choosing the file starts everything by itself (read, questions, pictures); only Save is left for you. A question whose figure sits on the next page is found by a second look with shifted pages.
    v1.9: ONE RUN. Reading the paper, making the questions AND adding the pictures now happen in the same run with one button (no separate \"Add pictures\" step). The report is now one short line (Ready / Held / Dropped / Not found); the long list is behind a \"Details\" tap.
    v1.8: PICTURES. After a run, the button "Add pictures" finds the diagram / map / table of every held question on the page pictures, cuts it out, shows a small preview next to the question, lets BOTH AIs look at it, and Save stores the picture on the same server as the paper (the students' Exam Room already shows it above the question).
@@ -6,7 +7,7 @@
 (function(){
 "use strict";
 var URL_BUILD="https://edu-ai-backend-three.vercel.app/api/book-link?exambuild=1";
-var CHUNK=3500,MAX_PAGES=30,GAP_MS=11000,OCR_BATCH=2,OCR_GAP_MS=9000;
+var CHUNK=3500,MAX_PAGES=30,GAP_MS=6000,OCR_BATCH=2,OCR_GAP_MS=5000;
 var ST=window.__eduEB=window.__eduEB||{built:[],meta:null,busy:false};
 ST.held=ST.held||[];ST.lost=ST.lost||[];ST.pics=ST.pics||{};
 
@@ -228,7 +229,7 @@ function reportCounts(built,held,lost){
   shown.forEach(function(d){if(d.n)all[d.n]=1;});
   var nums=Object.keys(all).map(Number),max=nums.length?Math.max.apply(null,nums):0,miss=0;
   for(i=1;i<=max;i++)if(!all[i])miss++;
-  return {kept:built.length,held:held.length,dropped:shown.length,missing:miss};
+  return {kept:built.length,held:held.length,dropped:shown.length,missing:miss,max:max,written:(max>0&&(built.length+held.length+shown.length)<max*0.5)};
 }
 function reportLines(built,held,lost){
   var kn=[],hn=[],all={},i;
@@ -245,7 +246,8 @@ function reportLines(built,held,lost){
   if(held.length)out.push("Held (no picture yet): "+held.length+(hn.length?" (No. "+srt(hn).join(", ")+")":"")+".");
   shown.slice(0,40).forEach(function(d){out.push("Dropped No. "+(d.n||"?")+": "+(WHY[d.reason]||d.reason)+". "+String(d.q||"").slice(0,70));});
   if(shown.length>40)out.push("... and "+(shown.length-40)+" more dropped.");
-  if(miss.length)out.push("Not found by the AI at all (numbers between 1 and "+max+"): "+miss.join(", ")+". Run the same file again to try them.");
+  if(miss.length&&max>0&&(built.length+held.length+shown.length)<max*0.5)out.push("Most question numbers in this paper are written-answer questions, not multiple choice, so they are not built.");
+  else if(miss.length)out.push("Not found by the AI at all (numbers between 1 and "+max+"): "+miss.join(", ")+". Run the same file again to try them.");
   return out;
 }
 async function buildPaper(){
@@ -321,7 +323,7 @@ async function buildPaper(){
     }
     ST.busy=false;drawResults();
     var cn=reportCounts(ST.built,ST.held,ST.lost),withPic=ST.built.filter(function(b){return b.img;}).length;
-    say("ebSt",(limitHit?"Stopped: the AI limit was reached. ":(failedIdx.length?"Finished with problems. ":"Done. "))+"Ready to save: "+cn.kept+(withPic?" ("+withPic+" with a picture)":"")+" · Held: "+cn.held+" · Dropped: "+cn.dropped+(cn.missing?" · Not found: "+cn.missing:"")+"."+(picNote?" "+picNote:"")+scanNote+(failedIdx.length?" "+failedIdx.length+" part(s) failed twice ("+lastErr+"). Save what is ready, then run the same file again later; Save skips questions already saved.":"")+(!ST.built.length&&!ST.held.length&&!cn.dropped?" No multiple-choice questions were found. If this paper only has written (structured) questions, that is expected.":"")+(ST.built.length?" Everything is ready: look at the pictures, then tap Save.":""));
+    say("ebSt",(limitHit?"Stopped: the AI limit was reached. ":(failedIdx.length?"Finished with problems. ":"Done. "))+"Ready to save: "+cn.kept+(withPic?" ("+withPic+" with a picture)":"")+" · Held: "+cn.held+" · Dropped: "+cn.dropped+(cn.written?" · Mostly written questions (not multiple choice)":(cn.missing?" · Not found: "+cn.missing:""))+"."+(picNote?" "+picNote:"")+scanNote+(failedIdx.length?" "+failedIdx.length+" part(s) failed twice ("+lastErr+"). Save what is ready, then run the same file again later; Save skips questions already saved.":"")+(!ST.built.length&&!ST.held.length&&!cn.dropped?" No multiple-choice questions were found. If this paper only has written (structured) questions, that is expected.":"")+(ST.built.length?" Everything is ready: look at the pictures, then tap Save.":""));
     try{var sv=$("ebSave");if(sv&&sv.scrollIntoView)sv.scrollIntoView({behavior:"smooth",block:"start"});}catch(e9){}
   }catch(e){say("ebSt","Stopped: "+((e&&e.message)||e));}
   ST.busy=false;drawResults();
@@ -450,7 +452,7 @@ function drawResults(){
   var box=$("ebList");if(!box)return;
   var q=ST.built,h="",rep=reportLines(ST.built,ST.held,ST.lost),cn=reportCounts(ST.built,ST.held,ST.lost);
   if(rep.length){
-    h+="<div style='border:1px solid var(--line);border-radius:9px;padding:8px 12px;margin:0 0 10px;font-size:13px;line-height:1.5;color:var(--sub);word-break:break-word'><b style='color:var(--ink)'>Ready "+cn.kept+"</b> · Held "+cn.held+" · Dropped "+cn.dropped+(cn.missing?" · Not found "+cn.missing:"")
+    h+="<div style='border:1px solid var(--line);border-radius:9px;padding:8px 12px;margin:0 0 10px;font-size:13px;line-height:1.5;color:var(--sub);word-break:break-word'><b style='color:var(--ink)'>Ready "+cn.kept+"</b> · Held "+cn.held+" · Dropped "+cn.dropped+(cn.written?" · Mostly written questions":(cn.missing?" · Not found "+cn.missing:""))
       +"<details style='margin-top:6px'><summary style='cursor:pointer;color:var(--ink)'>Details</summary><div style='font-size:12.5px;line-height:1.55;margin-top:6px'>"+rep.map(function(l){return "<div>"+E(l)+"</div>";}).join("")+"</div></details></div>";
   }
   if(ST.held.length&&ST.pdfFile&&!ST.busy)h+="<button type='button' class='btn' id='ebPics' style='margin:0 0 10px'>Try pictures again ("+ST.held.length+" held)</button>";
@@ -681,5 +683,5 @@ function render(body){
   showSpace();
 }
 
-window.EduExamBuilder={render:render,version:"2.0",_readFileText:readFileText,_counts:reportCounts,_guess:guessFrom,_report:reportLines,_looksScanned:looksScanned};
+window.EduExamBuilder={render:render,version:"2.1",_readFileText:readFileText,_counts:reportCounts,_guess:guessFrom,_report:reportLines,_looksScanned:looksScanned};
 })();
