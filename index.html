@@ -1029,7 +1029,10 @@ body.admpanel .wrap{padding-bottom:160px}
 .admtop .logout{background:rgba(179,38,30,.85);color:#fff;text-shadow:none}
 .admgrid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:6px}
 .admcard{border:1px solid rgba(255,214,120,.55);border-radius:22px;min-height:150px;color:#fff;font-weight:800;font-size:15px;letter-spacing:.4px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);box-shadow:0 8px 24px rgba(0,0,0,.35),0 0 18px rgba(249,184,31,.3);text-shadow:0 2px 6px rgba(0,0,0,.5)}
-.admcard i{font-style:normal;font-size:46px;line-height:1}.admcard:active{transform:scale(.97)}
+.admcard i{font-style:normal;font-size:46px;line-height:1}.admcard i svg{width:46px;height:46px}
+#admNav button i svg{width:24px;height:24px}
+.admprev{display:flex;align-items:center;justify-content:center;gap:6px}
+.admcard:active{transform:scale(.97)}
 .admcard.c1{background:linear-gradient(135deg,rgba(76,95,212,.82),rgba(139,92,255,.78))}
 .admcard.c2{background:linear-gradient(135deg,rgba(31,138,84,.85),rgba(22,160,92,.75))}
 .admcard.c3{background:linear-gradient(135deg,rgba(224,70,50,.85),rgba(249,140,40,.78))}
@@ -1047,6 +1050,19 @@ body.admpanel #admAi{display:flex}
 #admAi .m img{width:100%;height:100%;object-fit:cover}
 #admAi span{font-size:9.5px;font-weight:800;color:#fff;background:rgba(40,12,38,.85);border:1px solid rgba(249,184,31,.6);border-radius:10px;padding:2px 7px;white-space:nowrap}
 </style>
+<style>
+/* top-left search button + search header */
+.topbar .srchtop{flex:none;width:34px;height:34px;border-radius:50%;border:1px solid rgba(255,255,255,.35);background:rgba(255,255,255,.12);color:#fff;display:flex;align-items:center;justify-content:center;padding:0;margin:0}
+.topbar .srchtop svg{width:20px;height:20px}
+body.light .topbar .srchtop{background:rgba(30,124,242,.10);border-color:rgba(30,124,242,.25);color:#1E7CF2}
+body.srchpage .topbar{padding-right:14px!important}
+.hsearch{flex:1;min-width:0;display:flex;align-items:center;gap:8px;height:38px;padding:0 12px;border-radius:19px;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.35);color:#fff}
+.hsearch svg{width:18px;height:18px;flex:none}
+.hsearch input{flex:1;min-width:0;height:100%;background:none;border:0;outline:0;color:inherit;font-size:15px;font-family:inherit;padding:0;box-shadow:none}
+.hsearch input::placeholder{color:rgba(255,255,255,.65)}
+body.light .hsearch{background:#fff;border-color:rgba(30,124,242,.35);color:#0b1b3f}
+body.light .hsearch input::placeholder{color:#6b7a99}
+</style>
 </head>
 <body><script>(function(){try{var t=localStorage.getItem("edu_theme2")||"sunset";document.body.classList.add(t==="light"?"light":t==="dark"?"dark":"sunset")}catch(e){document.body.classList.add("sunset")}})();</script>
 <header class="top" id="topHeader"></header>
@@ -1054,7 +1070,7 @@ body.admpanel #admAi{display:flex}
 <button class="aifab" id="aiFab" onclick="location.hash='#/ai'" title="Edu AI Assistant">🤖</button>
 <nav class="bottomnav">
   <a href="#/" data-r="/"><span class="ic"><svg class="nic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 10.2V20h13v-9.8"/><path d="M10 20v-5.5h4V20"/></svg></span>Home</a>
-  <a href="#/search" data-r="search"><span class="ic"><svg class="nic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4.5 4.5"/></svg></span>Search</a>
+  <a href="#/room" data-r="room"><span class="ic"><svg class="nic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="4.5" width="14" height="16.5" rx="2"/><path d="M9 4.5h6V7H9z"/><path d="m8.8 13.4 2.2 2.2 4.2-4.6"/></svg></span>Exam Room</a>
   <a href="#/library" data-r="library"><span class="ic"><svg class="nic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="4" width="4.6" height="16" rx="1"/><rect x="9.6" y="4" width="4.6" height="16" rx="1"/><path d="m16.2 5.6 3.7-1 3 14.6-3.7 1z" transform="translate(-1.6 0)"/></svg></span>Library</a>
   <a href="#/exams" data-r="exams"><span class="ic"><svg class="nic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6.5 3h8l4 4v14h-12z"/><path d="M14.5 3v4h4"/><path d="M9.5 12h6M9.5 16h6"/></svg></span>Exams</a>
   <a href="#/settings" data-r="settings" id="navX" data-mode="settings"><span class="ic"><svg class="nic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-.33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h0a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51h0a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v0a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></span>Settings</a>
@@ -1634,7 +1650,7 @@ function bookCard(b){
     <div class="acts">${ok?`<button class="open ib" type="button" aria-label="Preview" title="Preview" onclick="previewBook('${bkey(b)}')">${IC_EYE}</button><a class="open dl ib" aria-label="Save" title="Save" href="${esc(dlUrl(b))}"${isFb(b)?` onclick="return fbDl('${bkey(b)}')"`:""}>${IC_DL}</a>`:''}</div></div>`;
 }
 
-function setHeader(html,noAcct){ document.getElementById("topHeader").innerHTML = `<div class="topbar">${html}<button type="button" class="accttop"${noAcct?' style="display:none"':''} aria-label="My account" title="My account" onclick="eduOpenAccount()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="3.6"/><path d="M4.5 20c.8-3.7 3.8-5.8 7.5-5.8s6.7 2.1 7.5 5.8"/></svg></button></div>`; }
+function setHeader(html,noAcct){ const srch=(!noAcct && !/class="(back|hamb)"/.test(html))?`<button type="button" class="srchtop" aria-label="Search" title="Search" onclick="location.hash='#/search'"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4.5 4.5"/></svg></button>`:""; document.getElementById("topHeader").innerHTML = `<div class="topbar">${srch}${html}<button type="button" class="accttop"${noAcct?' style="display:none"':''} aria-label="My account" title="My account" onclick="eduOpenAccount()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="3.6"/><path d="M4.5 20c.8-3.7 3.8-5.8 7.5-5.8s6.7 2.1 7.5 5.8"/></svg></button></div>`; }
 function setActiveNav(key){ document.querySelectorAll(".bottomnav a").forEach(a=>a.classList.toggle("active", a.dataset.r===key)); }
 
 function render(){
@@ -1652,7 +1668,7 @@ function route(){
   document.getElementById("topHeader").style.display = isLand ? "none" : "";
   document.querySelector(".bottomnav").style.display = isLand ? "none" : "";
   document.body.classList.toggle("landing",isLand);
-  {const p0=(location.hash.slice(1)||"/").split("/").filter(Boolean)[0];document.body.classList.toggle("aipage",p0==="ai");document.body.classList.toggle("noacct",isLand||p0==="admin");document.body.classList.toggle("adminpage",p0==="admin");document.body.classList.toggle("libbg",p0==="library"||p0==="level"||p0==="search");document.body.classList.toggle("exbg",p0==="exams");}
+  {const p0=(location.hash.slice(1)||"/").split("/").filter(Boolean)[0];document.body.classList.toggle("aipage",p0==="ai");document.body.classList.toggle("srchpage",p0==="search");document.body.classList.toggle("noacct",isLand||p0==="admin");document.body.classList.toggle("adminpage",p0==="admin");document.body.classList.toggle("libbg",p0==="library"||p0==="level"||p0==="search");document.body.classList.toggle("exbg",p0==="exams");}
   document.body.classList.remove("gate");
   const hash = location.hash.slice(1) || "/";
   const parts = hash.split("/").filter(Boolean).map(decodeURIComponent);
@@ -1669,6 +1685,7 @@ function route(){
     }
     return parts[3] ? renderClassBooks(app, parts[1], parts[2], parts[3]) : renderClass(app, parts[1], parts[2]);
   }
+  if(parts[0] === "room") return eduRoomOpen(app);
   if(parts[0] === "exams") return renderExams(app, parts[1], parts[2]);
   if(parts[0] === "start") return renderStart(app);
   if(parts[0] === "library") return renderLibrary(app);
@@ -1680,6 +1697,27 @@ function route(){
   return renderHome(app);
 }
 
+/* AI Examination Room (student): small script loaded on demand from the website */
+function eduRoomOpen(app){
+  setActiveNav("room");
+  const go=()=>window.EduRoom.open(app);
+  if(window.EduRoom)return go();
+  setHeader(`<h2>AI Examination Room</h2>`);
+  app.innerHTML='<div class="empty">Loading...</div>';
+  const sc=document.createElement("script");
+  sc.src="https://edu-library.januarysteven154.workers.dev/exam-room.js?v="+Date.now();
+  sc.onload=go;
+  sc.onerror=()=>{
+    /* website not reachable (offline): use the copy of exam-room.js saved inside the app */
+    try{sc.remove();}catch(x){}
+    const lc=document.createElement("script");
+    lc.src="exam-room.js";
+    lc.onload=go;
+    lc.onerror=()=>{app.innerHTML='<div class="empty">Could not open the Examination Room. Check your internet and try again.</div>';};
+    document.head.appendChild(lc);
+  };
+  document.head.appendChild(sc);
+}
 function renderHome(app){
   setHeader(""); setActiveNav("/");
   const F=[[LS(BOOKP),"Books"],[LS('<circle cx="11" cy="11" r="6.5"/><path d="m16 16 4.5 4.5"/>'),"Smart Search"],[LS('<path d="M11 3.5l1.9 5.1 5.1 1.9-5.1 1.9L11 17.5l-1.9-5.1L4 10.5l5.1-1.9z"/><path d="M18.5 15.5l.7 1.8 1.8.7-1.8.7-.7 1.8-.7-1.8-1.8-.7 1.8-.7z"/>'),"Edu AI"],[LS('<path d="M12 3l7.5 3v5.5c0 4.5-3.2 8-7.5 9.5-4.3-1.5-7.5-5-7.5-9.5V6z"/><path d="m8.7 12 2.4 2.4 4.2-4.6"/>'),"Safe & Secure"],[LS('<path d="M7.5 18.5h10a4 4 0 0 0 .6-7.95A6 6 0 0 0 6.5 9.6a4.5 4.5 0 0 0 1 8.9z"/>'),"Online Library"],[LS('<rect x="7" y="2.5" width="10" height="19" rx="2.5"/><path d="M11 18.5h2"/>'),"Mobile Friendly"]];
@@ -1731,6 +1769,7 @@ function renderLibrary(app){
   setHeader(""); setActiveNav("library");
   const D={Primary:["Build strong foundations for a brighter future.","pri"],Secondary:["Gain knowledge, develop skills, reach your goals.","sec"],Tertiary:["Advance your education, shape your career.","ter"]};
   app.innerHTML=`<div class="phero"><div class="pt"><div class="brandline"><span class="bli">${LS(BOOKP)}</span><b>Edu <i>Library</i></b></div><h2 style="margin-top:18px">Welcome Back!</h2><p>Your journey to knowledge continues here.</p></div><div class="ph wel">${flag()}</div></div><p class="mot" id="mot">${SPARK}<span>Education changes lives</span></p>
+   <div class="chooser" style="padding-bottom:0"><a class="lv ter" href="#/room"><div class="orb2">${LS('<rect x="5" y="8" width="14" height="11" rx="3"/><path d="M12 8V5"/><circle cx="12" cy="4" r="1"/><circle cx="9.5" cy="13" r="1"/><circle cx="14.5" cy="13" r="1"/><path d="M10 16.5h4"/>')}</div><div><b>AI Examination Room</b><em>Practise with multiple-choice questions</em><p>Past-paper questions, marked for you</p></div><i class="chev">\u203a</i></a></div>
    <div class="chooser"><h3>Choose Your Education Level</h3><p class="sub">Select your level to access classes and learning materials.</p>
    ${Object.entries(LEVELS).map(([k,l])=>`<a class="lv ${D[k][1]}" href="#/level/${k}"><div class="orb2">${LS(LVSVG[k]||BOOKP)}</div><div><b>${esc(l.label)}</b><em>${l.sub||(l.classes[0]+" – "+l.classes[l.classes.length-1])}</em><p>${D[k][0]}</p></div><i class="chev">›</i></a>`).join("")}</div>${recentRows()}`;
 }
@@ -1898,15 +1937,15 @@ function renderSettings(app,sub){
   if(sub==="reading"&&window.eduReadingBind)window.eduReadingBind(app);
   try{applyLang();}catch(e){}
 }
+function eduSearchBack(){ if(history.length>1)history.back(); else location.hash="#/library"; }
 function renderSearch(app, initial){
-  setHeader(`<div class="brand"><span class="mark sym"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4.5 4.5"/></svg></span>Search Books</div>`);
-  setActiveNav("search");
+  const q0 = initial ? decodeURIComponent(initial) : "";
+  setHeader(`<button class="back" onclick="eduSearchBack()" aria-label="Back">\u2190</button><div class="hsearch"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4.5 4.5"/></svg><input id="sq" type="search" value="${esc(q0)}" placeholder="Search title, subject, class..." oninput="runSearch()" autocomplete="off" enterkeyhint="search"></div>`,true);
+  setActiveNav("none");
   const books = loadBooks();
   let activeFilter = "All";
-  const q0 = initial ? decodeURIComponent(initial) : "";
   app.innerHTML = `
-    <form class="search" style="padding-top:16px" onsubmit="event.preventDefault()"><input id="sq" value="${esc(q0)}" placeholder="Search title, subject, class..." oninput="runSearch()"></form>
-    <div class="filters" id="sfilters">
+    <div class="filters" id="sfilters" style="padding-top:16px">
       ${["All",...Object.keys(LEVELS)].map(k=>`<button data-k="${k}" class="${k==='All'?'active':''}">${k==='All'?'All':LEVELS[k].label}</button>`).join("")}
     </div>
     <div class="pops"><h3 class="sec">Popular Searches</h3><button onclick="document.getElementById('sq').value='Mathematics';runSearch()">Mathematics</button><button onclick="document.getElementById('sq').value='English';runSearch()">English</button><button onclick="document.getElementById('sq').value='Biology';runSearch()">Biology</button><button onclick="document.getElementById('sq').value='Chemistry';runSearch()">Chemistry</button><button onclick="document.getElementById('sq').value='History';runSearch()">History</button><button onclick="document.getElementById('sq').value='Geography';runSearch()">Geography</button></div>
@@ -1924,6 +1963,7 @@ function renderSearch(app, initial){
       : r.length ? r.map(bookCard).join("") : `<div class="empty">No books matched your search.</div>`;
   };
   runSearch();
+  if(!q0)setTimeout(function(){const i=document.getElementById("sq");if(i)i.focus();},80);
 }
 
 function renderAdmin(app){
@@ -1971,6 +2011,21 @@ function loadLibraryManager(){
 let adminTab = "home";
 function admGo(t){adminTab=t;renderAdminPanel(document.getElementById("app"));window.scrollTo(0,0);}
 function admExit(){let h=window.ADM_BACK;try{h=h||sessionStorage.getItem("edu_admback");}catch(e){}location.hash=h||"#/library";}
+/* Admin panel symbols (line icons, same style as the rest of the app) instead of emojis */
+const ADP={
+  book:'<path d="M4 19.5V5a2 2 0 0 1 2-2h13v15H6a2 2 0 0 0-2 2z"/><path d="M4 19.5A2 2 0 0 0 6 21.5h13V18"/>',
+  exam:'<path d="M6 3h9l4 4v14H6z"/><path d="M14 3v5h5"/><path d="M9 13h7M9 17h5"/>',
+  dash:'<path d="M5 20v-8M12 20V5M19 20v-5"/><path d="M3 20h18"/>',
+  upload:'<path d="M12 16V4"/><path d="m7 9 5-5 5 5"/><path d="M5 20h14"/>',
+  server:'<circle cx="12" cy="12" r="9"/><path d="M3 12h18"/><path d="M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/>',
+  exit:'<path d="M10 4H5v16h5"/><path d="m14 8 4 4-4 4"/><path d="M18 12H9"/>',
+  ai:'<rect x="5" y="8" width="14" height="11" rx="3"/><path d="M12 8V5"/><circle cx="12" cy="4" r="1"/><circle cx="9.5" cy="13" r="1"/><circle cx="14.5" cy="13" r="1"/><path d="M10 16.5h4"/>',
+  lock:'<rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/>',
+  warn:'<path d="M12 3 2.5 20h19z"/><path d="M12 10v4M12 17v.5"/>',
+  eye:'<path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z"/><circle cx="12" cy="12" r="3"/>'
+};
+function adi(n,px){return '<svg viewBox="0 0 24 24" width="'+px+'" height="'+px+'" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-.2em;flex:none">'+ADP[n]+'</svg>';}
+const ADFLAG='<svg viewBox="0 0 18 12" width="18" height="12" aria-hidden="true" style="vertical-align:-1px;border-radius:2px"><rect width="18" height="4" fill="#000"/><rect y="4" width="18" height="4" fill="#CE1126"/><rect y="8" width="18" height="4" fill="#339E35"/><path d="M6.5 4a2.5 2.5 0 0 1 5 0z" fill="#CE1126"/></svg>';
 function renderAdminPanel(app){
   setHeader(`<div class="brand"><span class="mark sym"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-.33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h0a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51h0a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v0a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></span>Admin Panel</div>`,true);
   setActiveNav("admin");
@@ -1978,16 +2033,16 @@ function renderAdminPanel(app){
   if(window.ADM_HOME){adminTab="home";window.ADM_HOME=false;}
   document.body.classList.add("admpanel");
   app.innerHTML = `
-    <div class="admtop"><div><b>📚 EDU Library</b><small>Proudly Malawian 🇲🇼</small></div>
+    <div class="admtop"><div><b>${adi("book",22)} EDU Library</b><small>Proudly Malawian ${ADFLAG}</small></div>
       <button class="logout" onclick="adminLogout()">Log out</button></div>
     <div id="tabBody"></div>`;
   document.querySelectorAll("#admNav,#admAi").forEach(n=>n.remove());
   const nv=document.createElement("nav");nv.id="admNav";
-  nv.innerHTML=[["exit","🚪","EXIT"],["dashboard","📊","DASHBOARD"],["upload","📤","UPLOAD PDF"],["exams","📝","UPLOAD EXAMS"],["server","🌐","SERVER"]].map(x=>`<button data-t="${x[0]}" class="${adminTab===x[0]?'on':''}"><i>${x[1]}</i>${x[2]}</button>`).join("");
+  nv.innerHTML=[["exit","exit","EXIT"],["dashboard","dash","DASHBOARD"],["upload","upload","UPLOAD PDF"],["exams","exam","UPLOAD EXAMS"],["server","server","SERVER"]].map(x=>`<button data-t="${x[0]}" class="${adminTab===x[0]?'on':''}"><i>${adi(x[1],24)}</i>${x[2]}</button>`).join("");
   nv.onclick=e=>{const b=e.target.closest("button");if(!b)return;if(b.dataset.t==="exit")admExit();else admGo(b.dataset.t);};
   document.body.appendChild(nv);
   const fb=document.createElement("button");fb.id="admAi";fb.type="button";fb.setAttribute("aria-label","Edu Library AI");
-  fb.innerHTML='<div class="m">🤖</div><span>Edu Library AI</span>';
+  fb.innerHTML='<div class="m" style="color:#fff">'+adi("ai",30)+'</div><span>Edu Library AI</span>';
   const im=new Image();im.onload=()=>{const m=fb.querySelector(".m");m.innerHTML="";m.appendChild(im);};im.src="/assets/edu-ai-avatar.jpg";
   fb.onclick=()=>admGo("library");
   document.body.appendChild(fb);
@@ -1996,10 +2051,10 @@ function renderAdminPanel(app){
 
   if(adminTab==="home"){
     body.innerHTML=`<div class="admgrid">
-      <button class="admcard c1" onclick="admGo('dashboard')"><i>📊</i>DASHBOARD</button>
-      <button class="admcard c2" onclick="admGo('upload')"><i>📚</i>UPLOAD PDF</button>
-      <button class="admcard c3" onclick="admGo('exams')"><i>📝</i>UPLOAD EXAMS</button>
-      <button class="admcard c4" onclick="admGo('server')"><i>🌐</i>SERVER</button></div>`;
+      <button class="admcard c1" onclick="admGo('dashboard')"><i>${adi("dash",46)}</i>DASHBOARD</button>
+      <button class="admcard c2" onclick="admGo('upload')"><i>${adi("upload",46)}</i>UPLOAD PDF</button>
+      <button class="admcard c3" onclick="admGo('exams')"><i>${adi("exam",46)}</i>UPLOAD EXAMS</button>
+      <button class="admcard c4" onclick="admGo('server')"><i>${adi("server",46)}</i>SERVER</button></div>`;
   } else if(adminTab==="dashboard"){
     body.innerHTML = `<div class="statgrid">
         <div class="stat" style="background:linear-gradient(135deg,#1F8A54,#16A05C)"><b id="admS1">0</b><span>Books uploaded</span></div>
@@ -2071,17 +2126,17 @@ function renderAdminPanel(app){
     body.innerHTML = SERVERS.map(x=>{
       const n=(x.exam?loadExams():books).filter(b=>(b._s||"A")===x.id).length;
       return `<div class="card" style="max-width:100%;margin:0 0 12px;padding:18px">
-        <div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><b>${x.exam?"📝 Examinations":"🌐 Books"} · ${esc(x.name)}</b><span style="font-size:12px;font-weight:700;color:${x.ok?"var(--primary)":"var(--sub)"}">${x.ok?"● Connected":"○ Not connected yet"}</span></div>
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><b>${x.exam?adi("exam",16)+" Examinations":adi("server",16)+" Books"} · ${esc(x.name)}</b><span style="font-size:12px;font-weight:700;color:${x.ok?"var(--primary)":"var(--sub)"}">${x.ok?"● Connected":"○ Not connected yet"}</span></div>
         <div style="${box}">${x.ok?esc(x.url||x.endpoint):"Will be added soon"}</div>
         <p style="color:var(--sub);font-size:12px;margin:8px 0 0">${x.ok?n+(x.exam?" exam paper":" book")+(n!==1?"s":"")+" stored here":(x.exam?"Reserved for examination PDFs.":"Extra space for new uploads.")}</p>
         <div class="srvu" id="srvU_${x.id}">${x.ok?"Checking space…":""}</div></div>`;
     }).join("")+`
       <div style="text-align:center;margin:0 0 12px"><button type="button" class="admchip" onclick="admUsageDraw()">↻ Check space again</button></div>
       <div class="card" style="max-width:100%;margin:0 0 12px;padding:18px">
-        <b>🤖 Edu AI Backend</b>
+        <b>${adi("ai",16)} Edu AI Backend</b>
         <div style="${box}">${esc(getAIEndpoint())}</div>
         <p style="color:var(--sub);font-size:12px;margin:8px 0 0">Already connected — the AI Assistant is ready to use.</p></div>
-      <p style="color:var(--sub);font-size:12px;text-align:center">🔒 Server links are fixed in the app and can't be edited here.</p>`;
+      <p style="color:var(--sub);font-size:12px;text-align:center">${adi("lock",14)} Server links are fixed in the app and can't be edited here.</p>`;
     admUsageDraw();
   }
 }
@@ -2186,13 +2241,46 @@ function admRow(b,cnt){
   const asking=admAsk===k;
   const jk=esc(k.replace(/\\/g,"\\\\").replace(/'/g,"\\'"));
   return `<div class="admrow${n>1?" dup":""}">
-    <div class="thumb" onclick="previewBook('${jk}')" ${b.file_path&&!isFb(b)?`data-src="${esc(b.file_path)}"`:""}>📄</div>
+    <div class="thumb" onclick="previewBook('${jk}')" ${b.file_path&&!isFb(b)?`data-src="${esc(b.file_path)}"`:""}>${adi("exam",26)}</div>
     <div class="admtxt"><b>${esc(b.title||b.subject||"(no title)")}</b>
       <small>${esc(admPath(b))}${isExam(b)&&b.subject&&b.subject!==b.title?" · "+esc(b.subject):""}</small>
       <small>${esc(S.name)}${admDate(b.added)?" · Added "+esc(admDate(b.added)):""}${n>1?` <span class="admbadge">Duplicate ×${n}</span>`:""}</small></div>
     ${asking?`<div class="admask"><span>Delete this file?</span><button type="button" class="admyes" data-k="${esc(k)}" onclick="admDel(this.dataset.k)">Yes, delete</button><button type="button" class="admno" onclick="admAsk='';admDraw()">Cancel</button></div>`
-    :`<div class="admbtns"><button type="button" class="admprev" data-k="${esc(k)}" onclick="previewBook(this.dataset.k)">👁 Preview</button><button type="button" class="admdel" data-k="${esc(k)}" onclick="admAsk=this.dataset.k;admDraw()" ${admBusy?"disabled":""}>Delete</button></div>`}
+    :`<div class="admbtns"><button type="button" class="admprev" data-k="${esc(k)}" onclick="previewBook(this.dataset.k)">${adi("eye",15)} Preview</button><button type="button" class="admdel" data-k="${esc(k)}" onclick="admAsk=this.dataset.k;admDraw()" ${admBusy?"disabled":""}>Delete</button></div>`}
   </div>`;
+}
+/* ---------- ADMIN: browse by category (Level > Class > Books/Exams > exam body or level > Subject), then delete ---------- */
+const ADM_STEPS=["lv","cls","kind","g","sub"];
+let admNav={lv:"",cls:"",kind:"",g:"",sub:""};
+function admPick(s,v){admNav[s]=v;for(let j=ADM_STEPS.indexOf(s)+1;j<ADM_STEPS.length;j++)admNav[ADM_STEPS[j]]="";admAsk="";admDraw();try{window.scrollTo(0,0);}catch(e){}}
+function admBackOne(){for(let j=ADM_STEPS.length-1;j>=0;j--){if(admNav[ADM_STEPS[j]]!==""){admPick(ADM_STEPS[j],"");return;}}}
+function admBrowse(books,exams,cnt){
+  let items=books.concat(exams);
+  const lvOf=b=>LEVELS[b.level]?b.level:"?";
+  const gv=b=>(isExam(b)?examBody(b):tierOf(b))||"-";
+  const sv=b=>String(b.subject||"").trim()||"-";
+  const countBy=(arr,f)=>{const m=new Map();arr.forEach(b=>{const k=f(b);m.set(k,(m.get(k)||0)+1);});return m;};
+  const filt={lv:(b,v)=>lvOf(b)===v,cls:(b,v)=>admCls0(b)===v,kind:(b,v)=>(v==="exams")===isExam(b),g:(b,v)=>gv(b)===v,sub:(b,v)=>sv(b)===v};
+  const lab={lv:v=>v==="?"?"Other / unsorted":LEVELS[v].label,cls:v=>v||"(no class)",kind:v=>v==="exams"?"Exams":"Books",g:v=>v==="-"?"None":v,sub:v=>v==="-"?"(no subject)":v};
+  const opt=(s,v,label,n)=>`<button type="button" class="admopt" data-s="${s}" data-v="${esc(v)}" onclick="admPick(this.dataset.s,this.dataset.v)"><span>${esc(label)}</span><b>${n}</b></button>`;
+  const crumbs=[];
+  const alpha=(m)=>Array.from(m.keys()).sort((a,b)=>a==="-"?1:b==="-"?-1:String(a).localeCompare(String(b)));
+  for(const s of ADM_STEPS){
+    const v=admNav[s];
+    if(v!==""){items=items.filter(b=>filt[s](b,v));crumbs.push(`<button type="button" class="admcrumb" data-s="${s}" data-v="" onclick="admPick(this.dataset.s,this.dataset.v)">${esc(lab[s](v))} \u2715</button>`);continue;}
+    let keys,title,m;
+    if(s==="lv"){m=countBy(items,lvOf);keys=Object.keys(LEVELS).concat(["?"]).filter(k=>m.get(k)>0);title="Which level?";}
+    else if(s==="cls"){m=countBy(items,admCls0);const L=LEVELS[admNav.lv],first=(L?L.classes:[]).filter(k=>m.get(k)>0);keys=first.concat(Array.from(m.keys()).filter(k=>first.indexOf(k)<0).sort());title=admNav.lv==="Tertiary"?"Which course area?":"Which class?";}
+    else if(s==="kind"){m=countBy(items,b=>isExam(b)?"exams":"books");keys=["books","exams"].filter(k=>m.get(k)>0);title="Books or exams?";}
+    else if(s==="g"){m=countBy(items,gv);if(m.size<=1)continue;keys=alpha(m);title=admNav.kind==="exams"?"Which exam type?":"Which level?";}
+    else{m=countBy(items,sv);if(m.size<=1)continue;keys=alpha(m);title="Which subject?";}
+    const head=(crumbs.length?`<div class="admcr">${crumbs.join("")}</div><button type="button" class="admchip" onclick="admBackOne()">\u2190 Back</button>`:`<p class="admnote">Pick a category to find the file you want to delete. To find a file by its name, use the search box above.</p>`);
+    return head+`<h3 class="admh">${title}</h3>`+(keys.length?keys.map(k=>opt(s,k,lab[s](k),m.get(k))).join(""):`<p class="admnote">Nothing uploaded here yet.</p>`);
+  }
+  items.sort((a,b)=>{const x=admNorm(a.title||a.subject),y=admNorm(b.title||b.subject);return x<y?-1:x>y?1:(String(b.added||"")<String(a.added||"")?-1:1);});
+  const LIM=300,shown=items.slice(0,LIM);
+  return `<div class="admcr">${crumbs.join("")}</div><button type="button" class="admchip" onclick="admBackOne()">\u2190 Back</button><h3 class="admh">Files here <span>(${items.length})</span></h3>`+
+    (shown.length?shown.map(b=>admRow(b,cnt)).join("")+(items.length>LIM?`<p class="admnote">Showing the first ${LIM}.</p>`:""):`<p class="admnote">Nothing left here.</p>`);
 }
 function admDraw(){
   const el=document.getElementById("admLists");if(!el)return;
@@ -2203,6 +2291,7 @@ function admDraw(){
   const set=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=v;};
   set("admS1",books.length);set("admS2",exams.length);set("admS3",extra(cb)+extra(ce));set("admS4",SERVERS.filter(x=>x.ok).length+" / "+SERVERS.length);
   const q=admNorm(admQ);
+  if(!q&&!admDup){el.innerHTML=admBrowse(books,exams,Object.assign({},cb,ce));return;}
   const sorter=(a,b)=>{const x=admNorm(a.level)+"|"+admNorm(admCls0(a))+"|"+admDupKey(a),y=admNorm(b.level)+"|"+admNorm(admCls0(b))+"|"+admDupKey(b);return x<y?-1:x>y?1:(String(b.added||"")<String(a.added||"")?-1:1);};
   const pick=(list,cnt)=>list.filter(b=>(!admDup||(cnt[admDupKey(b)]||1)>1)&&(!q||admNorm([b.title,b.subject,b.level,b.class,admPath(b)].join(" ")).indexOf(q)>-1)).sort(sorter);
   const LIM=300;
@@ -2211,7 +2300,7 @@ function admDraw(){
     return `<h3 class="admh">${title} <span>(${list.length}${list.length!==full.length?" of "+full.length:""})</span></h3>`+
       (shown.length?shown.map(b=>admRow(b,cnt)).join("")+(list.length>LIM?`<p class="admnote">Showing the first ${LIM}. Use the search box to narrow it down.</p>`:""):`<p class="admnote">${empty}</p>`);
   };
-  el.innerHTML=sec("📚 Books",books,pick(books,cb),cb,admDup?"No duplicate books.":"No books uploaded yet.")+sec("📝 Exams",exams,pick(exams,ce),ce,admDup?"No duplicate exams.":"No exams uploaded yet.");
+  el.innerHTML=sec(adi("book",18)+" Books",books,pick(books,cb),cb,admDup?"No duplicate books.":"No books uploaded yet.")+sec(adi("exam",18)+" Exams",exams,pick(exams,ce),ce,admDup?"No duplicate exams.":"No exams uploaded yet.");
 }
 async function admReload(quiet){
   if(!quiet)admMsgSet("Refreshing...");
@@ -2290,7 +2379,7 @@ function admUsageHTML(x,used){
   const col=pct>=90?"#C62828":pct>=70?"#E0892B":"#1F8A54";
   return `<div class="srvbar"><i style="width:${Math.max(pct,used>0?2:0)}%;background:${col}"></i></div>
     <div class="srvtxt"><b style="color:${col}">${admBytes(left)} left</b> · ${admBytes(used)} used of ${SERVER_CAP[x.id]} GB (${pct}%)</div>
-    ${pct>=90?`<div class="srvwarn">⚠ Almost full. Upload new files to another server.</div>`:""}`;
+    ${pct>=90?`<div class="srvwarn">${adi("warn",15)} Almost full. Upload new files to another server.</div>`:""}`;
 }
 async function admUsageDraw(){
   await Promise.all(SERVERS.map(async x=>{
@@ -2730,6 +2819,17 @@ function speakMsg(i){
     ttsUI();ttsNext();setTimeout(()=>ttsBg(true),400);
   }catch(_){try{ttsEnd();}catch(__){}}
 }
+/* read-aloud for any other screen (the Examination Room uses it): same engine as the chat, key must be a number above 99999 */
+function speakText(key,text){
+  if(!("speechSynthesis" in window)||!text)return;
+  if(TTS.i===key&&TTS.state==="playing"){ttsPause();return;}
+  if(TTS.i===key&&TTS.state==="paused"){ttsResume();return;}
+  ttsStop(true);
+  try{
+    TTS.i=key;TTS.kind=ttsKindFor(text);TTS.code=ttsLocalCode(text);TTS.chunks=ttsSplit(plainAI(text));TTS.pos=0;TTS.state="playing";
+    ttsUI();ttsNext();setTimeout(()=>ttsBg(true),400);
+  }catch(_){try{ttsEnd();}catch(__){}}
+}
 /* audio keeps going if you switch apps; it stops when the app is closed */
 window.addEventListener("pagehide",e=>{if(!e.persisted&&document.visibilityState!=="hidden")ttsStop(true);});
 function getProfile(){try{return JSON.parse(localStorage.getItem("edu_profile")||"null")||{};}catch(_){return {};}}
@@ -2797,7 +2897,7 @@ function renderAIMessages(streamingText){
   const sc=document.getElementById("aiScroll");if(sc)sc.scrollTop=sc.scrollHeight;
 }
 
-const GATED=["level","exams","start","library","search","ai"];
+const GATED=["level","exams","start","library","search","ai","room"];
 window.eduGoSignIn=function(){
   document.querySelectorAll(".aimodal,#acctTopModal,#acctModal").forEach(e=>e.remove());
   try{toggleAIHist(false);}catch(e){}
@@ -3348,7 +3448,7 @@ window.addEventListener("hashchange", render);
 </script>
 <script>
 /* ---------- Reading mode + Settings ---------- */
-const APP_VERSION="1.8.1"; // <- change this when you release a new version
+const APP_VERSION="1.8.4"; // <- change this when you release a new version
 const APP_BUILD_NOTE="Mobile-friendly digital library for students in Malawi — navigation, Settings and account layout update";
 (function(){
   const EYE_SVG='<svg class="sic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-6.5 10-6.5S22 12 22 12s-3.6 6.5-10 6.5S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>',GEAR_SVG='<svg class="sic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h0a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51h0a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v0a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>';
@@ -4620,7 +4720,7 @@ body.landing .l2 .inside .fg3 b,body.landing .l2 .inside .insnote,body.landing .
 <script>
 /* SWIPE BETWEEN SECTIONS (1.6.2): swipe left/right to move Search <-> Library <-> Exams. Bottom bar and everything else stay as they are. */
 (function(){
-  var ORDER=["search","library","exams"],sx=0,sy=0,st=0,ok=false,dir=0;
+  var ORDER=["library","exams"],sx=0,sy=0,st=0,ok=false,dir=0;
   function sec(){var h=(location.hash||"#/").slice(2).split("/")[0];return ORDER.indexOf(h)>-1?h:"";}
   function blocked(el){
     if(document.body.classList.contains("gate")||document.body.classList.contains("kbopen"))return true;
@@ -4664,6 +4764,10 @@ body.landing .l2 .inside .fg3 b,body.landing .l2 .inside .insnote,body.landing .
 .admbar input::placeholder{color:var(--sub)}
 .admchip{flex:none;border:1px solid var(--line);background:rgba(127,127,127,.12);color:var(--ink);border-radius:20px;padding:8px 12px;font-size:12.5px;font-weight:600}
 .admchip.on{background:#E0724F;border-color:#E0724F;color:#fff}
+.admopt{display:flex;justify-content:space-between;align-items:center;gap:10px;width:100%;text-align:left;border:1px solid var(--line);border-radius:12px;padding:14px 14px;margin-bottom:8px;background:rgba(127,127,127,.12);color:var(--ink);font-size:15px;font-weight:600}
+.admopt b{flex:none;background:rgba(127,127,127,.28);border-radius:12px;padding:2px 10px;font-size:13px}
+.admcr{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 8px}
+.admcrumb{border:none;background:#1C6FA6;color:#fff;border-radius:16px;padding:6px 11px;font-size:12.5px;font-weight:700}
 .admmsg{font-size:13px;min-height:18px;margin:0 0 8px;word-break:break-word}
 .admh{margin:16px 0 8px;font-size:16px;color:var(--ink)}
 .admh span{font-weight:500;color:var(--sub);font-size:13px}
