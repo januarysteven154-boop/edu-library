@@ -1,5 +1,6 @@
-/* Edu Library: AI Examination Room (student screen) v1.2
+/* Edu Library: AI Examination Room (student screen) v1.3
    Loaded on demand from index.html when a student opens #/room.
+   v1.3: a play / pause button on the AI teacher's explanation reads it aloud (same voice engine as Edu AI chat).
    v1.2: the AI teacher's explanation shows real bold text (the ** marks are turned into bold).
    v1.1: papers come from server C (and D when C is full) through the backend, are saved on the phone
    (so practice works again offline), and questions can show a diagram picture. Options are shuffled every time,
@@ -8,6 +9,7 @@
 "use strict";
 if(window.EduRoom)return;
 var API="https://edu-ai-backend-three.vercel.app/api/book-link?room=";
+var SPK=100000; /* read-aloud key = SPK + question number */
 var HK="edu_room_hist",RK="edu_room_rep",IK="edu_room_idx",PK="edu_room_p_",PL="edu_room_plist";
 var APP=null;
 var S={screen:"setup",lv:"",cls:"",sub:"",cat:null,papers:[],qs:[],i:0,sel:[],res:null,busy:false,err:"",exp:{}};
@@ -15,6 +17,15 @@ var S={screen:"setup",lv:"",cls:"",sub:"",cat:null,papers:[],qs:[],i:0,sel:[],re
 function e(s){return String(s==null?"":s).replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c];});}
 /* safe text with **bold** turned into bold (text is escaped first, so nothing else can become HTML) */
 function fmt(s){return e(s).replace(/\*\*([^*\n][^*]*?)\*\*/g,"<b>$1</b>");}
+function stopSpeak(){try{if(typeof window.ttsStop==="function")window.ttsStop();}catch(x){}}
+/* play / pause button (round, top right of the explanation) */
+function spkBtn(i){
+  if(!("speechSynthesis" in window)||typeof window.speakText!=="function")return "";
+  var on=(typeof window.ttsOn==="function")&&window.ttsOn(SPK+i);
+  var ic=(typeof window.ttsIcon==="function")?window.ttsIcon(SPK+i):"";
+  return "<button type='button' class='speak-btn"+(on?" on":"")+"' data-i='"+(SPK+i)+"' title='"+(on?"Pause":"Play")+"' aria-label='"+(on?"Pause":"Play")+"' onclick='EduRoom.speak("+i+")'>"+ic+"</button>";
+}
+function expHtml(i){return fmt(S.exp[i])+spkBtn(i);}
 async function api(action,payload,extra){
   var r=await fetch(API+action+(extra||""),{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload||{})});
   var j=null;try{j=await r.json();}catch(x){}
@@ -69,6 +80,7 @@ function css(){
 ".rm .acts button{flex:1;min-width:130px;border:1px solid var(--line);background:rgba(127,127,127,.15);color:var(--ink);border-radius:10px;padding:9px 10px;font-size:13px;font-weight:700}"+
 ".rm .ex{margin-top:8px;font-size:14px;line-height:1.5;color:var(--ink);white-space:pre-wrap;word-wrap:break-word}"+
 ".rm .ex b{font-weight:800}"+
+".rm .ex.has{position:relative;padding-right:44px;min-height:38px}"+
 ".rm .hist{display:flex;justify-content:space-between;gap:8px;font-size:13px;color:var(--ink);border-bottom:1px solid var(--line);padding:7px 0}"+
 ".rm .hist span{color:var(--sub)}"+
 ".rm .lbl{font-size:12px;color:var(--sub);text-align:center;margin:12px 0}"+
@@ -196,7 +208,7 @@ function reviewHtml(){
     });
     h+="<div class='n'>"+(sel<0?"You did not answer. ":(sel===q.ci?"Correct. ":"You chose "+letter(sel)+". "))+"The saved answer is "+letter(q.ci)+".</div>"+
       "<div class='acts'><button type='button' onclick='EduRoom.explain("+i+")'>Explain with AI teacher</button><button type='button' id='rmrep"+i+"' onclick='EduRoom.report("+i+")'>Report a wrong answer</button></div>"+
-      "<div class='ex' id='rmex"+i+"'>"+(S.exp[i]?fmt(S.exp[i]):"")+"</div></div>";
+      "<div class='ex"+((S.exp[i]&&S.exp[i]!=="Thinking...")?" has":"")+"' id='rmex"+i+"'>"+((S.exp[i]&&S.exp[i]!=="Thinking...")?expHtml(i):(S.exp[i]?e(S.exp[i]):""))+"</div></div>";
   });
   return h+"<div class='nav'><button type='button' class='go' onclick='EduRoom.home()'>Done</button></div>";
 }
@@ -215,6 +227,7 @@ function draw(){
 /* ---------- actions ---------- */
 async function begin(count){
   if(S.busy)return;
+  stopSpeak();
   S.busy=true;S.err="";draw();
   try{
     var ps=S.papers.filter(function(p){return p.level===S.lv&&p.class===S.cls&&p.subject===S.sub;});
@@ -269,7 +282,7 @@ async function explain(i){
     box.textContent="Could not get an explanation: "+(x&&x.message||x);
     return;
   }
-  var b2=document.getElementById("rmex"+i);if(b2)b2.innerHTML=fmt(S.exp[i]);
+  var b2=document.getElementById("rmex"+i);if(b2){b2.className="ex has";b2.innerHTML=expHtml(i);}
 }
 async function report(i){
   var q=S.qs[i],btn=document.getElementById("rmrep"+i),rk=q.pid+":"+q.id;
@@ -322,14 +335,15 @@ window.EduRoom={
     S.i=Math.max(0,Math.min(S.qs.length-1,S.i+d));draw();
   },
   quit:function(){if(confirm("Stop this practice? Your answers will not be saved."))window.EduRoom.home();},
-  result:function(){S.screen="result";draw();},
+  result:function(){stopSpeak();S.screen="result";draw();},
   review:function(){S.screen="review";draw();},
   again:function(){begin(S.qs.length);},
-  home:function(){S.screen="setup";S.qs=[];S.sel=[];S.res=null;S.exp={};S.lv="";S.cls="";S.sub="";S.err="";draw();},
+  home:function(){stopSpeak();S.screen="setup";S.qs=[];S.sel=[];S.res=null;S.exp={};S.lv="";S.cls="";S.sub="";S.err="";draw();},
   explain:explain,
+  speak:function(i){if(S.exp[i]&&S.exp[i]!=="Thinking..."&&typeof window.speakText==="function")window.speakText(SPK+i,S.exp[i]);},
   report:report,
   zoom:zoom,
-  version:"1.2",
+  version:"1.3",
   _t:{band:band,shuffle:shuffle,fmt:fmt,S:S}
 };
 })();
