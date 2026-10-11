@@ -1,4 +1,5 @@
-/* Edu Library: AI Examination Room (student screen) v1.3
+/* Edu Library: AI Examination Room (student screen) v1.4
+   v1.4: clearer path Level > Class > Subject > list of PAPERS (each shows its number of questions) > the paper. On a paper the student can first \"Read the whole paper\" (all questions and pictures, nothing marked), then \"Start answering\". During the quiz a \"Read all\" button opens the same reading screen and returns to the same question. \"Mixed practice\" keeps the old random-questions choice.
    Loaded on demand from index.html when a student opens #/room.
    v1.3: a play / pause button on the AI teacher's explanation reads it aloud (same voice engine as Edu AI chat).
    v1.2: the AI teacher's explanation shows real bold text (the ** marks are turned into bold).
@@ -12,7 +13,7 @@ var API="https://edu-ai-backend-three.vercel.app/api/book-link?room=";
 var SPK=100000; /* read-aloud key = SPK + question number */
 var HK="edu_room_hist",RK="edu_room_rep",IK="edu_room_idx",PK="edu_room_p_",PL="edu_room_plist";
 var APP=null;
-var S={screen:"setup",lv:"",cls:"",sub:"",cat:null,papers:[],qs:[],i:0,sel:[],res:null,busy:false,err:"",exp:{}};
+var S={screen:"setup",lv:"",cls:"",sub:"",paper:"",mix:"",rd:[],back:"paper",cat:null,papers:[],qs:[],i:0,sel:[],res:null,busy:false,err:"",exp:{}};
 
 function e(s){return String(s==null?"":s).replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c];});}
 /* safe text with **bold** turned into bold (text is escaped first, so nothing else can become HTML) */
@@ -85,6 +86,10 @@ function css(){
 ".rm .hist span{color:var(--sub)}"+
 ".rm .lbl{font-size:12px;color:var(--sub);text-align:center;margin:12px 0}"+
 ".rm .qimg{display:block;max-width:100%;max-height:340px;margin:10px auto;border-radius:10px;background:#fff;border:1px solid var(--line)}"+
+".rm .opt b{white-space:nowrap}"+
+".rm .opt span small{display:block;font-weight:500;font-size:12px;color:var(--sub);margin-top:2px}"+
+".rm .tb{display:flex;gap:6px}"+
+".rm .rdo{margin:0 0 6px;padding-left:4px;font-size:14.5px;line-height:1.4;color:var(--ink);word-wrap:break-word}"+
 ".rmzoom{position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,.92);display:flex;align-items:center;justify-content:center;padding:10px}"+
 ".rmzoom img{max-width:100%;max-height:100%;background:#fff;border-radius:8px}";
   document.head.appendChild(s);
@@ -129,8 +134,13 @@ async function loadPaper(p){
 }
 
 /* ---------- screens ---------- */
+function pkey(p){return [p.level||"?",p.class||"?",p.subject||"General"];}
+function papersFor(l,k,su){return S.papers.filter(function(p){var a=pkey(p);return a[0]===l&&(k==null||a[1]===k)&&(su==null||a[2]===su);});}
+function stat(ps){var q=0;ps.forEach(function(p){q+=p.count||0;});return ps.length+(ps.length===1?" paper \u00B7 ":" papers \u00B7 ")+q+" questions";}
+function ptitle(p){return (p&&(p.title||p.name))||"Paper";}
+function papersNow(){if(S.paper)return S.papers.filter(function(p){return p.id===S.paper.id;});return papersFor(S.lv,S.cls,S.sub);}
 function crumb(k,label){return "<button type='button' class='crumb' onclick=\"EduRoom.pick('"+k+"','')\">"+e(label)+" \u2715</button>";}
-function opt(k,v,label,n){return "<button type='button' class='opt' data-k='"+k+"' data-v=\""+e(v)+"\" onclick=\"EduRoom.pick(this.dataset.k,this.dataset.v)\"><span>"+e(label)+"</span><b>"+n+"</b></button>";}
+function opt(k,v,label,n){return "<button type='button' class='opt' data-k='"+k+"' data-v=\""+e(v)+"\" onclick=\"EduRoom.pick(this.dataset.k,this.dataset.v)\"><span>"+label+"</span><b>"+n+"</b></button>";}
 
 function setupHtml(){
   var h="<p class='n'>Practise with multiple-choice questions taken from past papers. Choose what you want to practise.</p>";
@@ -138,6 +148,8 @@ function setupHtml(){
   if(S.lv)cr.push(crumb("lv",lvLabel(S.lv)));
   if(S.cls)cr.push(crumb("cls",S.cls));
   if(S.sub)cr.push(crumb("sub",S.sub));
+  if(S.paper)cr.push(crumb("paper",ptitle(S.paper)));
+  else if(S.mix)cr.push(crumb("mix","Mixed practice"));
   if(cr.length)h+="<div class='crumbs'>"+cr.join("")+"</div>";
   var cat=S.cat||{};
   if(!Object.keys(cat).length){
@@ -146,18 +158,25 @@ function setupHtml(){
   if(!S.lv){
     h+="<h3>Which level?</h3>";
     var ks=lvOrder().concat(["?"]).filter(function(k){return cat[k];});
-    ks.forEach(function(k){h+=opt("lv",k,lvLabel(k),sum(cat[k]));});
+    ks.forEach(function(k){h+=opt("lv",k,e(lvLabel(k)),stat(papersFor(k)));});
   }else if(!S.cls){
     h+="<h3>Which class?</h3>";
     var cl=cat[S.lv]||{},first=((typeof LEVELS!=="undefined"&&LEVELS[S.lv])?LEVELS[S.lv].classes:[]).filter(function(k){return cl[k];});
     var rest2=Object.keys(cl).filter(function(k){return first.indexOf(k)<0;}).sort();
-    first.concat(rest2).forEach(function(k){h+=opt("cls",k,k,sum(cl[k]));});
+    first.concat(rest2).forEach(function(k){h+=opt("cls",k,e(k),stat(papersFor(S.lv,k)));});
   }else if(!S.sub){
     h+="<h3>Which subject?</h3>";
     var sj=(cat[S.lv]||{})[S.cls]||{};
-    Object.keys(sj).sort().forEach(function(k){h+=opt("sub",k,k,sj[k]);});
+    Object.keys(sj).sort().forEach(function(k){h+=opt("sub",k,e(k),stat(papersFor(S.lv,S.cls,k)));});
+  }else if(S.paper){
+    h+=paperHtml();
+  }else if(!S.mix){
+    var pl=papersFor(S.lv,S.cls,S.sub).sort(function(a,b){return (Number(b.year)||0)-(Number(a.year)||0)||String(ptitle(a)).localeCompare(String(ptitle(b)));});
+    h+="<h3>Choose a paper</h3><p class='n'>Open a paper to read all its questions first, then start answering.</p>";
+    pl.forEach(function(p){h+=opt("paper",p.id,e(ptitle(p))+(p.year?"<small>"+e(p.year)+"</small>":""),(p.count||0)+" questions");});
+    if(pl.length>1)h+=opt("mix","1","Mixed practice<small>Random questions from all these papers</small>",stat(pl).split(" \u00B7 ")[1]);
   }else{
-    var total=(((cat[S.lv]||{})[S.cls]||{})[S.sub])||0;
+    var total=0;papersFor(S.lv,S.cls,S.sub).forEach(function(p){total+=p.count||0;});
     h+="<h3>How many questions?</h3>";
     [10,20,40].filter(function(x){return x<total;}).forEach(function(x){h+=opt("count",String(x),x+" questions",x);});
     var all=Math.min(total,60);
@@ -174,10 +193,28 @@ function setupHtml(){
   return h+"<div class='lbl'>AI-marked practice. Not an official exam result.</div>";
 }
 
+function paperHtml(){
+  var p=S.paper,h="<h3>"+e(ptitle(p))+"</h3><p class='n'>"+(p.count||0)+" questions"+(p.year?" \u00B7 "+e(p.year):"")+". Tip: read all the questions first, then start answering.</p>";
+  h+="<div class='nav'><button type='button' class='sec' onclick='EduRoom.read()'>Read the whole paper first</button></div>";
+  h+="<div class='nav'><button type='button' class='go' onclick='EduRoom.start()'>Start answering</button></div>";
+  if(S.err)h+="<p class='n' style='color:#D9534F'>"+e(S.err)+"</p>";
+  if(S.busy)h+="<p class='n'>Loading questions...</p>";
+  return h;
+}
+function readHtml(){
+  var fromQuiz=S.back==="quiz";
+  var btn=fromQuiz?"<div class='nav'><button type='button' class='go' onclick='EduRoom.unread()'>Back to question "+(S.i+1)+"</button></div>":"<div class='nav'><button type='button' class='go' onclick='EduRoom.start()'>Start answering</button></div>";
+  var h="<div class='top'><span>Reading all "+S.rd.length+" questions</span><button type='button' onclick='EduRoom.unread()'>Back</button></div>"+
+    "<p class='n'>Nothing is marked here. Read everything, then "+(fromQuiz?"go back to your question.":"start answering.")+"</p>"+btn;
+  S.rd.forEach(function(q,i){
+    h+="<div class='card'><div class='q' style='font-size:15px'>"+(i+1)+". "+e(q.q)+"</div>"+imgHtml(q)+q.o.map(function(o){return "<div class='rdo'>\u2022 "+e(o)+"</div>";}).join("")+"</div>";
+  });
+  return h+btn;
+}
 function imgHtml(q){return q.img?"<img class='qimg' alt='Diagram or table for this question' src=\""+e(q.img)+"\" onclick='EduRoom.zoom(this.src)'>":"";}
 function quizHtml(){
   var n=S.qs.length,q=S.qs[S.i],sel=S.sel[S.i];
-  var h="<div class='top'><span>Question "+(S.i+1)+" of "+n+"</span><button type='button' onclick='EduRoom.quit()'>Quit</button></div>"+
+  var h="<div class='top'><span>Question "+(S.i+1)+" of "+n+"</span><span class='tb'><button type='button' onclick='EduRoom.read()'>Read all</button><button type='button' onclick='EduRoom.quit()'>Quit</button></span></div>"+
     "<div class='bar'><i style='width:"+Math.round((S.i/n)*100)+"%'></i></div>"+
     "<div class='q'>"+e(q.q)+"</div>"+imgHtml(q);
   q.opts.forEach(function(o,k){
@@ -219,31 +256,35 @@ function draw(){
   if(S.screen==="quiz")h=quizHtml();
   else if(S.screen==="result")h=resultHtml();
   else if(S.screen==="review")h=reviewHtml();
+  else if(S.screen==="read")h=readHtml();
   else h=setupHtml();
   APP.innerHTML="<div class='rm'>"+h+"</div>";
   try{window.scrollTo(0,0);}catch(x){}
 }
 
 /* ---------- actions ---------- */
+async function collect(ps){
+  var out=[];
+  for(var pi=0;pi<ps.length;pi++){
+    var pd=await loadPaper(ps[pi]);
+    (pd.questions||[]).forEach(function(x){
+      var o=x.options,ci=x.correct;
+      if(!Array.isArray(o)||o.length!==4||typeof ci!=="number"||ci<0||ci>3)return;
+      if(!x.q||o.some(function(t){return typeof t!=="string"||!t.trim();}))return;
+      out.push({id:x.id,pid:pd.id,img:x.img||"",q:x.q,o:o.slice(),ci:ci});
+    });
+  }
+  return out;
+}
 async function begin(count){
   if(S.busy)return;
   stopSpeak();
   S.busy=true;S.err="";draw();
   try{
-    var ps=S.papers.filter(function(p){return p.level===S.lv&&p.class===S.cls&&p.subject===S.sub;});
-    var good=[];
-    for(var pi=0;pi<ps.length;pi++){
-      var pd=await loadPaper(ps[pi]);
-      (pd.questions||[]).forEach(function(x){
-        var o=x.options,ci=x.correct;
-        if(!Array.isArray(o)||o.length!==4||typeof ci!=="number"||ci<0||ci>3)return;
-        if(!x.q||o.some(function(t){return typeof t!=="string"||!t.trim();}))return;
-        var order=shuffle([0,1,2,3]);
-        good.push({id:x.id,pid:pd.id,img:x.img||"",q:x.q,opts:order.map(function(k){return o[k];}),ci:order.indexOf(ci)});
-      });
-    }
-    if(!good.length)throw new Error("No questions found for this choice.");
-    S.qs=shuffle(good).slice(0,Math.max(1,count));
+    var raw=await collect(papersNow());
+    if(!raw.length)throw new Error("No questions found for this choice.");
+    var good=raw.map(function(r){var order=shuffle([0,1,2,3]);return {id:r.id,pid:r.pid,img:r.img,q:r.q,opts:order.map(function(k){return r.o[k];}),ci:order.indexOf(r.ci)};});
+    S.qs=S.paper?good:shuffle(good).slice(0,Math.max(1,count));
     S.sel=S.qs.map(function(){return -1;});
     S.i=0;S.res=null;S.exp={};S.screen="quiz";
   }catch(x){
@@ -310,6 +351,7 @@ window.EduRoom={
     try{if(typeof setHeader==="function")setHeader("<h2>AI Examination Room</h2>");}catch(x){}
     try{if(typeof setActiveNav==="function")setActiveNav("room");}catch(x){}
     if(S.screen!=="setup"&&S.qs.length){draw();return;}
+    if(S.screen==="read"&&S.rd.length){draw();return;}
     S.cat=null; /* always ask the server again, so newly saved papers show up */
     if(!S.cat){
       app.innerHTML="<div class='rm'><div class='empty'>Loading...</div></div>";
@@ -324,11 +366,29 @@ window.EduRoom={
   retry:function(){S.cat=null;window.EduRoom.open(APP);},
   pick:function(k,v){
     if(k==="count"){begin(parseInt(v,10)||10);return;}
+    if(k==="paper"&&v){S.paper=S.papers.filter(function(p){return p.id===v;})[0]||"";S.err="";draw();return;}
     S[k]=v;
-    if(k==="lv"){S.cls="";S.sub="";}
-    if(k==="cls"){S.sub="";}
+    if(k==="lv"){S.cls="";S.sub="";S.paper="";S.mix="";}
+    if(k==="cls"){S.sub="";S.paper="";S.mix="";}
+    if(k==="sub"){S.paper="";S.mix="";}
     S.err="";draw();
   },
+  start:function(){S.screen="setup";begin(9999);},
+  read:async function(){
+    if(S.busy)return;
+    stopSpeak();
+    if(S.screen==="quiz"){
+      S.rd=S.qs.map(function(q){return {q:q.q,img:q.img,o:q.opts};});S.back="quiz";S.screen="read";draw();return;
+    }
+    S.busy=true;S.err="";draw();
+    try{
+      var raw=await collect(papersNow());
+      if(!raw.length)throw new Error("No questions found for this choice.");
+      S.rd=raw.map(function(r){return {q:r.q,img:r.img,o:r.o};});S.back="paper";S.screen="read";
+    }catch(x){S.err="Could not load the questions. Check your internet and try again. ("+(x&&x.message||x)+")";}
+    S.busy=false;draw();
+  },
+  unread:function(){S.screen=(S.back==="quiz"&&S.qs.length)?"quiz":"setup";draw();},
   choose:function(k){S.sel[S.i]=k;draw();},
   step:function(d){
     if(d>0){if(S.sel[S.i]<0)return;if(S.i===S.qs.length-1){finish();return;}}
@@ -338,12 +398,12 @@ window.EduRoom={
   result:function(){stopSpeak();S.screen="result";draw();},
   review:function(){S.screen="review";draw();},
   again:function(){begin(S.qs.length);},
-  home:function(){stopSpeak();S.screen="setup";S.qs=[];S.sel=[];S.res=null;S.exp={};S.lv="";S.cls="";S.sub="";S.err="";draw();},
+  home:function(){stopSpeak();S.screen="setup";S.qs=[];S.sel=[];S.res=null;S.exp={};S.lv="";S.cls="";S.sub="";S.paper="";S.mix="";S.rd=[];S.back="paper";S.err="";draw();},
   explain:explain,
   speak:function(i){if(S.exp[i]&&S.exp[i]!=="Thinking..."&&typeof window.speakText==="function")window.speakText(SPK+i,S.exp[i]);},
   report:report,
   zoom:zoom,
-  version:"1.3",
+  version:"1.4",
   _t:{band:band,shuffle:shuffle,fmt:fmt,S:S}
 };
 })();
