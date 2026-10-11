@@ -1,4 +1,4 @@
-/* Edu Library - AI Library Manager v1.1: the AI sorts each PDF. 80% sure or more = uploads by itself. Below 80% = waits for your Approve. Stops cleanly when the AI limit is reached. Exact duplicates (same file content + size) are skipped automatically, without using the AI. */
+/* Edu Library - AI Library Manager v1.3: the AI sorts each PDF. 80% sure or more = uploads by itself. Below 80% = waits for your Approve, collected in ONE box at the top with Approve all / Reject all. Stops cleanly when the AI limit is reached. Exact duplicates (same file content + size) AND files whose title + class already exist in the library are rejected automatically. "Check anyway" brings a skipped file back. */
 (function(){
 "use strict";
 var URL_CLASSIFY="https://edu-ai-backend-three.vercel.app/api/book-link?classify=1";
@@ -166,6 +166,17 @@ function curRec(it){
   var cls=e.cls0+(e.docType==="exam"?TIER_SEP+"Exam"+(e.body?TIER_SEP+e.body:""):(e.level==="Tertiary"&&e.tier?TIER_SEP+e.tier:""));
   return {title:e.title,subject:e.docType==="exam"?e.subject:e.title,level:e.level,class:cls};
 }
+/* does a book with the same title + class already exist in the library? (null = no, or cannot tell) */
+function libTitleHit(it){
+  try{
+    var rec=it.edit?curRec(it):null;
+    if(!rec||!rec.title||!it.edit.cls0)return null;
+    var k=admDupKey(rec);
+    if(!k)return null;
+    var f=booksCache.filter(function(b){return admDupKey(b)===k;})[0];
+    return f?{title:f.title||""}:null;
+  }catch(e){return null;}
+}
 function checkDuplicates(){
   var lib={},seen={},keys={};
   try{booksCache.forEach(function(b){lib[admDupKey(b)]=b.title;});}catch(e){}
@@ -203,6 +214,8 @@ function autoCheck(it){
   if(!sure(it))return false;
   it.dec="approved";it.auto=true;return true;
 }
+/* a file that is waiting for your OK (these are collected in one box at the top) */
+function needsOk(it){return !!(it.edit&&it.dec==="pending"&&!it.up);}
 
 /* ---------- drawing ---------- */
 function opts(list,val,blank){
@@ -286,7 +299,7 @@ function miniCard(it){
     else if(it.status==="paused")h+="<div style='color:#e0a030;margin-top:3px'>Paused — the AI limit was reached. Not checked yet.</div>";
     else if(it.status==="work")h+="<div style='margin-top:3px'>Reading and asking AI…</div>";
     else if(it.status==="noText")h+="<div style='color:#e0a030;margin-top:3px'>No readable text (maybe scanned).</div>";
-    else if(it.status==="dupe")h+="<div style='color:#777;font-weight:700;margin-top:3px'>⛔ "+E(it.msg)+"</div><div style='font-size:12px;color:var(--sub);margin-top:2px'>Not sent to the AI. Nothing uploaded.</div><div style='display:flex;margin-top:6px'>"+miniBtn("Check anyway","EduLibraryManager.force("+i+")")+"</div>";
+    else if(it.status==="dupe")h+="<div style='color:#777;font-weight:700;margin-top:3px'>⛔ "+E(it.msg)+"</div><div style='font-size:12px;color:var(--sub);margin-top:2px'>"+(it.tdupe?"Matched by title and class. Nothing uploaded.":"Not sent to the AI. Nothing uploaded.")+"</div><div style='display:flex;margin-top:6px'>"+miniBtn("Check anyway","EduLibraryManager.force("+i+")")+"</div>";
     if(it.status==="err"||it.status==="noText")h+="<div style='display:flex;margin-top:6px'>"+miniBtn("Fill in by hand","EduLibraryManager.hand("+i+")")+"</div>";
   }else{
     var bits=[];
@@ -310,27 +323,45 @@ function miniCard(it){
   return "<div style='border:1px solid var(--line);border-left:5px solid "+colorOf(it)+";border-radius:9px;padding:8px 12px;margin:0 0 8px;font-size:13px;word-break:break-word'>"+head+h+"</div>";
 }
 function cardHtml(it){return (it.edit&&isOpen(it))?fullCard(it):miniCard(it);}
+/* redraw one card in place; if it moved in or out of the "needs your OK" box, redraw the whole list so it lands in the right place */
 function drawOne(i){
-  var el=$("lmc"+i);if(!el||!items[i])return;
-  checkDuplicates();el.innerHTML=cardHtml(items[i]);bar();
+  var it=items[i],el=$("lmc"+i);if(!el||!it)return;
+  var g=needsOk(it)?"n":"o";
+  if(it._g&&it._g!==g){fullDraw();return;}
+  checkDuplicates();el.innerHTML=cardHtml(it);it._g=g;bar();
 }
 function fullDraw(){
   var box=$("lmList");if(!box)return;
   checkDuplicates();
-  box.innerHTML=items.map(function(it){return "<div id='lmc"+it.i+"'>"+cardHtml(it)+"</div>";}).join("");
+  var need=[],rest=[];
+  items.forEach(function(it){if(needsOk(it))need.push(it);else rest.push(it);it._g=needsOk(it)?"n":"o";});
+  function wrap(it){return "<div id='lmc"+it.i+"'>"+cardHtml(it)+"</div>";}
+  var h="";
+  if(need.length){
+    h+="<div style='border:2px solid #e0a030;border-radius:11px;padding:10px 10px 4px;margin:0 0 14px'>"
+      +"<div style='font-weight:700;font-size:14px;margin:0 0 4px'>⚠ Waiting for your OK ("+need.length+")</div>"
+      +"<div style='font-size:12px;color:var(--sub);margin:0 0 8px'>All files the AI is not sure about are collected here. Approve or reject them all at once, or one by one below.</div>"
+      +"<div style='display:flex;gap:8px;margin:0 0 10px'>"+btn("✅ Approve all ("+need.length+")","EduLibraryManager.bulkApprove()","#2FA36B")+btn("❌ Reject all ("+need.length+")","EduLibraryManager.bulkReject()","#d9534f")+"</div>"
+      +need.map(wrap).join("")+"</div>";
+  }
+  if(rest.length){
+    if(need.length)h+="<div style='font-weight:700;font-size:13px;color:var(--sub);margin:0 0 8px'>Other files ("+rest.length+")</div>";
+    h+=rest.map(wrap).join("");
+  }
+  box.innerHTML=h;
   bar();
 }
 function bar(){
   var ok=items.filter(function(x){return x.dec==="approved"&&x.up!=="done";}).length;
   var rj=items.filter(function(x){return x.dec==="rejected";}).length;
   var dn=items.filter(function(x){return x.up==="done";}).length;
-  var need=items.filter(function(x){return x.edit&&x.dec==="pending"&&!x.up;}).length;
+  var need=items.filter(needsOk).length;
   var nd=items.filter(function(x){return x.status==="dupe";}).length;
   var fin=items.filter(function(x){return x.status==="done"||x.status==="noText"||x.status==="err"||x.status==="dupe";}).length;
   var u=$("lmUp");if(u){u.textContent="Upload approved ("+ok+")";u.disabled=!ok||uploading;}
   var a=$("lmAll");if(a)a.disabled=!items.length;
   var s=$("lmStatus");
-  if(s&&items.length)s.textContent=fin+" of "+items.length+" checked"+(nd?" ("+nd+" identical cop"+(nd>1?"ies":"y")+")":"")+" · "+dn+" uploaded · "+need+" need your OK · "+rj+" rejected"+(running?" — checking, keep this screen open":(uploading?" — uploading, keep this screen open":""));
+  if(s&&items.length)s.textContent=fin+" of "+items.length+" checked"+(nd?" ("+nd+" skipped as duplicate"+(nd>1?"s":"")+")":"")+" · "+dn+" uploaded · "+need+" need your OK · "+rj+" rejected"+(running?" — checking, keep this screen open":(uploading?" — uploading, keep this screen open":""));
   else if(s)s.textContent="";
   var st=$("lmStop");if(st)st.style.display=(running||uploading)?"":"none";
   var rs=$("lmResume");if(rs)rs.style.display=(!running&&items.some(function(x){return x.status==="paused";}))?"":"none";
@@ -356,13 +387,42 @@ function decide(i,d){
   it.msg="";it.dec=d;it.auto=false;drawOne(i);
   if(d==="approved")kick();
 }
+/* approve every waiting file at once (files with missing details or a possible duplicate are left for you to check one by one) */
+function bulkApprove(){
+  checkDuplicates();
+  var n=0,skip=0;
+  items.forEach(function(it){
+    if(!needsOk(it))return;
+    if(problems(it).length||it.dups.length){skip++;return;}
+    it.msg="";it.dec="approved";it.auto=false;n++;
+  });
+  fullDraw();
+  if(n)kick();
+  var s=$("lmStatus");
+  if(s)s.textContent=n+" file(s) approved — uploading now."+(skip?" "+skip+" left in the box: missing details or possible duplicate, please check them one by one.":"");
+}
+/* reject every waiting file at once (each card keeps its own Undo) */
+function bulkReject(){
+  var list=items.filter(needsOk);
+  if(!list.length)return;
+  if(!confirm("Reject all "+list.length+" waiting file(s)? They will not be uploaded. You can still tap Undo on any card."))return;
+  list.forEach(function(it){it.msg="";it.dec="rejected";it.auto=false;});
+  fullDraw();
+  var s=$("lmStatus");if(s)s.textContent=list.length+" file(s) rejected.";
+}
 function hand(i){var it=items[i];if(!it||it.edit)return;it.edit=newEdit(null,it.name);it.dec="pending";it.open=true;drawOne(i);}
 function toggle(i){var it=items[i];if(!it)return;it.open=!isOpen(it);drawOne(i);}
 function retry(i){var it=items[i];if(!it)return;it.up="";it.upErr="";it.dec="approved";drawOne(i);kick();}
-/* "Check anyway": put a skipped file back in the queue and ignore the fingerprint checks for it */
+/* "Check anyway": bring a skipped file back. A file skipped by title is restored without a new AI request and waits for your Approve. A file skipped by its content is sent through the normal check, ignoring the fingerprint rules. */
 function force(i){
   var it=items[i];if(!it||it.status!=="dupe")return;
-  it.forceCheck=true;it.status="wait";it.dec="";it.auto=false;it.msg="";it.result=null;it.edit=null;it.err="";
+  it.forceCheck=true;it.auto=false;it.msg="";it.err="";
+  if(it.tdupe&&it.savedEdit){
+    it.result=it.savedResult;it.edit=it.savedEdit;it.tdupe=false;
+    it.status="done";it.dec="pending";it.open=true;
+    drawOne(i);return;
+  }
+  it.status="wait";it.dec="";it.result=null;it.edit=null;
   drawOne(i);
   if(!running){
     run().catch(function(e){
@@ -407,13 +467,13 @@ async function run(){
           if(items[q].hash&&items[q].hash===it.hash&&items[q].size===it.size){tw=q;break;}
         }
         if(tw>=0){
-          it.status="dupe";it.dec="rejected";it.auto=true;
+          it.status="dupe";it.dec="rejected";it.auto=true;it.tdupe=false;
           it.msg="Skipped automatically: identical copy of #"+(tw+1);
           drawOne(k);continue;
         }
         var hit=await libraryHit(it.hash,it.size);
         if(hit){
-          it.status="dupe";it.dec="rejected";it.auto=true;
+          it.status="dupe";it.dec="rejected";it.auto=true;it.tdupe=false;
           it.msg="Already in the library ("+(clean(hit.title)||"no title")+")";
           drawOne(k);continue;
         }
@@ -424,7 +484,19 @@ async function run(){
       var j;
       try{j=await classify(it.file,info);}finally{lastAi=Date.now();}
       if(j.noText){it.status="noText";}
-      else if(j.result){it.result=j.result;it.provider=j.provider;it.status="done";it.edit=newEdit(j.result,it.name);it.dec="pending";}
+      else if(j.result){
+        it.result=j.result;it.provider=j.provider;it.status="done";it.edit=newEdit(j.result,it.name);it.dec="pending";
+        /* same title + class as a book already in the library: reject automatically (Check anyway brings it back) */
+        if(!it.forceCheck){
+          var th=libTitleHit(it);
+          if(th){
+            it.savedResult=it.result;it.savedEdit=it.edit;
+            it.result=null;it.edit=null;
+            it.status="dupe";it.dec="rejected";it.auto=true;it.tdupe=true;
+            it.msg="Already in the library: "+(clean(th.title)||"same title and class");
+          }
+        }
+      }
       else{it.status="err";it.err=j.error||"No answer";}
     }catch(e){
       if(e&&e.limit){limitHit=true;it.status="paused";break;}
@@ -579,7 +651,7 @@ function pick(files){
 function render(body){
   items=ST.items;bookServer=ST.bookServer;
   var so=SERVERS.filter(function(x){return !x.exam;}).map(function(x){return "<option value='"+x.id+"'"+(x.ok?"":" disabled")+(x.id===bookServer?" selected":"")+">"+E(x.name)+(x.ok?"":" (not connected)")+"</option>";}).join("");
-  body.innerHTML="<div class='note' style='margin-top:0'>AI Library — choose PDFs. The AI works out where each one belongs. <b>If it is "+pct(AUTO_MIN)+" sure or more, the file uploads by itself.</b> Below "+pct(AUTO_MIN)+", or if it sees a problem or a possible duplicate, it waits for your <b>Approve</b>. <b>Exact copies of files already uploaded are skipped automatically.</b><br><b>Tip:</b> each time you choose PDFs they are <b>added</b> to the list. Tap <b>Details</b> on a card to edit it.</div>"
+  body.innerHTML="<div class='note' style='margin-top:0'>AI Library — choose PDFs. The AI works out where each one belongs. <b>If it is "+pct(AUTO_MIN)+" sure or more, the file uploads by itself.</b> Below "+pct(AUTO_MIN)+", or if it sees a problem, the file waits for your OK in <b>one box at the top</b>, where you can <b>Approve all</b> or <b>Reject all</b>. <b>Files already in the library (exact copies, or the same title and class) are skipped automatically.</b> Tap <b>Check anyway</b> on a skipped card to bring it back.<br><b>Tip:</b> each time you choose PDFs they are <b>added</b> to the list. Tap <b>Details</b> on a card to edit it.</div>"
    +"<input id='lmFile' type='file' accept='application/pdf,.pdf' multiple style='display:none'>"
    +"<button type='button' class='btn' id='lmPick'>Choose PDF files</button>"
    +"<label style='display:flex;gap:10px;align-items:center;margin:12px 0 0;font-size:13.5px'><input type='checkbox' id='lmAuto'"+(ST.auto?" checked":"")+" style='width:20px;height:20px;flex:none'> <span>Upload automatically when the AI is "+pct(AUTO_MIN)+" sure or more</span></label>"
@@ -604,5 +676,5 @@ function render(body){
   }else bar();
 }
 
-window.EduLibraryManager={render:render,set:setField,decide:decide,hand:hand,retry:retry,toggle:toggle,resume:resume,force:force,version:"1.1"};
+window.EduLibraryManager={render:render,set:setField,decide:decide,hand:hand,retry:retry,toggle:toggle,resume:resume,force:force,bulkApprove:bulkApprove,bulkReject:bulkReject,version:"1.3"};
 })();
