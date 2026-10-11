@@ -1,11 +1,12 @@
 /* Edu Library - AI Examination Room, Admin side: Exam Builder v1.7 (saves papers to server C, with a space meter; fills Class, Subject, Title and Year from the file by itself). Builds checked multiple-choice questions (two AIs must agree) from the text of an exam paper (PDF with text, SCANNED PDF read by AI, Word .docx, or .txt) and saves them to server C through the backend. Includes an accuracy test with maths questions whose answers are known.
+   v1.8: PICTURES. After a run, the button "Add pictures" finds the diagram / map / table of every held question on the page pictures, cuts it out, shows a small preview next to the question, lets BOTH AIs look at it, and Save stores the picture on the same server as the paper (the students' Exam Room already shows it above the question).
    v1.7: (1) "Scanned paper" box (turns on by itself when the PDF was made by a scanner): the page pictures are read by AI instead of the hidden scan text, which is often full of mistakes and mixed-up lines; the AI reading is kept in memory so a second run does not read the pictures again. (2) A report after every run: which question numbers were kept, which need a picture (held, not saved yet), which were dropped and why, and which numbers were not found at all. (3) Failed parts are tried again once, and the real reason of a failure is shown. */
 (function(){
 "use strict";
 var URL_BUILD="https://edu-ai-backend-three.vercel.app/api/book-link?exambuild=1";
 var CHUNK=3500,MAX_PAGES=30,GAP_MS=11000,OCR_BATCH=2,OCR_GAP_MS=9000;
 var ST=window.__eduEB=window.__eduEB||{built:[],meta:null,busy:false};
-ST.held=ST.held||[];ST.lost=ST.lost||[];
+ST.held=ST.held||[];ST.lost=ST.lost||[];ST.pics=ST.pics||{};
 
 function $(id){return document.getElementById(id);}
 function wait(ms){return new Promise(function(r){setTimeout(r,ms);});}
@@ -229,7 +230,7 @@ function reportLines(built,held,lost){
   var out=[];
   if(!built.length&&!held.length&&!shown.length)return out;
   out.push("Kept and ready to save: "+built.length+(kn.length?" (No. "+srt(kn).join(", ")+")":""));
-  if(held.length)out.push("Need a picture, not saved yet: "+held.length+(hn.length?" (No. "+srt(hn).join(", ")+")":"")+". Picture support is the next update.");
+  if(held.length)out.push("Need a picture, not saved yet: "+held.length+(hn.length?" (No. "+srt(hn).join(", ")+")":"")+". Tap the Add pictures button below.");
   shown.slice(0,40).forEach(function(d){out.push("Dropped No. "+(d.n||"?")+": "+(WHY[d.reason]||d.reason)+". "+String(d.q||"").slice(0,70));});
   if(shown.length>40)out.push("... and "+(shown.length-40)+" more dropped.");
   if(miss.length)out.push("Not found by the AI at all (numbers between 1 and "+max+"): "+miss.join(", ")+". Run the same file again to try them.");
@@ -240,10 +241,11 @@ async function buildPaper(){
   var f=$("ebFile").files[0],c=ctxNow();
   if(!f){say("ebSt","Choose a file first (PDF, Word .docx or .txt).");return;}
   if(!c.cls||!c.subject||!c.title){var ms=[];if(!c.cls)ms.push("Class");if(!c.subject)ms.push("Subject");if(!c.title)ms.push("Paper title");say("ebSt","Please fill in: "+ms.join(", ")+".");return;}
-  ST.busy=true;ST.built=[];ST.held=[];ST.lost=[];ST.meta=null;drawResults();
+  ST.busy=true;ST.built=[];ST.held=[];ST.lost=[];ST.pics={};ST.meta=null;ST.pdfFile=null;drawResults();
   var limitHit=false;
   try{
     var isPdf=!/\.(docx|txt|doc)$/i.test(f.name||"");
+    ST.pdfFile=isPdf?f:null;
     var useScan=isPdf&&$("ebScan")&&$("ebScan").checked;
     var rd,chunks,scanNote="";
     if(useScan){
@@ -302,23 +304,135 @@ async function buildPaper(){
   }catch(e){say("ebSt","Stopped: "+((e&&e.message)||e));}
   ST.busy=false;drawResults();
 }
+/* ---------- pictures for the questions that need one ---------- */
+var PIC_MAX=110000; /* saved picture: about 100 KB at most */
+function dataBytes(d){return Math.floor((d.length-d.indexOf(",")-1)*0.75);}
+/* cut the picture out of a page (box = [top,left,bottom,right] in 0-1000 units), small enough to save */
+async function cropPage(pdf,pageNum,box){
+  var g=await pdf.getPage(pageNum),v1=g.getViewport({scale:1});
+  var sc=Math.min(3,2400/Math.max(v1.width,v1.height));
+  var vp=g.getViewport({scale:sc}),cv=document.createElement("canvas");
+  cv.width=Math.floor(vp.width);cv.height=Math.floor(vp.height);
+  var cx=cv.getContext("2d");cx.fillStyle="#fff";cx.fillRect(0,0,cv.width,cv.height);
+  await g.render({canvasContext:cx,viewport:vp}).promise;
+  var pad=0.012,y0=Math.max(0,box[0]/1000-pad),x0=Math.max(0,box[1]/1000-pad),y1=Math.min(1,box[2]/1000+pad),x1=Math.min(1,box[3]/1000+pad);
+  var sx=Math.floor(x0*cv.width),sy=Math.floor(y0*cv.height),sw=Math.max(8,Math.floor((x1-x0)*cv.width)),sh=Math.max(8,Math.floor((y1-y0)*cv.height));
+  var k=Math.min(1,900/sw),ow=Math.max(8,Math.floor(sw*k)),oh=Math.max(8,Math.floor(sh*k));
+  var out=document.createElement("canvas");out.width=ow;out.height=oh;
+  var ox=out.getContext("2d");ox.fillStyle="#fff";ox.fillRect(0,0,ow,oh);
+  ox.drawImage(cv,sx,sy,sw,sh,0,0,ow,oh);
+  cv.width=0;cv.height=0;
+  var jpeg=out.toDataURL("image/jpeg",0.8),web="",ext="webp",qs=[0.72,0.6,0.5,0.4],i;
+  for(i=0;i<qs.length;i++){web=out.toDataURL("image/webp",qs[i]);if(web.indexOf("data:image/webp")!==0)break;if(dataBytes(web)<=PIC_MAX)break;}
+  if(web.indexOf("data:image/webp")!==0){ext="jpg";web="";for(i=0;i<qs.length;i++){web=out.toDataURL("image/jpeg",qs[i]);if(dataBytes(web)<=PIC_MAX)break;}}
+  out.width=0;out.height=0;
+  return {jpeg:jpeg.split(",")[1],save:web.split(",")[1],ext:ext,bytes:dataBytes(web),preview:web};
+}
+async function addPictures(){
+  if(ST.busy||!ST.held.length||!ST.pdfFile||!ST.meta)return;
+  ST.busy=true;drawResults();
+  var c=ST.meta,found={},groups={},reasons=[],added=0,textOnly=0,limitHit=false,pdf=null;
+  try{
+    var buf=await ST.pdfFile.arrayBuffer();
+    pdf=await pdfjsLib.getDocument({data:new Uint8Array(buf)}).promise;
+    var n=Math.min(pdf.numPages,MAX_PAGES),withNum=ST.held.filter(function(h){return h.n;});
+    /* 1. where is the picture of each held question? (the AI looks at 2 pages at a time) */
+    var p=1;
+    while(p<=n&&!limitHit){
+      var left=withNum.filter(function(h){return !found[h.n];});
+      if(!left.length)break;
+      var last=Math.min(p+OCR_BATCH-1,n),imgs=[];
+      say("ebSt","Looking for the pictures: pages "+p+(last>p?"–"+last:"")+" of "+n+". Questions still to find: "+left.length+"…");
+      for(var q=p;q<=last;q++)imgs.push(await pageImage(pdf,q));
+      try{
+        var j=await post({figures:true,images:imgs,qs:left.map(function(h){return {n:h.n,q:h.q};}),level:c.level,class:c.cls,subject:c.subject});
+        (j.items||[]).forEach(function(it){
+          if(!it.found||found[it.n])return;
+          found[it.n]={noPic:it.needsPicture===false,page:it.image?p+it.image-1:0,box:it.box};
+        });
+      }catch(e){
+        if(e&&e.limit){limitHit=true;break;}
+        throw e;
+      }
+      p=last+1;
+      if(p<=n)await wait(OCR_GAP_MS);
+    }
+    if(limitHit)reasons.push("the AI limit was reached while looking for pictures");
+    /* 2. group the questions: same picture together, questions that need no picture together */
+    ST.held.forEach(function(h){
+      var f=h.n?found[h.n]:null;
+      if(!f)return;
+      if(f.noPic){(groups.text=groups.text||{items:[]}).items.push(h);return;}
+      if(!f.box||!f.page)return;
+      var key=f.page+"|"+f.box.map(function(v){return Math.round(v/20);}).join(",");
+      (groups[key]=groups[key]||{page:f.page,box:f.box,items:[]}).items.push(h);
+    });
+    /* 3. cut each picture out, let both AIs look at it, keep what they agree on */
+    var keys=Object.keys(groups),answered={},gi=0;
+    for(var ki=0;ki<keys.length&&!limitHit;ki++){
+      var gr=groups[keys[ki]],crop=null;
+      gi++;
+      say("ebSt","Picture "+gi+" of "+keys.length+": cutting it out and asking both AIs to look at it…");
+      try{
+        if(gr.box)crop=await cropPage(pdf,gr.page,gr.box);
+        var r=await post({answerPics:true,image:crop?crop.jpeg:"",qs:gr.items.slice(0,8).map(function(h){return {n:h.n,q:h.q,options:h.options};}),level:c.level,class:c.cls,subject:c.subject});
+        var name=null;
+        if(crop){
+          name="fig"+gr.page+"-"+gr.box.map(function(v){return Math.round(v/10).toString(36);}).join("")+"."+crop.ext;
+          name=name.toLowerCase();
+        }
+        (r.kept||[]).forEach(function(k){
+          var it={q:k.q,options:k.options,correct:k.correct,verifiedBy:k.verifiedBy,n:k.n};
+          if(crop){it.img=name;it.preview=crop.preview;ST.pics[name]=crop.save;added++;}else textOnly++;
+          ST.built.push(it);answered[k.n]=1;
+        });
+        (r.droppedList||[]).forEach(function(d){ST.lost.push(d);answered[d.n]=1;});
+      }catch(e){
+        if(e&&e.limit){limitHit=true;reasons.push("the AI limit was reached");break;}
+        reasons.push("a group of questions failed ("+((e&&e.message)||e)+")");
+      }
+      drawResults();
+      if(ki<keys.length-1)await wait(6000);
+    }
+    ST.held=ST.held.filter(function(h){return !(h.n&&answered[h.n]);});
+    var noFound=ST.held.filter(function(h){return h.n&&!found[h.n];}).map(function(h){return h.n;});
+    var noBox=ST.held.filter(function(h){return h.n&&found[h.n]&&!found[h.n].noPic&&!(found[h.n].box&&found[h.n].page);}).map(function(h){return h.n;});
+    if(noFound.length)reasons.push("No. "+noFound.join(", ")+(noFound.length>1?" were":" was")+" not found on the page pictures");
+    if(noBox.length)reasons.push("the picture of No. "+noBox.join(", ")+" could not be located");
+    say("ebSt","Pictures: "+added+" question(s) now have a picture, "+textOnly+" more did not need one. Still held: "+ST.held.length+(reasons.length?". Reasons: "+reasons.join("; ")+".":".")+" Look at each picture below before you tap Save. Tap Don't save under a picture that is wrong.");
+  }catch(e){say("ebSt","Pictures stopped: "+((e&&e.message)||e));}
+  try{if(pdf)pdf.destroy();}catch(e3){}
+  ST.busy=false;drawResults();
+}
+function dropBuilt(i){
+  if(ST.busy)return;
+  var it=ST.built[i];if(!it)return;
+  ST.built.splice(i,1);drawResults();
+}
 function drawResults(){
   var box=$("ebList");if(!box)return;
   var q=ST.built,h="",rep=reportLines(ST.built,ST.held,ST.lost);
   if(rep.length){
     h+="<div style='border:1px solid var(--line);border-radius:9px;padding:8px 12px;margin:0 0 10px;font-size:12.5px;line-height:1.55;color:var(--sub);word-break:break-word'><b style='color:var(--ink)'>Report</b>"+rep.map(function(l){return "<div>"+E(l)+"</div>";}).join("")+"</div>";
   }
+  if(ST.held.length&&ST.pdfFile&&!ST.busy)h+="<button type='button' class='btn' id='ebPics' style='margin:0 0 10px'>Add pictures to the "+ST.held.length+" question(s) that need one</button>";
+  if(ST.held.length&&!ST.pdfFile&&!ST.busy)h+="<div style='font-size:12.5px;color:var(--sub);margin:0 0 10px'>Pictures can only be added from a PDF paper for now.</div>";
   if(q.length){
     h+="<button type='button' class='btn green' id='ebSave' style='margin:0 0 10px'>Save "+q.length+" questions</button>";
     q.forEach(function(it,i){
       h+="<div style='border:1px solid var(--line);border-radius:9px;padding:8px 12px;margin:0 0 8px;font-size:13px;word-break:break-word'><b>"+(i+1)+". "+E(it.q)+"</b>"
-        +it.options.map(function(o,k){return "<div style='"+(k===it.correct?"color:#2FA36B;font-weight:700":"color:var(--sub)")+"'>"+"ABCD"[k]+". "+E(o)+(k===it.correct?" ✓":"")+"</div>";}).join("")+"</div>";
+        +(it.preview?"<img alt='Picture for this question' src=\""+E(it.preview)+"\" style='display:block;max-width:100%;max-height:260px;margin:8px auto;border-radius:8px;background:#fff;border:1px solid var(--line)'>":"")
+        +it.options.map(function(o,k){return "<div style='"+(k===it.correct?"color:#2FA36B;font-weight:700":"color:var(--sub)")+"'>"+"ABCD"[k]+". "+E(o)+(k===it.correct?" ✓":"")+"</div>";}).join("")
+        +(it.img?"<button type='button' class='ebDrop' data-i='"+i+"' style='margin-top:8px;border:1px solid var(--line);background:rgba(127,127,127,.15);color:var(--ink);border-radius:8px;padding:6px 10px;font-size:12.5px'>Don't save this question</button>":"")
+        +"</div>";
     });
   }
   box.innerHTML=h;
   var b=$("ebSave");if(b)b.onclick=save;
+  var pb=$("ebPics");if(pb)pb.onclick=addPictures;
+  var ds=box.querySelectorAll?box.querySelectorAll(".ebDrop"):[];
+  for(var di=0;di<ds.length;di++)ds[di].onclick=(function(el){return function(){dropBuilt(parseInt(el.getAttribute("data-i"),10));};})(ds[di]);
 }
-
 /* ---------- Examination Room storage (server C, with server D as back-up space) ---------- */
 var URL_ROOM="https://edu-ai-backend-three.vercel.app/api/book-link?room=";
 var URL_USAGE="https://edu-ai-backend-three.vercel.app/api/book-link?usage=1";
@@ -352,11 +466,18 @@ async function save(){
   try{
     say("ebSt","Saving...");
     var j=await roomCall("save",{level:m.level,class:m.cls,subject:m.subject,title:m.title,year:m.year,
-      questions:ST.built.map(function(q){return {q:q.q,options:q.options,correct:q.correct,verifiedBy:q.verifiedBy||"mistral+gemini"};})});
-    var seen=0;
-    try{var p=await roomCall("paper",{},"&id="+encodeURIComponent(j.id));seen=(p.questions||[]).length;}catch(e){}
+      questions:ST.built.map(function(q){return {q:q.q,options:q.options,correct:q.correct,verifiedBy:q.verifiedBy||"mistral+gemini",img:q.img||undefined};})});
+    /* pictures go to the same server as the paper */
+    var names={},upOk=0,upBad=0,nm;
+    ST.built.forEach(function(q){if(q.img)names[q.img]=1;});
+    for(nm in names){
+      if(!ST.pics||!ST.pics[nm]){upBad++;continue;}
+      try{await roomCall("img",{id:j.id,name:nm,b64:ST.pics[nm]});upOk++;}catch(e5){upBad++;}
+    }
+    var seen=0,seenImg=0;
+    try{var p=await roomCall("paper",{},"&id="+encodeURIComponent(j.id));seen=(p.questions||[]).length;seenImg=(p.questions||[]).filter(function(x){return x.img;}).length;}catch(e){}
     var msg="Saved on server "+j.server+": "+j.added+" new question(s)"+(j.skipped?", "+j.skipped+" already saved before (skipped)":"")+".";
-    if(seen>0){msg+=" Check passed: students can read "+seen+" question(s) of this paper.";ST.built=[];drawResults();}
+    if(seen>0){msg+=" Check passed: students can read "+seen+" question(s) of this paper"+(seenImg?", "+seenImg+" with a picture":"")+".";if(upOk||upBad)msg+=" Pictures saved: "+upOk+(upBad?". FAILED: "+upBad+" (send this message to Claude)":".");ST.built=[];ST.pics={};drawResults();}
     else msg+=" WARNING: the check could not read the paper back. Do not save again, send this message to Claude.";
     say("ebSt",msg);
     showSpace();
@@ -514,5 +635,5 @@ function render(body){
   showSpace();
 }
 
-window.EduExamBuilder={render:render,version:"1.7",_readFileText:readFileText,_guess:guessFrom,_report:reportLines,_looksScanned:looksScanned};
+window.EduExamBuilder={render:render,version:"1.8",_readFileText:readFileText,_guess:guessFrom,_report:reportLines,_looksScanned:looksScanned};
 })();
