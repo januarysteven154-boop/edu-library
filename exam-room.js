@@ -255,9 +255,10 @@ async function report(i){
 window.EduRoom={
   open:async function(app){
     APP=app;css();
-    try{if(typeof setHeader==="function")setHeader("<button class=\"back\" onclick=\"location.hash='#/exams'\">\u2190</button><h2>AI Examination Room</h2>");}catch(x){}
-    try{if(typeof setActiveNav==="function")setActiveNav("exams");}catch(x){}
+    try{if(typeof setHeader==="function")setHeader("<h2>AI Examination Room</h2>");}catch(x){}
+    try{if(typeof setActiveNav==="function")setActiveNav("room");}catch(x){}
     if(S.screen!=="setup"&&S.qs.length){draw();return;}
+    S.cat=null; /* always ask the server again, so newly saved papers show up */
     if(!S.cat){
       app.innerHTML="<div class='rm'><div class='empty'>Loading...</div></div>";
       try{await loadCat();}

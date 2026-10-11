@@ -259,6 +259,15 @@ function drawResults(){
   box.innerHTML=h;
   var b=$("ebSave");if(b)b.onclick=save;
 }
+/* asks the server the same way a student phone does (publishable key only), so we know the Room can really read the saved questions */
+async function studentsCanSee(pk){
+  try{
+    var u=sb.supabaseUrl,k=sb.supabaseKey;
+    var r=await fetch(u+"/rest/v1/exam_questions?select=id&status=eq.active&paper_key=eq."+encodeURIComponent(pk)+"&limit=1000",{headers:{apikey:k,Authorization:"Bearer "+k}});
+    if(!r.ok)return 0;
+    var j=await r.json();return Array.isArray(j)?j.length:0;
+  }catch(e){return 0;}
+}
 async function save(){
   if(ST.busy||!ST.built.length||!ST.meta)return;
   ST.busy=true;var m=ST.meta;
@@ -268,12 +277,16 @@ async function save(){
     if(ex.error)throw ex.error;
     var have={};(ex.data||[]).forEach(function(r){have[norm(r.q_text)]=1;});
     var rows=ST.built.filter(function(q){return !have[norm(q.q)];}).map(function(q){
-      return {paper_key:pk,level:m.level,class:m.cls,subject:m.subject,source_title:m.title,source_year:m.year,q_text:q.q,options:q.options,correct_index:q.correct,verified_by:q.verifiedBy||"mistral+gemini"};
+      return {paper_key:pk,level:m.level,class:m.cls,subject:m.subject,source_title:m.title,source_year:m.year,q_text:q.q,options:q.options,correct_index:q.correct,status:"active",verified_by:q.verifiedBy||"mistral+gemini"};
     });
     var skipped=ST.built.length-rows.length;
     if(rows.length){var r=await sb.from("exam_questions").insert(rows);if(r.error)throw r.error;}
-    say("ebSt","Saved "+rows.length+" question(s)."+(skipped?" "+skipped+" already saved before, skipped.":""));
-    ST.built=[];drawResults();
+    var seen=await studentsCanSee(pk);
+    var msg="Saved "+rows.length+" question(s)."+(skipped?" "+skipped+" already saved before, skipped.":"");
+    if(seen>0)msg+=" Check passed: students can see "+seen+" question(s) of this paper in the Examination Room.";
+    else msg+=" WARNING: students CANNOT see them yet (the Room reads only rows marked active). Run the SQL fix, then save again.";
+    say("ebSt",msg);
+    if(seen>0){ST.built=[];drawResults();}
   }catch(e){say("ebSt","Could not save: "+((e&&e.message)||e));}
   ST.busy=false;
 }
