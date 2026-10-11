@@ -676,5 +676,29 @@ function render(body){
   }else bar();
 }
 
+/* AI Examination Room builder: adds a button at the top of this screen that opens exam-builder.js */
+(function(){
+  var orig=render;
+  render=function(body){
+    orig(body);
+    try{
+      var b=document.createElement("button");
+      b.type="button";b.className="btn";b.style.margin="0 0 12px";
+      b.textContent="📝 AI Examination Room builder";
+      b.onclick=function(){
+        body.innerHTML="<p style='color:var(--sub);font-size:13px'>Loading…</p>";
+        var go=function(){window.EduExamBuilder.render(body);};
+        if(window.EduExamBuilder){go();return;}
+        var s=document.createElement("script");
+        s.src="https://edu-library.januarysteven154.workers.dev/exam-builder.js?v="+Date.now();
+        s.onload=go;
+        s.onerror=function(){body.innerHTML="<div class='note'>Could not load exam-builder.js</div>";};
+        document.head.appendChild(s);
+      };
+      body.insertBefore(b,body.firstChild);
+    }catch(e){}
+  };
+})();
+
 window.EduLibraryManager={render:render,set:setField,decide:decide,hand:hand,retry:retry,toggle:toggle,resume:resume,force:force,bulkApprove:bulkApprove,bulkReject:bulkReject,version:"1.3"};
 })();
