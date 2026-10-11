@@ -1,4 +1,4 @@
-/* Edu Library - AI Examination Room, Admin side: Exam Builder v1.0. Builds checked multiple-choice questions (two AIs must agree) from the text of an exam paper PDF and saves them to Supabase table exam_questions. Includes an accuracy test with maths questions whose answers are known. */
+/* Edu Library - AI Examination Room, Admin side: Exam Builder v1.1. Builds checked multiple-choice questions (two AIs must agree) from the text of an exam paper (PDF with text, Word .docx, or .txt) and saves them to Supabase table exam_questions. Includes an accuracy test with maths questions whose answers are known. */
 (function(){
 "use strict";
 var URL_BUILD="https://edu-ai-backend-three.vercel.app/api/book-link?exambuild=1";
@@ -32,8 +32,8 @@ async function build(text,ctx){
   throw new Error("Too many requests. Wait a minute and try again.");
 }
 
-/* ---------- reading the PDF ---------- */
-async function readPages(file){
+/* ---------- reading a PDF ---------- */
+async function readPdf(file){
   var buf=await file.arrayBuffer();
   var pdf=await pdfjsLib.getDocument({data:new Uint8Array(buf)}).promise;
   var n=Math.min(pdf.numPages,MAX_PAGES),pages=[];
@@ -43,8 +43,69 @@ async function readPages(file){
       pages.push(t.items.map(function(x){return x.str;}).join(" ").replace(/[ \t]+/g," ").trim().slice(0,7000));
     }catch(e){pages.push("");}
   }
+  var total=pdf.numPages;
   try{pdf.destroy();}catch(e){}
-  return {pages:pages,total:pdf.numPages};
+  return {pages:pages,total:total};
+}
+
+/* ---------- reading a Word .docx (no library needed) ---------- */
+async function inflateRaw(bytes){
+  if(typeof DecompressionStream==="undefined")throw new Error("This phone's browser cannot open Word files. Update Chrome / Android System WebView.");
+  var ds=new DecompressionStream("deflate-raw");
+  var resp=new Response(new Blob([bytes]).stream().pipeThrough(ds));
+  return new Uint8Array(await resp.arrayBuffer());
+}
+async function zipEntry(buf,wanted){
+  var v=new DataView(buf),u8=new Uint8Array(buf),i,eocd=-1;
+  for(i=buf.byteLength-22;i>=Math.max(0,buf.byteLength-70000);i--){if(v.getUint32(i,true)===0x06054b50){eocd=i;break;}}
+  if(eocd<0)throw new Error("This is not a valid .docx file (old .doc files are not supported; save it as .docx first).");
+  var count=v.getUint16(eocd+10,true),pos=v.getUint32(eocd+16,true),dec=new TextDecoder();
+  for(i=0;i<count;i++){
+    if(v.getUint32(pos,true)!==0x02014b50)break;
+    var method=v.getUint16(pos+10,true),csize=v.getUint32(pos+20,true),nl=v.getUint16(pos+28,true),el=v.getUint16(pos+30,true),cl=v.getUint16(pos+32,true),lo=v.getUint32(pos+42,true);
+    var name=dec.decode(u8.subarray(pos+46,pos+46+nl));
+    if(name===wanted){
+      var ln=v.getUint16(lo+26,true),le=v.getUint16(lo+28,true),start=lo+30+ln+le,data=u8.subarray(start,start+csize);
+      if(method===0)return data;
+      if(method===8)return await inflateRaw(data);
+      throw new Error("Unsupported Word file compression.");
+    }
+    pos+=46+nl+el+cl;
+  }
+  return null;
+}
+function xmlToText(xml){
+  var t=xml.replace(/<w:instrText[^>]*>[\s\S]*?<\/w:instrText>/g,"")
+    .replace(/<w:tab\s*\/>/g," ").replace(/<w:br[^>]*\/>/g,"\n").replace(/<\/w:p>/g,"\n")
+    .replace(/<[^>]+>/g,"");
+  return t.replace(/&lt;/g,"<").replace(/&gt;/g,">").replace(/&quot;/g,"\"").replace(/&apos;/g,"'")
+    .replace(/&#x([0-9a-fA-F]+);/g,function(m,h){return String.fromCharCode(parseInt(h,16));})
+    .replace(/&#(\d+);/g,function(m,d){return String.fromCharCode(parseInt(d,10));})
+    .replace(/&amp;/g,"&");
+}
+function textToPages(text){
+  var paras=text.split(/\r?\n/).map(function(s){return s.replace(/[ \t]+/g," ").trim();}).filter(Boolean);
+  var pages=[],cur="";
+  paras.forEach(function(p){
+    if(cur&&cur.length+p.length>3000){pages.push(cur);cur="";}
+    cur+=(cur?"\n":"")+p;
+  });
+  if(cur)pages.push(cur);
+  return {pages:pages.slice(0,MAX_PAGES),total:pages.length};
+}
+async function readDocx(file){
+  var buf=await file.arrayBuffer();
+  var data=await zipEntry(buf,"word/document.xml");
+  if(!data)throw new Error("Could not find the text inside this Word file.");
+  return textToPages(xmlToText(new TextDecoder().decode(data)));
+}
+async function readTxt(file){return textToPages(await file.text());}
+async function readFileText(file){
+  var n=(file.name||"").toLowerCase();
+  if(/\.docx$/.test(n))return await readDocx(file);
+  if(/\.txt$/.test(n))return await readTxt(file);
+  if(/\.doc$/.test(n))throw new Error("Old .doc files are not supported. Open it in Word or WPS and save it as .docx, then choose it again.");
+  return await readPdf(file);
 }
 function chunkPages(pages){
   var out=[],cur="";
@@ -102,17 +163,21 @@ function fillClasses(){
 async function buildPaper(){
   if(ST.busy)return;
   var f=$("ebFile").files[0],c=ctxNow();
-  if(!f){say("ebSt","Choose a PDF first.");return;}
+  if(!f){say("ebSt","Choose a file first (PDF, Word .docx or .txt).");return;}
   if(!c.cls||!c.subject||!c.title){say("ebSt","Fill in class, subject and title first.");return;}
   ST.busy=true;ST.built=[];ST.meta=null;drawResults();
   var found=0,limitHit=false;
   try{
-    say("ebSt","Reading the PDF…");
-    var rd=await readPages(f),chunks=chunkPages(rd.pages);
-    if(!chunks.length){say("ebSt","No readable text (maybe a scanned PDF). Scanned papers are not supported yet.");ST.busy=false;return;}
+    say("ebSt","Reading the file…");
+    var rd=await readFileText(f),chunks=chunkPages(rd.pages);
+    if(!chunks.length){
+      var isPdf=!/\.(docx|txt)$/i.test(f.name||"");
+      say("ebSt",isPdf?"No readable text (maybe a scanned PDF). Scanned papers are not supported yet.":"No readable text found in this file.");
+      ST.busy=false;return;
+    }
     var seen={};
     for(var k=0;k<chunks.length;k++){
-      say("ebSt","Part "+(k+1)+" of "+chunks.length+" (pages read: "+rd.pages.length+" of "+rd.total+")… kept so far: "+ST.built.length);
+      say("ebSt","Part "+(k+1)+" of "+chunks.length+" (parts of the file read: "+rd.pages.length+" of "+rd.total+")… kept so far: "+ST.built.length);
       try{
         var j=await build(chunks[k],c);
         found+=j.found||0;
@@ -169,7 +234,7 @@ function render(body){
    +"<button type='button' class='btn' id='ebAcc'>Run accuracy test (12 maths questions)</button>"
    +"<div id='ebAccSt' style='color:var(--sub);font-size:12.5px;margin:8px 0'></div><div id='ebAccOut'></div>"
    +"<div style='font-weight:700;margin:16px 0 6px'>2. Build from a paper</div>"
-   +"<input id='ebFile' type='file' accept='application/pdf,.pdf' style='margin:0 0 10px;max-width:100%'>"
+   +"<input id='ebFile' type='file' accept='application/pdf,.pdf,.docx,.txt,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain' style='margin:0 0 10px;max-width:100%'>"
    +"<div class='row2'><div class='field' style='margin:0 0 8px'><label>Level</label><select id='ebLevel'>"+lv+"</select></div>"
    +"<div class='field' style='margin:0 0 8px'><label>Class</label><select id='ebClass'></select></div></div>"
    +"<div class='field' style='margin:0 0 8px'><label>Subject</label><input id='ebSubj' placeholder='e.g. Biology'></div>"
@@ -184,5 +249,5 @@ function render(body){
   drawResults();
 }
 
-window.EduExamBuilder={render:render,version:"1.0"};
+window.EduExamBuilder={render:render,version:"1.1",_readFileText:readFileText};
 })();
