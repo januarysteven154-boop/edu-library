@@ -1,4 +1,4 @@
-/* Edu Library - AI Examination Room, Admin side: Exam Builder v1.2. Builds checked multiple-choice questions (two AIs must agree) from the text of an exam paper (PDF with text, SCANNED PDF read by AI, Word .docx, or .txt) and saves them to Supabase table exam_questions. Includes an accuracy test with maths questions whose answers are known. */
+/* Edu Library - AI Examination Room, Admin side: Exam Builder v1.3. Builds checked multiple-choice questions (two AIs must agree) from the text of an exam paper (PDF with text, SCANNED PDF read by AI, Word .docx, or .txt) and saves them to Supabase table exam_questions. Includes an accuracy test with maths questions whose answers are known. */
 (function(){
 "use strict";
 var URL_BUILD="https://edu-ai-backend-three.vercel.app/api/book-link?exambuild=1";
@@ -32,6 +32,14 @@ async function post(payload){
   throw new Error("Too many requests. Wait a minute and try again.");
 }
 async function build(text,ctx){return post({text:text,level:ctx.level,class:ctx.cls,subject:ctx.subject});}
+async function buildRetry(text,ctx){
+  try{return await build(text,ctx);}
+  catch(e){
+    if(e&&e.limit)throw e;
+    await wait(20000);
+    return await build(text,ctx);
+  }
+}
 async function ocr(images,ctx){var j=await post({images:images,level:ctx.level,class:ctx.cls,subject:ctx.subject});return String(j.text||"");}
 
 /* ---------- reading a PDF ---------- */
@@ -218,22 +226,23 @@ async function buildPaper(){
       say("ebSt",isPdf?"Could not read any text from the page pictures. The scan may be too faint or blank.":"No readable text found in this file.");
       ST.busy=false;return;
     }
-    var seen={};
+    var seen={},failed=0,lastErr="";
+    ST.meta=c;
     for(var k=0;k<chunks.length;k++){
       say("ebSt","Part "+(k+1)+" of "+chunks.length+" (parts of the file read: "+rd.pages.length+" of "+rd.total+")… kept so far: "+ST.built.length);
       try{
-        var j=await build(chunks[k],c);
+        var j=await buildRetry(chunks[k],c);
         found+=j.found||0;
         (j.questions||[]).forEach(function(q){var key=norm(q.q);if(seen[key])return;seen[key]=1;ST.built.push(q);});
       }catch(e){
         if(e&&e.limit){limitHit=true;break;}
-        throw e;
+        failed++;lastErr=(e&&e.message)||String(e);
       }
       drawResults();
       if(k<chunks.length-1)await wait(GAP_MS);
     }
     ST.meta=c;
-    say("ebSt",(limitHit?"Stopped: the AI limit was reached. ":"Done. ")+"Questions found: "+found+" · kept (both AIs agreed): "+ST.built.length+" · dropped: "+(found-ST.built.length)+"."+scanNote+(found===0?" No multiple-choice questions were found. If this paper only has written (structured) questions, that is expected.":""));
+    say("ebSt",(limitHit?"Stopped: the AI limit was reached. ":(failed?"Finished with problems. ":"Done. "))+"Questions found: "+found+" · kept (both AIs agreed): "+ST.built.length+" · dropped: "+(found-ST.built.length)+"."+scanNote+(failed?" "+failed+" part(s) failed ("+lastErr+"). You can still Save what was kept. Run the same file again later to try the failed parts; Save skips questions already saved.":"")+(found===0?" No multiple-choice questions were found. If this paper only has written (structured) questions, that is expected.":""));
   }catch(e){say("ebSt","Stopped: "+((e&&e.message)||e));}
   ST.busy=false;drawResults();
 }
@@ -292,5 +301,5 @@ function render(body){
   drawResults();
 }
 
-window.EduExamBuilder={render:render,version:"1.2",_readFileText:readFileText};
+window.EduExamBuilder={render:render,version:"1.3",_readFileText:readFileText};
 })();
