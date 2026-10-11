@@ -1,9 +1,11 @@
-/* Edu Library - AI Library Manager v1.3: the AI sorts each PDF. 80% sure or more = uploads by itself. Below 80% = waits for your Approve, collected in ONE box at the top with Approve all / Reject all. Stops cleanly when the AI limit is reached. Exact duplicates (same file content + size) AND files whose title + class already exist in the library are rejected automatically. "Check anyway" brings a skipped file back. */
+/* Edu Library - AI Library Manager v1.4: the AI sorts each PDF or Word (.docx) file. 80% sure or more = uploads by itself (PDF only; Word files always wait for your OK until the student app can open Word files). Below 80% = waits for your Approve, collected in ONE box at the top with Approve all / Reject all. Stops cleanly when the AI limit is reached. Exact duplicates (same file content + size) AND files whose title + class already exist in the library are rejected automatically. "Check anyway" brings a skipped file back. */
 (function(){
 "use strict";
 var URL_CLASSIFY="https://edu-ai-backend-three.vercel.app/api/book-link?classify=1";
+var URL_READER="https://edu-library.januarysteven154.workers.dev/doc-reader.js";
 var GAP_MS=5500,UP_GAP_MS=7000,MAX_FILES=30,TAIL=1400,HEAD=5500,MAX_READ=15,ENOUGH=1500;
 var AUTO_MIN=0.80; /* at or above this, a file uploads without asking you */
+var WORD_AUTO=false; /* Word files never upload by themselves until the student app can open them */
 /* state is kept on window so it survives a screen redraw */
 var ST=window.__eduLM=window.__eduLM||{items:[],bookServer:"A"};
 if(ST.auto===undefined){ST.auto=true;try{ST.auto=localStorage.getItem("lm_auto")!=="0";}catch(e){}}
@@ -16,8 +18,10 @@ function E(s){return typeof esc==="function"?esc(s):String(s==null?"":s).replace
 function hex(buf){return Array.prototype.map.call(new Uint8Array(buf),function(x){return ("0"+x.toString(16)).slice(-2);}).join("");}
 function mb(n){return (n/1048576).toFixed(1)+" MB";}
 function clean(s){return String(s||"").replace(/[\\\/]+/g,"-").replace(/~+/g,"-").replace(/\s+/g," ").trim();}
-function baseName(n){return String(n||"").replace(/\.pdf$/i,"").replace(/_+/g," ").trim();}
+function baseName(n){return String(n||"").replace(/\.(pdf|docx)$/i,"").replace(/_+/g," ").trim();}
 function pct(x){return Math.round((x||0)*100)+"%";}
+function isWordFile(f){return /\.docx$/i.test((f&&f.name)||"");}
+function isPdfFile(f){return /\.pdf$/i.test((f&&f.name)||"")||(f&&f.type==="application/pdf");}
 async function token(){
   var s=await sb.auth.getSession();
   var t=s&&s.data&&s.data.session&&s.data.session.access_token;
@@ -43,6 +47,27 @@ async function readPdf(file){
   var readable=excerpt.replace(/\[Page \d+\]|\s/g,"").length>=80;
   return {pages:n,hash:hash,excerpt:excerpt,readable:readable,read:p>maxp?maxp:p};
 }
+/* ---------- reading a Word (.docx) file: the shared reader file is loaded once, when first needed ---------- */
+function ensureReader(){
+  if(window.EduDocReader)return Promise.resolve();
+  return new Promise(function(ok,no){
+    var s=document.createElement("script");
+    s.src=URL_READER+"?v="+Date.now();
+    s.onload=function(){if(window.EduDocReader)ok();else no(new Error("The Word reader did not start."));};
+    s.onerror=function(){no(new Error("Could not load the Word reader (doc-reader.js). Is it uploaded to the website?"));};
+    document.head.appendChild(s);
+  });
+}
+async function readWordFile(file){
+  await ensureReader();
+  var d=await window.EduDocReader.readWord(file);
+  var t=String(d.text||"").replace(/[ \t]+/g," ").replace(/\n{3,}/g,"\n\n").trim();
+  var excerpt=(t.slice(0,HEAD)+(t.length>HEAD+TAIL?"\n"+t.slice(-TAIL):"")).slice(0,7000);
+  var readable=t.replace(/\s/g,"").length>=80;
+  /* a Word file has no fixed pages: this is only an estimate for the AI */
+  return {pages:Math.max(1,Math.round(t.length/2500)),hash:d.hash,excerpt:excerpt,readable:readable,read:0};
+}
+async function readAny(file){return isWordFile(file)?readWordFile(file):readPdf(file);}
 /* limit:true from the server means the AI allowance is used up: do NOT retry, stop the batch */
 async function classify(file,info){
   var tok=await token();
@@ -197,7 +222,7 @@ function checkDuplicates(){
 /* ---------- is the AI sure enough to go on its own? ---------- */
 function sure(it){
   var p=it.result;
-  return !!(it.status==="done"&&it.edit&&p&&p.confidence>=AUTO_MIN&&!p.needsReview&&!(p.flags&&p.flags.length)&&!it.dups.length&&!problems(it).length);
+  return !!(it.status==="done"&&it.edit&&p&&p.confidence>=AUTO_MIN&&!p.needsReview&&!(p.flags&&p.flags.length)&&!it.dups.length&&!problems(it).length&&!(it.word&&!WORD_AUTO));
 }
 function whyNot(it){
   var p=it.result,w=[];
@@ -205,6 +230,7 @@ function whyNot(it){
   if(!(p.confidence>=AUTO_MIN))w.push("AI is only "+pct(p.confidence)+" sure (below "+pct(AUTO_MIN)+")");
   if(p.needsReview||(p.flags&&p.flags.length))w.push("the AI flagged something");
   if(it.dups.length)w.push("possible duplicate");
+  if(it.word&&!WORD_AUTO)w.push("Word file: the student app may not be able to open it yet");
   var pr=problems(it);if(pr.length)w.push(pr.join(", "));
   return w.join("; ");
 }
@@ -216,6 +242,7 @@ function autoCheck(it){
 }
 /* a file that is waiting for your OK (these are collected in one box at the top) */
 function needsOk(it){return !!(it.edit&&it.dec==="pending"&&!it.up);}
+function sizeTxt(it){return it.word?" · Word file":(it.pages?" · "+it.pages+" pages"+(it.read?" (read "+it.read+")":""):"");}
 
 /* ---------- drawing ---------- */
 function opts(list,val,blank){
@@ -253,7 +280,7 @@ function fullCard(it){
   else if(it.status==="wait")h+="<div style='margin-top:4px'>Waiting…</div>";
   else if(it.status==="paused"){c="#e0a030";h+="<div style='color:#e0a030;margin-top:4px'>Paused — the AI limit was reached. Not checked yet.</div>";}
   else if(it.status==="work")h+="<div style='margin-top:4px'>Reading and asking AI…</div>";
-  else if(it.status==="noText"){c="#e0a030";h+="<div style='color:#e0a030;margin-top:4px'>No readable text (maybe a scanned PDF).</div>";}
+  else if(it.status==="noText"){c="#e0a030";h+="<div style='color:#e0a030;margin-top:4px'>No readable text"+(it.word?" in this Word file.":" (maybe a scanned PDF).")+"</div>";}
   else if(it.status==="done"&&p){
     c=it.dec==="rejected"?"#777":(sure(it)?"#2FA36B":"#e0a030");
     h+="<div style='margin-top:4px'>AI confidence: <b>"+pct(p.confidence)+"</b> · "+E(it.provider||"")+"</div>";
@@ -278,7 +305,7 @@ function fullCard(it){
   }
   if(it.edit)h+="<div style='display:flex;margin-top:8px'>"+btn("▲ Close details","EduLibraryManager.toggle("+i+")")+"</div>";
   return "<div style='border:1px solid var(--line);border-left:5px solid "+c+";border-radius:9px;padding:10px 12px;margin:0 0 10px;font-size:13px;word-break:break-word'>"
-    +"<div style='color:var(--sub);font-size:12px'>#"+(i+1)+" · "+E(it.name)+" · "+mb(it.size)+(it.pages?" · "+it.pages+" pages"+(it.read?" (read "+it.read+")":""):"")+"</div>"+h+"</div>";
+    +"<div style='color:var(--sub);font-size:12px'>#"+(i+1)+" · "+E(it.name)+" · "+mb(it.size)+sizeTxt(it)+"</div>"+h+"</div>";
 }
 function colorOf(it){
   if(it.up==="done")return "#2FA36B";
@@ -292,13 +319,13 @@ function isOpen(it){return it.open===true||(it.open===undefined&&items.length===
 function miniBtn(label,call,bg){return "<button type='button' class='admchip' style='flex:1;padding:8px 6px;font-size:13px"+(bg?";background:"+bg+";color:#fff;border-color:"+bg:"")+"' onclick=\""+call+"\">"+label+"</button>";}
 function miniCard(it){
   var i=it.i,e=it.edit,p=it.result,h="";
-  var head="<div style='color:var(--sub);font-size:12px'>#"+(i+1)+" · "+E(it.name)+" · "+mb(it.size)+(it.pages?" · "+it.pages+" pages":"")+"</div>";
+  var head="<div style='color:var(--sub);font-size:12px'>#"+(i+1)+" · "+E(it.name)+" · "+mb(it.size)+(it.word?" · Word file":(it.pages?" · "+it.pages+" pages":""))+"</div>";
   if(!e){
     if(it.status==="err")h+="<div style='color:#d9534f;margin-top:3px'>Problem: "+E(it.err)+"</div>";
     else if(it.status==="wait")h+="<div style='margin-top:3px'>Waiting…</div>";
     else if(it.status==="paused")h+="<div style='color:#e0a030;margin-top:3px'>Paused — the AI limit was reached. Not checked yet.</div>";
     else if(it.status==="work")h+="<div style='margin-top:3px'>Reading and asking AI…</div>";
-    else if(it.status==="noText")h+="<div style='color:#e0a030;margin-top:3px'>No readable text (maybe scanned).</div>";
+    else if(it.status==="noText")h+="<div style='color:#e0a030;margin-top:3px'>No readable text"+(it.word?".":" (maybe scanned).")+"</div>";
     else if(it.status==="dupe")h+="<div style='color:#777;font-weight:700;margin-top:3px'>⛔ "+E(it.msg)+"</div><div style='font-size:12px;color:var(--sub);margin-top:2px'>"+(it.tdupe?"Matched by title and class. Nothing uploaded.":"Not sent to the AI. Nothing uploaded.")+"</div><div style='display:flex;margin-top:6px'>"+miniBtn("Check anyway","EduLibraryManager.force("+i+")")+"</div>";
     if(it.status==="err"||it.status==="noText")h+="<div style='display:flex;margin-top:6px'>"+miniBtn("Fill in by hand","EduLibraryManager.hand("+i+")")+"</div>";
   }else{
@@ -458,7 +485,7 @@ async function run(){
     if(it.status!=="wait")continue;
     it.status="work";drawOne(k);
     try{
-      var info=await readPdf(it.file);
+      var info=await readAny(it.file);
       it.pages=info.pages;it.hash=info.hash;it.read=info.read;
       /* exact duplicates are skipped BEFORE any AI request (and with no waiting) */
       if(it.hash&&!it.forceCheck){
@@ -619,8 +646,9 @@ function kick(){
 
 function pick(files){
   try{
-    var list=Array.prototype.slice.call(files||[]).filter(function(f){return /\.pdf$/i.test(f.name)||f.type==="application/pdf";});
-    if(!list.length){alert("Please choose PDF files.");return;}
+    var all=Array.prototype.slice.call(files||[]);
+    var list=all.filter(function(f){return isPdfFile(f)||isWordFile(f);});
+    if(!list.length){alert(all.some(function(f){return /\.doc$/i.test(f.name||"");})?"Old .doc files are not supported. Open it in Word or WPS and save it as .docx, then choose it again.":"Please choose PDF or Word (.docx) files.");return;}
     /* tidy the list when nothing is busy: drop uploaded and rejected cards */
     if(!running&&!uploading){
       var keep=items.filter(function(x){return x.up!=="done"&&x.dec!=="rejected";});
@@ -632,7 +660,7 @@ function pick(files){
       var dup=items.some(function(x){return x.name===f.name&&x.size===f.size;});
       if(dup){skipped++;return;}
       if(items.length>=MAX_FILES){skipped++;return;}
-      items.push({i:items.length,file:f,name:f.name,size:f.size,status:"wait",dups:[],dec:"",up:"",msg:""});
+      items.push({i:items.length,file:f,name:f.name,size:f.size,word:isWordFile(f),status:"wait",dups:[],dec:"",up:"",msg:""});
       added++;
     });
     var s=$("lmStatus");
@@ -651,10 +679,10 @@ function pick(files){
 function render(body){
   items=ST.items;bookServer=ST.bookServer;
   var so=SERVERS.filter(function(x){return !x.exam;}).map(function(x){return "<option value='"+x.id+"'"+(x.ok?"":" disabled")+(x.id===bookServer?" selected":"")+">"+E(x.name)+(x.ok?"":" (not connected)")+"</option>";}).join("");
-  body.innerHTML="<div class='note' style='margin-top:0'>AI Library — choose PDFs. The AI works out where each one belongs. <b>If it is "+pct(AUTO_MIN)+" sure or more, the file uploads by itself.</b> Below "+pct(AUTO_MIN)+", or if it sees a problem, the file waits for your OK in <b>one box at the top</b>, where you can <b>Approve all</b> or <b>Reject all</b>. <b>Files already in the library (exact copies, or the same title and class) are skipped automatically.</b> Tap <b>Check anyway</b> on a skipped card to bring it back.<br><b>Tip:</b> each time you choose PDFs they are <b>added</b> to the list. Tap <b>Details</b> on a card to edit it.</div>"
-   +"<input id='lmFile' type='file' accept='application/pdf,.pdf' multiple style='display:none'>"
-   +"<button type='button' class='btn' id='lmPick'>Choose PDF files</button>"
-   +"<label style='display:flex;gap:10px;align-items:center;margin:12px 0 0;font-size:13.5px'><input type='checkbox' id='lmAuto'"+(ST.auto?" checked":"")+" style='width:20px;height:20px;flex:none'> <span>Upload automatically when the AI is "+pct(AUTO_MIN)+" sure or more</span></label>"
+  body.innerHTML="<div class='note' style='margin-top:0'>AI Library — choose PDF or Word (.docx) files. The AI works out where each one belongs. <b>If it is "+pct(AUTO_MIN)+" sure or more, a PDF uploads by itself.</b> Below "+pct(AUTO_MIN)+", or if it sees a problem, the file waits for your OK in <b>one box at the top</b>, where you can <b>Approve all</b> or <b>Reject all</b>. <b>Word files always wait for your OK</b>, because the student app may not open them yet. <b>Files already in the library (exact copies, or the same title and class) are skipped automatically.</b> Tap <b>Check anyway</b> on a skipped card to bring it back.<br><b>Tip:</b> each time you choose files they are <b>added</b> to the list. Tap <b>Details</b> on a card to edit it.</div>"
+   +"<input id='lmFile' type='file' accept='application/pdf,.pdf,.docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document' multiple style='display:none'>"
+   +"<button type='button' class='btn' id='lmPick'>Choose PDF or Word files</button>"
+   +"<label style='display:flex;gap:10px;align-items:center;margin:12px 0 0;font-size:13.5px'><input type='checkbox' id='lmAuto'"+(ST.auto?" checked":"")+" style='width:20px;height:20px;flex:none'> <span>Upload PDFs automatically when the AI is "+pct(AUTO_MIN)+" sure or more</span></label>"
    +"<div class='field' style='margin:10px 0 0'><label>Save books to (exams always go to Server C)</label><select id='lmSrv'>"+so+"</select></div>"
    +"<div id='lmStatus' style='color:var(--sub);font-size:12.5px;margin:10px 0'></div>"
    +"<div style='display:flex;gap:8px;margin-bottom:10px'><button type='button' class='admchip' id='lmAll' style='flex:1'>Approve all confident</button><button type='button' class='admchip' id='lmStop' style='display:none'>Stop</button><button type='button' class='admchip' id='lmResume' style='display:none'>Check remaining files</button></div>"
@@ -700,5 +728,5 @@ function render(body){
   };
 })();
 
-window.EduLibraryManager={render:render,set:setField,decide:decide,hand:hand,retry:retry,toggle:toggle,resume:resume,force:force,bulkApprove:bulkApprove,bulkReject:bulkReject,version:"1.3"};
+window.EduLibraryManager={render:render,set:setField,decide:decide,hand:hand,retry:retry,toggle:toggle,resume:resume,force:force,bulkApprove:bulkApprove,bulkReject:bulkReject,version:"1.4",_readAny:readAny};
 })();
