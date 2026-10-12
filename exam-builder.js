@@ -1,15 +1,15 @@
-/* Edu Library - AI Examination Room, Admin side: Exam Builder v2.1 (saves papers to server C, with a space meter; fills Class, Subject, Title and Year from the file by itself). Builds checked multiple-choice questions (two AIs must agree) from the text of an exam paper (PDF with text, SCANNED PDF read by AI, Word .docx, or .txt) and saves them to server C through the backend. Includes an accuracy test with maths questions whose answers are known.
-   v2.1: (1) a paper with only written (structured / essay) questions now says so clearly instead of \"Not found: N\"; (2) shorter waits between AI calls (faster runs); works with backend examBuild.js v6, which no longer turns a written question into a fake multiple-choice question.
-   v2.0: FULLY AUTOMATIC. Choosing the file starts everything by itself (read, questions, pictures); only Save is left for you. A question whose figure sits on the next page is found by a second look with shifted pages.
-   v1.9: ONE RUN. Reading the paper, making the questions AND adding the pictures now happen in the same run with one button (no separate \"Add pictures\" step). The report is now one short line (Ready / Held / Dropped / Not found); the long list is behind a \"Details\" tap.
-   v1.8: PICTURES. After a run, the button "Add pictures" finds the diagram / map / table of every held question on the page pictures, cuts it out, shows a small preview next to the question, lets BOTH AIs look at it, and Save stores the picture on the same server as the paper (the students' Exam Room already shows it above the question).
-   v1.7: (1) "Scanned paper" box (turns on by itself when the PDF was made by a scanner): the page pictures are read by AI instead of the hidden scan text, which is often full of mistakes and mixed-up lines; the AI reading is kept in memory so a second run does not read the pictures again. (2) A report after every run: which question numbers were kept, which need a picture (held, not saved yet), which were dropped and why, and which numbers were not found at all. (3) Failed parts are tried again once, and the real reason of a failure is shown. */
+/* Edu Library - AI Examination Room, Admin side: Exam Builder v2.3 (saves papers to server C, with a space meter; fills Class, Subject, Title and Year from the file by itself). Builds checked multiple-choice questions (two AIs must agree) AND written questions (the AI finds them and drafts the model answers) from the text of an exam paper (PDF with text, SCANNED PDF read by AI, Word .docx, or .txt) and saves them to server C through the backend. Includes an accuracy test with maths questions whose answers are known.
+   v2.3: WRITTEN QUESTIONS, FULLY AUTOMATIC. In the same run as the multiple-choice questions, the AI also finds the questions the student must answer in their own words (short answer, structured parts, describe, essay, letter, comprehension, note making) and drafts a model answer for each. You type nothing. One Save puts both kinds into the same paper. A written question that needs a diagram is held (not saved) because its model answer cannot be trusted without seeing the picture; a question where the student must draw is dropped. Works with backend lib/examBuild.js v7, lib/roomStore.js v2 and lib/roomMark.js.
+   v2.1: a paper with only written questions now says so clearly; works with backend examBuild.js v6.
+   v2.0: FULLY AUTOMATIC. Choosing the file starts everything by itself (read, questions, pictures); only Save is left for you.
+   v1.7 to v1.9: scanned-paper reading by AI, report of kept / held / dropped, pictures cut out of the page and saved with the paper, one run with one button. */
 (function(){
 "use strict";
 var URL_BUILD="https://edu-ai-backend-three.vercel.app/api/book-link?exambuild=1";
-var CHUNK=3500,MAX_PAGES=30,GAP_MS=6000,OCR_BATCH=2,OCR_GAP_MS=5000;
+var CHUNK=3500,MAX_PAGES=30,GAP_MS=6000,OCR_BATCH=2,OCR_GAP_MS=5000,WGAP_MS=11000;
 var ST=window.__eduEB=window.__eduEB||{built:[],meta:null,busy:false};
 ST.held=ST.held||[];ST.lost=ST.lost||[];ST.pics=ST.pics||{};
+ST.written=ST.written||[];ST.wheld=ST.wheld||[];ST.wlost=ST.wlost||[];
 
 function $(id){return document.getElementById(id);}
 function wait(ms){return new Promise(function(r){setTimeout(r,ms);});}
@@ -46,6 +46,7 @@ async function buildRetry(text,ctx){
     return await build(text,ctx);
   }
 }
+async function buildWritten(text,ctx){return post({written:true,text:text,level:ctx.level,class:ctx.cls,subject:ctx.subject});}
 async function ocr(images,ctx){var j=await post({images:images,level:ctx.level,class:ctx.cls,subject:ctx.subject});return String(j.text||"");}
 
 /* ---------- reading a PDF ---------- */
@@ -176,6 +177,21 @@ function chunkPages(pages){
   if(cur.replace(/\[Page \d+\]|\s/g,"").length>=80)out.push(cur);
   return out;
 }
+/* bigger pieces for the written questions (a question with its parts or a passage must not be cut), and each piece starts with the end of the page before so a question that runs over a page is seen whole at least once */
+function chunkPagesW(pages){
+  var out=[],cur="",lastSeg="",LIM=6000,OV=1200;
+  pages.forEach(function(t,i){
+    var s="\n[Page "+(i+1)+"]\n"+String(t||"").slice(0,6500);
+    if(cur&&cur.length+s.length>LIM){
+      out.push(cur);
+      var tail=lastSeg.slice(-OV);
+      cur=tail?"\n[continued from the page before]\n"+tail:"";
+    }
+    cur+=s;lastSeg=s;
+  });
+  if(cur.replace(/\[Page \d+\]|\[continued[^\]]*\]|\s/g,"").length>=80)out.push(cur);
+  return out;
+}
 
 /* ---------- accuracy test: maths questions with known answers ---------- */
 function rnd(a,b){return a+Math.floor(Math.random()*(b-a+1));}
@@ -220,42 +236,89 @@ function fillClasses(){
   $("ebClass").innerHTML="<option value=''>— choose —</option>"+cl.map(function(c){return "<option value=\""+E(c)+"\">"+E(c)+"</option>";}).join("");
 }
 var WHY={options_not_in_file:"its options were not found in the file text",disagree:"the two AIs gave different answers",unsure:"one AI was not sure of the answer"};
+var WHYW={needs_drawing:"the student would have to draw, which is not supported yet",too_long:"it is too long to save",multiple_choice:"it looks like multiple choice",not_in_file:"it was not found in the file text",no_answer:"the AI could not write a model answer"};
+var KINDS=[["short","Short answer"],["describe","Describe / explain"],["essay","Essay"],["letter","Letter"],["comprehension","Comprehension"],["notes","Note making / summary"],["diagram","Diagram question"]];
+function kindLabel(k){for(var i=0;i<KINDS.length;i++)if(KINDS[i][0]===k)return KINDS[i][1];return k;}
+/* question numbers of written questions (ready, held or dropped), so they are not reported as "not found" among the multiple-choice numbers */
+function wNums(){
+  var a=[];
+  ST.written.concat(ST.wheld).forEach(function(w){if(w.n)a.push(w.n);});
+  ST.wlost.forEach(function(d){if(d.n)a.push(d.n);});
+  return a;
+}
 /* the report: which question numbers were kept, held for a picture, dropped (and why), and not found at all */
-function reportCounts(built,held,lost){
+function reportCounts(built,held,lost,wn){
   var kn={},all={},i;
   built.forEach(function(q){if(q.n){kn[q.n]=1;all[q.n]=1;}});
   held.forEach(function(q){if(q.n)all[q.n]=1;});
   var shown=lost.filter(function(d){return !(d.n&&kn[d.n]);});
   shown.forEach(function(d){if(d.n)all[d.n]=1;});
+  (wn||[]).forEach(function(n){all[n]=1;});
   var nums=Object.keys(all).map(Number),max=nums.length?Math.max.apply(null,nums):0,miss=0;
   for(i=1;i<=max;i++)if(!all[i])miss++;
-  return {kept:built.length,held:held.length,dropped:shown.length,missing:miss,max:max,written:(max>0&&(built.length+held.length+shown.length)<max*0.5)};
+  return {kept:built.length,held:held.length,dropped:shown.length,missing:miss,max:max,written:false};
 }
-function reportLines(built,held,lost){
+function reportLines(built,held,lost,wn){
   var kn=[],hn=[],all={},i;
   built.forEach(function(q){if(q.n){kn.push(q.n);all[q.n]=1;}});
   held.forEach(function(q){if(q.n){hn.push(q.n);all[q.n]=1;}});
   var shown=lost.filter(function(d){return !(d.n&&kn.indexOf(d.n)>=0);});
   shown.forEach(function(d){if(d.n)all[d.n]=1;});
+  (wn||[]).forEach(function(n){all[n]=1;});
   var nums=Object.keys(all).map(Number),max=nums.length?Math.max.apply(null,nums):0,miss=[];
   for(i=1;i<=max;i++)if(!all[i])miss.push(i);
   var srt=function(a){return a.slice().sort(function(x,y){return x-y;});};
   var out=[];
   if(!built.length&&!held.length&&!shown.length)return out;
-  out.push("Kept and ready to save: "+built.length+(kn.length?" (No. "+srt(kn).join(", ")+")":""));
-  if(held.length)out.push("Held (no picture yet): "+held.length+(hn.length?" (No. "+srt(hn).join(", ")+")":"")+".");
+  out.push("Multiple choice kept and ready to save: "+built.length+(kn.length?" (No. "+srt(kn).join(", ")+")":""));
+  if(held.length)out.push("Multiple choice held (no picture yet): "+held.length+(hn.length?" (No. "+srt(hn).join(", ")+")":"")+".");
   shown.slice(0,40).forEach(function(d){out.push("Dropped No. "+(d.n||"?")+": "+(WHY[d.reason]||d.reason)+". "+String(d.q||"").slice(0,70));});
   if(shown.length>40)out.push("... and "+(shown.length-40)+" more dropped.");
-  if(miss.length&&max>0&&(built.length+held.length+shown.length)<max*0.5)out.push("Most question numbers in this paper are written-answer questions, not multiple choice, so they are not built.");
-  else if(miss.length)out.push("Not found by the AI at all (numbers between 1 and "+max+"): "+miss.join(", ")+". Run the same file again to try them.");
+  if(miss.length&&max>0)out.push("Not found by the AI at all (numbers between 1 and "+max+"): "+miss.join(", ")+". Run the same file again to try them.");
   return out;
+}
+function writtenLines(){
+  var out=[],srt=function(a){return a.slice().sort(function(x,y){return x-y;});};
+  var rn=ST.written.filter(function(w){return w.n;}).map(function(w){return w.n;});
+  var hn=ST.wheld.filter(function(w){return w.n;}).map(function(w){return w.n;});
+  if(ST.written.length)out.push("Written questions ready to save: "+ST.written.length+(rn.length?" (No. "+srt(rn).join(", ")+")":""));
+  if(ST.wheld.length)out.push("Written questions held (they need a diagram, not saved): "+ST.wheld.length+(hn.length?" (No. "+srt(hn).join(", ")+")":"")+".");
+  ST.wlost.slice(0,30).forEach(function(d){out.push("Written dropped No. "+(d.n||"?")+": "+(WHYW[d.reason]||d.reason)+". "+String(d.q||"").slice(0,70));});
+  return out;
+}
+/* the AI finds the written questions and drafts the model answers (backend v7). A question that runs over two pieces is kept once (the longer copy wins). */
+async function writtenPass(chunksW,c){
+  var map={},lost={},failed=0,lastErr="",limit=false,k;
+  for(k=0;k<chunksW.length;k++){
+    say("ebSt","Written questions: part "+(k+1)+" of "+chunksW.length+"… found so far: "+Object.keys(map).length+" (the AI is also writing the model answers, please wait)");
+    try{
+      var j;
+      try{j=await buildWritten(chunksW[k],c);}
+      catch(e1){if(e1&&e1.limit)throw e1;await wait(20000);j=await buildWritten(chunksW[k],c);}
+      (j.written||[]).forEach(function(w){
+        var key=w.n?"n"+w.n:"t"+norm(w.q).slice(0,60);
+        if(!map[key]||String(w.q).length>String(map[key].q).length)map[key]=w;
+      });
+      (j.writtenDropped||[]).forEach(function(d){lost[(d.n?"n"+d.n:"t"+norm(d.q).slice(0,40))+"|"+d.reason]=d;});
+    }catch(e){
+      if(e&&e.limit){limit=true;break;}
+      failed++;lastErr=(e&&e.message)||String(e);
+    }
+    if(k<chunksW.length-1)await wait(WGAP_MS);
+  }
+  var oks=[],helds=[],okN={};
+  Object.keys(map).forEach(function(key){var it=map[key];if(it.n)okN[it.n]=1;(it.needsPicture?helds:oks).push(it);});
+  var byN=function(a,b){return (a.n||9999)-(b.n||9999);};
+  ST.written=oks.sort(byN);ST.wheld=helds.sort(byN);
+  ST.wlost=Object.keys(lost).map(function(key){return lost[key];}).filter(function(d){return !(d.n&&okN[d.n]);});
+  return {failed:failed,lastErr:lastErr,limit:limit};
 }
 async function buildPaper(){
   if(ST.busy)return;
   var f=$("ebFile").files[0],c=ctxNow();
   if(!f){say("ebSt","Choose a file first (PDF, Word .docx or .txt).");return;}
   if(!c.cls||!c.subject||!c.title){var ms=[];if(!c.cls)ms.push("Class");if(!c.subject)ms.push("Subject");if(!c.title)ms.push("Paper title");say("ebSt","Please fill in: "+ms.join(", ")+".");return;}
-  ST.busy=true;ST.built=[];ST.held=[];ST.lost=[];ST.pics={};ST.meta=null;ST.pdfFile=null;drawResults();
+  ST.busy=true;ST.built=[];ST.held=[];ST.lost=[];ST.pics={};ST.written=[];ST.wheld=[];ST.wlost=[];ST.meta=null;ST.pdfFile=null;drawResults();
   var limitHit=false;
   try{
     var isPdf=!/\.(docx|txt|doc)$/i.test(f.name||"");
@@ -289,7 +352,7 @@ async function buildPaper(){
       (j.droppedList||[]).forEach(function(d){var key=norm(d.q);if(seenL[key])return;seenL[key]=1;ST.lost.push(d);});
     };
     for(var k=0;k<chunks.length;k++){
-      say("ebSt","Part "+(k+1)+" of "+chunks.length+" (parts of the file read: "+rd.pages.length+" of "+rd.total+")… kept so far: "+ST.built.length);
+      say("ebSt","Multiple choice: part "+(k+1)+" of "+chunks.length+" (parts of the file read: "+rd.pages.length+" of "+rd.total+")… kept so far: "+ST.built.length);
       try{await runChunk(k);}
       catch(e){
         if(e&&e.limit){limitHit=true;break;}
@@ -321,9 +384,20 @@ async function buildPaper(){
       var pr=await picturesCore();
       picNote=picLine(pr);
     }
+    /* written questions: same run, the AI finds them and writes the model answers */
+    var wNote="";
+    if(!limitHit){
+      var chunksW=chunkPagesW(rd.pages);
+      if(chunksW.length){
+        await wait(GAP_MS);
+        var wr=await writtenPass(chunksW,c);
+        if(wr.limit){limitHit=true;wNote=" Written questions stopped: the AI limit was reached.";}
+        else if(wr.failed)wNote=" "+wr.failed+" written part(s) failed ("+wr.lastErr+"); run the same file again later, Save skips questions already saved.";
+      }
+    }
     ST.busy=false;drawResults();
-    var cn=reportCounts(ST.built,ST.held,ST.lost),withPic=ST.built.filter(function(b){return b.img;}).length;
-    say("ebSt",(limitHit?"Stopped: the AI limit was reached. ":(failedIdx.length?"Finished with problems. ":"Done. "))+"Ready to save: "+cn.kept+(withPic?" ("+withPic+" with a picture)":"")+" · Held: "+cn.held+" · Dropped: "+cn.dropped+(cn.written?" · Mostly written questions (not multiple choice)":(cn.missing?" · Not found: "+cn.missing:""))+"."+(picNote?" "+picNote:"")+scanNote+(failedIdx.length?" "+failedIdx.length+" part(s) failed twice ("+lastErr+"). Save what is ready, then run the same file again later; Save skips questions already saved.":"")+(!ST.built.length&&!ST.held.length&&!cn.dropped?" No multiple-choice questions were found. If this paper only has written (structured) questions, that is expected.":"")+(ST.built.length?" Everything is ready: look at the pictures, then tap Save.":""));
+    var cn=reportCounts(ST.built,ST.held,ST.lost,wNums()),withPic=ST.built.filter(function(b){return b.img;}).length;
+    say("ebSt",(limitHit?"Stopped: the AI limit was reached. ":(failedIdx.length?"Finished with problems. ":"Done. "))+"Ready to save: "+cn.kept+" multiple choice"+(withPic?" ("+withPic+" with a picture)":"")+" · "+ST.written.length+" written · Held: "+(cn.held+ST.wheld.length)+" · Dropped: "+(cn.dropped+ST.wlost.length)+(cn.missing?" · Not found: "+cn.missing:"")+"."+(picNote?" "+picNote:"")+scanNote+wNote+(failedIdx.length?" "+failedIdx.length+" multiple-choice part(s) failed twice ("+lastErr+"). Save what is ready, then run the same file again later; Save skips questions already saved.":"")+((ST.built.length||ST.written.length)?" Everything is ready: look at the questions, then tap Save.":(!ST.held.length&&!ST.wheld.length&&!cn.dropped&&!ST.wlost.length?" No questions were found in this file.":"")));
     try{var sv=$("ebSave");if(sv&&sv.scrollIntoView)sv.scrollIntoView({behavior:"smooth",block:"start"});}catch(e9){}
   }catch(e){say("ebSt","Stopped: "+((e&&e.message)||e));}
   ST.busy=false;drawResults();
@@ -448,17 +522,26 @@ function dropBuilt(i){
   var it=ST.built[i];if(!it)return;
   ST.built.splice(i,1);drawResults();
 }
+function dropWritten(i){
+  if(ST.busy)return;
+  if(!ST.written[i])return;
+  ST.written.splice(i,1);drawResults();
+}
 function drawResults(){
   var box=$("ebList");if(!box)return;
-  var q=ST.built,h="",rep=reportLines(ST.built,ST.held,ST.lost),cn=reportCounts(ST.built,ST.held,ST.lost);
+  var q=ST.built,w=ST.written,h="",wn=wNums();
+  var rep=reportLines(ST.built,ST.held,ST.lost,wn).concat(writtenLines()),cn=reportCounts(ST.built,ST.held,ST.lost,wn);
   if(rep.length){
-    h+="<div style='border:1px solid var(--line);border-radius:9px;padding:8px 12px;margin:0 0 10px;font-size:13px;line-height:1.5;color:var(--sub);word-break:break-word'><b style='color:var(--ink)'>Ready "+cn.kept+"</b> · Held "+cn.held+" · Dropped "+cn.dropped+(cn.written?" · Mostly written questions":(cn.missing?" · Not found "+cn.missing:""))
+    h+="<div style='border:1px solid var(--line);border-radius:9px;padding:8px 12px;margin:0 0 10px;font-size:13px;line-height:1.5;color:var(--sub);word-break:break-word'><b style='color:var(--ink)'>Ready "+cn.kept+" multiple choice · "+w.length+" written</b> · Held "+(cn.held+ST.wheld.length)+" · Dropped "+(cn.dropped+ST.wlost.length)+(cn.missing?" · Not found "+cn.missing:"")
       +"<details style='margin-top:6px'><summary style='cursor:pointer;color:var(--ink)'>Details</summary><div style='font-size:12.5px;line-height:1.55;margin-top:6px'>"+rep.map(function(l){return "<div>"+E(l)+"</div>";}).join("")+"</div></details></div>";
   }
   if(ST.held.length&&ST.pdfFile&&!ST.busy)h+="<button type='button' class='btn' id='ebPics' style='margin:0 0 10px'>Try pictures again ("+ST.held.length+" held)</button>";
   if(ST.held.length&&!ST.pdfFile&&!ST.busy)h+="<div style='font-size:12.5px;color:var(--sub);margin:0 0 10px'>Pictures can only be added from a PDF paper for now.</div>";
+  if(q.length||w.length){
+    h+="<button type='button' class='btn green' id='ebSave' style='margin:0 0 10px'>Save "+(q.length+w.length)+" questions ("+q.length+" multiple choice, "+w.length+" written)</button>";
+  }
   if(q.length){
-    h+="<button type='button' class='btn green' id='ebSave' style='margin:0 0 10px'>Save "+q.length+" questions</button>";
+    h+="<div style='font-weight:700;margin:6px 0'>Multiple choice ("+q.length+")</div>";
     q.forEach(function(it,i){
       h+="<div style='border:1px solid var(--line);border-radius:9px;padding:8px 12px;margin:0 0 8px;font-size:13px;word-break:break-word'><b>"+(i+1)+". "+E(it.q)+"</b>"
         +(it.preview?"<img alt='Picture for this question' src=\""+E(it.preview)+"\" style='display:block;max-width:100%;max-height:260px;margin:8px auto;border-radius:8px;background:#fff;border:1px solid var(--line)'>":"")
@@ -467,11 +550,24 @@ function drawResults(){
         +"</div>";
     });
   }
+  if(w.length){
+    h+="<div style='font-weight:700;margin:10px 0 6px'>Written questions ("+w.length+")</div>";
+    w.forEach(function(it,i){
+      h+="<div style='border:1px solid var(--line);border-radius:9px;padding:8px 12px;margin:0 0 8px;font-size:13px;word-break:break-word'>"
+        +"<div style='color:var(--sub);font-size:12px'>"+(it.n?"No. "+it.n+" · ":"")+E(kindLabel(it.kind))+" · "+it.marks+" mark"+(it.marks>1?"s":"")+"</div>"
+        +"<div style='margin-top:4px;white-space:pre-wrap'><b>"+E(it.q.length>400?it.q.slice(0,400)+"…":it.q)+"</b></div>"
+        +"<details style='margin-top:6px'><summary style='cursor:pointer;color:var(--sub);font-size:12.5px'>Model answer the AI wrote (students never see it)</summary><div style='margin-top:4px;color:#2FA36B;font-size:12.5px;white-space:pre-wrap'>"+E(it.answer)+"</div></details>"
+        +"<button type='button' class='wDrop' data-i='"+i+"' style='margin-top:8px;border:1px solid var(--line);background:rgba(127,127,127,.15);color:var(--ink);border-radius:8px;padding:6px 10px;font-size:12.5px'>Don't save this question</button>"
+        +"</div>";
+    });
+  }
   box.innerHTML=h;
   var b=$("ebSave");if(b)b.onclick=save;
   var pb=$("ebPics");if(pb)pb.onclick=addPictures;
   var ds=box.querySelectorAll?box.querySelectorAll(".ebDrop"):[];
   for(var di=0;di<ds.length;di++)ds[di].onclick=(function(el){return function(){dropBuilt(parseInt(el.getAttribute("data-i"),10));};})(ds[di]);
+  var ws=box.querySelectorAll?box.querySelectorAll(".wDrop"):[];
+  for(var wi=0;wi<ws.length;wi++)ws[wi].onclick=(function(el){return function(){dropWritten(parseInt(el.getAttribute("data-i"),10));};})(ws[wi]);
 }
 /* ---------- Examination Room storage (server C, with server D as back-up space) ---------- */
 var URL_ROOM="https://edu-ai-backend-three.vercel.app/api/book-link?room=";
@@ -501,12 +597,13 @@ async function showSpace(){
   el.textContent="Space used: "+parts.join("  |  ");
 }
 async function save(){
-  if(ST.busy||!ST.built.length||!ST.meta)return;
+  if(ST.busy||(!ST.built.length&&!ST.written.length)||!ST.meta)return;
   ST.busy=true;var m=ST.meta;
   try{
     say("ebSt","Saving...");
-    var j=await roomCall("save",{level:m.level,class:m.cls,subject:m.subject,title:m.title,year:m.year,
-      questions:ST.built.map(function(q){return {q:q.q,options:q.options,correct:q.correct,verifiedBy:q.verifiedBy||"mistral+gemini",img:q.img||undefined};})});
+    var mcq=ST.built.map(function(q){return {q:q.q,options:q.options,correct:q.correct,verifiedBy:q.verifiedBy||"mistral+gemini",img:q.img||undefined};});
+    var wr=ST.written.map(function(x){return {type:"written",kind:x.kind,marks:x.marks,q:x.q,answer:x.answer,verifiedBy:"ai draft"};});
+    var j=await roomCall("save",{level:m.level,class:m.cls,subject:m.subject,title:m.title,year:m.year,questions:mcq.concat(wr)});
     /* pictures go to the same server as the paper */
     var names={},upOk=0,upBad=0,nm;
     ST.built.forEach(function(q){if(q.img)names[q.img]=1;});
@@ -514,10 +611,10 @@ async function save(){
       if(!ST.pics||!ST.pics[nm]){upBad++;continue;}
       try{await roomCall("img",{id:j.id,name:nm,b64:ST.pics[nm]});upOk++;}catch(e5){upBad++;}
     }
-    var seen=0,seenImg=0;
-    try{var p=await roomCall("paper",{},"&id="+encodeURIComponent(j.id));seen=(p.questions||[]).length;seenImg=(p.questions||[]).filter(function(x){return x.img;}).length;}catch(e){}
+    var seen=0,seenImg=0,seenW=0;
+    try{var p=await roomCall("paper",{},"&id="+encodeURIComponent(j.id));seen=(p.questions||[]).length;seenImg=(p.questions||[]).filter(function(x){return x.img;}).length;seenW=(p.questions||[]).filter(function(x){return x.type==="written";}).length;}catch(e){}
     var msg="Saved on server "+j.server+": "+j.added+" new question(s)"+(j.skipped?", "+j.skipped+" already saved before (skipped)":"")+".";
-    if(seen>0){msg+=" Check passed: students can read "+seen+" question(s) of this paper"+(seenImg?", "+seenImg+" with a picture":"")+".";if(upOk||upBad)msg+=" Pictures saved: "+upOk+(upBad?". FAILED: "+upBad+" (send this message to Claude)":".");ST.built=[];ST.pics={};drawResults();}
+    if(seen>0){msg+=" Check passed: students can read "+seen+" question(s) of this paper ("+(seen-seenW)+" multiple choice, "+seenW+" written"+(seenImg?", "+seenImg+" with a picture":"")+").";if(upOk||upBad)msg+=" Pictures saved: "+upOk+(upBad?". FAILED: "+upBad+" (send this message to Claude)":".");ST.built=[];ST.written=[];ST.pics={};drawResults();}
     else msg+=" WARNING: the check could not read the paper back. Do not save again, send this message to Claude.";
     say("ebSt",msg);
     showSpace();
@@ -656,7 +753,7 @@ async function onFile(){
 /* ---------- screen ---------- */
 function render(body){
   var lv=Object.keys(LEVELS).map(function(k){return "<option value=\""+E(k)+"\">"+E(LEVELS[k].label||k)+"</option>";}).join("");
-  body.innerHTML="<div class='note' style='margin-top:0'><b>AI Examination Room — Exam Builder.</b> Two different AIs answer each question separately. A question is kept only if both agree. Nothing is saved until you tap Save.</div>"
+  body.innerHTML="<div class='note' style='margin-top:0'><b>AI Examination Room — Exam Builder.</b> The AI reads the paper and builds both kinds of questions: multiple choice (two different AIs must agree on each answer) and written questions (the AI writes a model answer that is used only for marking). Nothing is saved until you tap Save.</div>"
    +"<div id='ebSpace' style='color:var(--sub);font-size:12px;margin:8px 0 0'>Checking space...</div>"
    +"<div style='font-weight:700;margin:10px 0 6px'>1. Accuracy test</div>"
    +"<button type='button' class='btn' id='ebAcc'>Run accuracy test (12 maths questions)</button>"
@@ -683,5 +780,5 @@ function render(body){
   showSpace();
 }
 
-window.EduExamBuilder={render:render,version:"2.1",_readFileText:readFileText,_counts:reportCounts,_guess:guessFrom,_report:reportLines,_looksScanned:looksScanned};
+window.EduExamBuilder={render:render,version:"2.3",_readFileText:readFileText,_counts:reportCounts,_guess:guessFrom,_report:reportLines,_looksScanned:looksScanned};
 })();
