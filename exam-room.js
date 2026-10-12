@@ -476,7 +476,7 @@ function customHtml(){
   Object.keys(SIZES).forEach(function(k){
     h+="<button type='button' class='"+(st.size===k?"on":"")+"' onclick=\"EduRoom.set('size','"+k+"')\" style='font-size:"+Math.round(13*SIZES[k][1])+"px'>"+e(SIZES[k][0])+"</button>";
   });
-  h+="</div><h3>Preview</h3><div class='card'><div class='q' style='font-size:15px'>Which planet is closest to the Sun?</div><button type='button' class='ch sel'><b>A</b><span>Mercury</span></button><button type='button' class='ch'><b>B</b><span>Venus</span></button></div>";
+  h+="</div><h3>Preview</h3><div class='card'><div class='q' style='font-size:15px'>Which planet is closest to the Sun?</div><button type='button' class='ch sel' onclick='EduRoom.pv(this)'><b>A</b><span>Mercury</span></button><button type='button' class='ch' onclick='EduRoom.pv(this)'><b>B</b><span>Venus</span></button></div>";
   h+="<div class='nav'><button type='button' class='go' onclick='EduRoom.customDone()'>Done</button></div>";
   h+="<div class='nav'><button type='button' class='sec' onclick='EduRoom.set(\"reset\",\"\")'>Reset to default look</button></div>";
   return h;
@@ -796,6 +796,12 @@ window.EduRoom={
   retry:function(){S.cat=null;window.EduRoom.open(APP);},
   custom:function(){S.screen="custom";draw();},
   customDone:function(){S.screen="setup";draw();},
+  pv:function(btn){
+    var p=btn&&btn.parentNode;if(!p)return;
+    var all=p.querySelectorAll(".ch");
+    for(var i=0;i<all.length;i++)all[i].className="ch";
+    btn.className="ch sel";
+  },
   set:function(k,v){
     var st=getSet();
     if(k==="reset"){st={wall:DEF.wall,acc:DEF.acc,size:DEF.size};}
