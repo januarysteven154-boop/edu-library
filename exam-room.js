@@ -1,5 +1,5 @@
 /* Edu Library: AI Examination Room (student screen) v1.6
-   v1.6: a "Back" button on every choosing screen (class, subject, list of papers, the paper, mixed practice). It goes back one step, to where you came from.
+   v1.6: a "Back" button at the top of every choosing screen (also at the bottom of the long list of papers) (class, subject, list of papers, the paper, mixed practice). It goes back one step, to where you came from.
    v1.5: written questions. A paper can hold multiple-choice AND written questions. The student answers all of them in one sitting
    (written answers are typed and kept as drafts on the phone), then taps Submit. Multiple choice is marked on the phone.
    Written answers go to the backend (?room=mark) in groups of 8 and come back with a verdict, score, feedback, spelling list
@@ -230,7 +230,7 @@ function setupHtml(){
       return "<div class='hist'><div>"+e(x.sub)+" <span>"+e(x.cls)+"</span></div><div>"+x.pct+"% <span>"+e(x.band)+"</span></div></div>";
     }).join("");
   }
-  return h+(S.lv?backBtn():"")+"<div class='lbl'>AI-marked practice. Not an official exam result.</div>";
+  return h+((S.lv&&S.cls&&S.sub&&!S.paper&&!S.mix)?backBtn():"")+"<div class='lbl'>AI-marked practice. Not an official exam result.</div>";
 }
 
 function paperHtml(){
