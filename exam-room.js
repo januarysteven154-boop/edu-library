@@ -1,4 +1,5 @@
-/* Edu Library: AI Examination Room (student screen) v1.5
+/* Edu Library: AI Examination Room (student screen) v1.6
+   v1.6: a "Back" button on every choosing screen (class, subject, list of papers, the paper, mixed practice). It goes back one step, to where you came from.
    v1.5: written questions. A paper can hold multiple-choice AND written questions. The student answers all of them in one sitting
    (written answers are typed and kept as drafts on the phone), then taps Submit. Multiple choice is marked on the phone.
    Written answers go to the backend (?room=mark) in groups of 8 and come back with a verdict, score, feedback, spelling list
@@ -85,6 +86,8 @@ function css(){
 ".rm .crumb{border:none;background:#1C6FA6;color:#fff;border-radius:16px;padding:6px 11px;font-size:12.5px;font-weight:700}"+
 ".rm .top{display:flex;justify-content:space-between;align-items:center;font-size:13px;color:var(--sub);margin:4px 0 6px}"+
 ".rm .top button,.rm .sec{border:1px solid var(--line);background:rgba(127,127,127,.12);color:var(--ink);border-radius:10px;padding:8px 12px;font-size:13px;font-weight:700}"+
+".rm .top.bk{justify-content:flex-start;margin:4px 0 10px}"+
+".rm .top.bk button{padding:10px 18px;font-size:14px}"+
 ".rm .bar{height:6px;border-radius:4px;background:rgba(127,127,127,.25);overflow:hidden;margin:0 0 14px}"+
 ".rm .bar i{display:block;height:100%;background:#2FA36B}"+
 ".rm .q{font-size:17px;line-height:1.5;font-weight:700;color:var(--ink);margin:0 0 14px;white-space:pre-wrap;word-wrap:break-word}"+
@@ -176,9 +179,10 @@ function ptitle(p){return (p&&(p.title||p.name))||"Paper";}
 function papersNow(){if(S.paper)return S.papers.filter(function(p){return p.id===S.paper.id;});return papersFor(S.lv,S.cls,S.sub);}
 function crumb(k,label){return "<button type='button' class='crumb' onclick=\"EduRoom.pick('"+k+"','')\">"+e(label)+" \u2715</button>";}
 function opt(k,v,label,n){return "<button type='button' class='opt' data-k='"+k+"' data-v=\""+e(v)+"\" onclick=\"EduRoom.pick(this.dataset.k,this.dataset.v)\"><span>"+label+"</span><b>"+n+"</b></button>";}
+function backBtn(){return "<div class='top bk'><button type='button' onclick='EduRoom.up()'>\u2190 Back</button></div>";}
 
 function setupHtml(){
-  var h="<p class='n'>Practise with multiple-choice and written questions taken from past papers. Choose what you want to practise.</p>";
+  var h=(S.lv?backBtn():"")+"<p class='n'>Practise with multiple-choice and written questions taken from past papers. Choose what you want to practise.</p>";
   var cr=[];
   if(S.lv)cr.push(crumb("lv",lvLabel(S.lv)));
   if(S.cls)cr.push(crumb("cls",S.cls));
@@ -226,7 +230,7 @@ function setupHtml(){
       return "<div class='hist'><div>"+e(x.sub)+" <span>"+e(x.cls)+"</span></div><div>"+x.pct+"% <span>"+e(x.band)+"</span></div></div>";
     }).join("");
   }
-  return h+"<div class='lbl'>AI-marked practice. Not an official exam result.</div>";
+  return h+(S.lv?backBtn():"")+"<div class='lbl'>AI-marked practice. Not an official exam result.</div>";
 }
 
 function paperHtml(){
@@ -548,6 +552,16 @@ window.EduRoom={
     if(k==="sub"){S.paper="";S.mix="";}
     S.err="";draw();
   },
+  /* Back: one step back to where the student came from (paper > list of papers > subject > class > level) */
+  up:function(){
+    if(S.busy)return;
+    if(S.paper)S.paper="";
+    else if(S.mix)S.mix="";
+    else if(S.sub)S.sub="";
+    else if(S.cls)S.cls="";
+    else if(S.lv)S.lv="";
+    S.err="";draw();
+  },
   start:function(){S.screen="setup";begin(9999);},
   read:async function(){
     if(S.busy)return;
@@ -596,7 +610,7 @@ window.EduRoom={
   speak:function(i){if(S.exp[i]&&S.exp[i]!=="Thinking..."&&typeof window.speakText==="function")window.speakText(SPK+i,S.exp[i]);},
   report:report,
   zoom:zoom,
-  version:"1.5",
+  version:"1.6",
   _t:{band:band,shuffle:shuffle,fmt:fmt,S:S}
 };
 })();
