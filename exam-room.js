@@ -1,4 +1,5 @@
-/* Edu Library: AI Examination Room (student screen) v1.7
+/* Edu Library: AI Examination Room (student screen) v1.8
+   v1.8: round icons on the level cards (notebook, graduation cap, college) and on the class cards (like the Library), wallpaper is now taken from the website first, then the copy inside the app. Tertiary shows automatically once it has papers.
    v1.7: wallpaper behind every Examination Room screen (3 looks: purple sunset, deep blue night, soft green; a built-in picture is used if the JPG cannot load),
    a customizable home dashboard (practice-day streak, weakest subjects, recent results), and a Customize screen (wallpaper, accent colour, text size).
    Everything is kept on the phone only (localStorage). No names, emails or phone numbers.
@@ -151,7 +152,7 @@ function applyTheme(){
     el.style.backgroundColor=t.top;
     el.style.backgroundImage="url(\""+sceneUri(t)+"\"),"+base;
     var tok=++wallTok;
-    tryWall(el,t,base,tok,[t.file,SITE+t.file]);
+    tryWall(el,t,base,tok,[SITE+t.file+"?v=18",t.file]);
     var v={"--ink":t.ink,"--sub":t.sub,"--line":t.line,"--rmBar":t.bar,"--rmCard":t.card,"--rmA1":a[1],"--rmA2":a[2],"--rmZ":String(SIZES[st.size][1])};
     for(var k in v)b.style.setProperty(k,v[k]);
     b.classList.add("rmwall");
@@ -234,6 +235,10 @@ function css(){
 ".rm .lbl{font-size:12px;color:var(--sub);text-align:center;margin:12px 0}"+
 ".rm .qimg{display:block;max-width:100%;max-height:340px;margin:10px auto;border-radius:10px;background:#fff;border:1px solid var(--line)}"+
 ".rm .opt b{white-space:nowrap}"+
+".rm .ot{display:flex;align-items:center;gap:12px;min-width:0}"+
+".rm .ol{min-width:0}"+
+".rm .oi{flex:none;width:46px;height:46px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-size:22px;font-style:normal;box-shadow:inset 0 0 12px rgba(255,255,255,.2)}"+
+".rm .oi svg{width:26px;height:26px}"+
 ".rm .opt span small{display:block;font-weight:500;font-size:12px;color:var(--sub);margin-top:2px}"+
 ".rm .tb{display:flex;gap:6px}"+
 ".rm .rdo{margin:0 0 6px;padding-left:4px;font-size:14.5px;line-height:1.4;color:var(--ink);word-wrap:break-word}"+
@@ -359,7 +364,17 @@ function stat(ps){var q=0;ps.forEach(function(p){q+=cnt(p);});return ps.length+(
 function ptitle(p){return (p&&(p.title||p.name))||"Paper";}
 function papersNow(){if(S.paper)return S.papers.filter(function(p){return p.id===S.paper.id;});return papersFor(S.lv,S.cls,S.sub);}
 function crumb(k,label){return "<button type='button' class='crumb' onclick=\"EduRoom.pick('"+k+"','')\">"+e(label)+" \u2715</button>";}
-function opt(k,v,label,n){return "<button type='button' class='opt' data-k='"+k+"' data-v=\""+e(v)+"\" onclick=\"EduRoom.pick(this.dataset.k,this.dataset.v)\"><span>"+label+"</span><b>"+n+"</b></button>";}
+var IPATH={book:"<path d='M12 6.5C10 5 7 4.5 3.5 5v13c3.5-.5 6.5 0 8.5 1.5 2-1.5 5-2 8.5-1.5V5c-3.5-.5-6.5 0-8.5 1.5z'/><path d='M12 6.5v13'/>",Primary:"<path d='M6 3.5h10.5a1.5 1.5 0 0 1 1.5 1.5v14a1.5 1.5 0 0 1-1.5 1.5H6z'/><path d='M6 3.5v17M9.5 8h5M9.5 11.5h5'/>",Secondary:"<path d='M2.5 9.5L12 5l9.5 4.5L12 14z'/><path d='M6.5 11.7v4.3c0 1.2 2.5 2.6 5.5 2.6s5.5-1.4 5.5-2.6v-4.3'/><path d='M21.5 9.5v5.5'/>",Tertiary:"<path d='M3 20.5h18M5 20.5V10M9.5 20.5V10M14.5 20.5V10M19 20.5V10'/><path d='M2.5 10L12 4l9.5 6z'/>"};
+var ICOL={Primary:["#1dba6d","#0b6b3d"],Secondary:["#2e8bff","#0e3fa8"],Tertiary:["#8b5cff","#4b2aa8"]};
+var CGR={Primary:["#F5B400,#FF8A00","#FF7A18,#F2590C","#F0284A,#C4102F","#E01FA0,#9B2BE0","#7B3FEA,#5B2BD0","#1E7CF2,#1550D0","#12C4C4,#0A8FA8","#22C55E,#0E9F3E"],Secondary:["#1E7CF2,#0F4FD0","#22C55E,#0E9F3E","#FF9A1F,#E06A00","#8B5CFF,#5B2BD0"],Tertiary:["#8B3FE8,#5B2BD0","#1E7CF2,#0F4FD0","#22C55E,#0E9F3E","#FF9A1F,#E06A00"]};
+function isvg(p){return "<svg viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round' aria-hidden='true'>"+p+"</svg>";}
+function lvIcon(l){var c=ICOL[l]||["#F25E1E","#A03A33"];return "<i class='oi' style='background:linear-gradient(135deg,"+c[0]+","+c[1]+")'>"+isvg(IPATH[l]||IPATH.book)+"</i>";}
+function clIcon(l,c,i){
+  var g=CGR[l]||CGR.Primary,gr=g[i%g.length],ic=null;
+  try{if(l==="Tertiary"&&typeof TICON!=="undefined"&&TICON[c])ic=e(TICON[c]);}catch(x){}
+  return "<i class='oi' style='background:linear-gradient(135deg,"+gr+")'>"+(ic||isvg(IPATH.book))+"</i>";
+}
+function opt(k,v,label,n,ic){return "<button type='button' class='opt' data-k='"+k+"' data-v=\""+e(v)+"\" onclick=\"EduRoom.pick(this.dataset.k,this.dataset.v)\"><span class='ot'>"+(ic||"")+"<span class='ol'>"+label+"</span></span><b>"+n+"</b></button>";}
 function backBtn(){return "<div class='top bk'><button type='button' onclick='EduRoom.up()'>\u2190 Back</button></div>";}
 
 function setupHtml(){
@@ -379,12 +394,12 @@ function setupHtml(){
     h+=streakHtml();
     h+="<h3>Which level?</h3>";
     var ks=lvOrder().concat(["?"]).filter(function(k){return cat[k];});
-    ks.forEach(function(k){h+=opt("lv",k,e(lvLabel(k)),stat(papersFor(k)));});
+    ks.forEach(function(k){h+=opt("lv",k,e(lvLabel(k)),stat(papersFor(k)),lvIcon(k));});
   }else if(!S.cls){
     h+="<h3>Which class?</h3>";
     var cl=cat[S.lv]||{},first=((typeof LEVELS!=="undefined"&&LEVELS[S.lv])?LEVELS[S.lv].classes:[]).filter(function(k){return cl[k];});
     var rest2=Object.keys(cl).filter(function(k){return first.indexOf(k)<0;}).sort();
-    first.concat(rest2).forEach(function(k){h+=opt("cls",k,e(k),stat(papersFor(S.lv,k)));});
+    first.concat(rest2).forEach(function(k,i){h+=opt("cls",k,e(k),stat(papersFor(S.lv,k)),clIcon(S.lv,k,i));});
   }else if(!S.sub){
     h+="<h3>Which subject?</h3>";
     var sj=(cat[S.lv]||{})[S.cls]||{};
@@ -858,7 +873,7 @@ window.EduRoom={
   speak:function(i){if(S.exp[i]&&S.exp[i]!=="Thinking..."&&typeof window.speakText==="function")window.speakText(SPK+i,S.exp[i]);},
   report:report,
   zoom:zoom,
-  version:"1.7",
+  version:"1.8",
   _t:{band:band,shuffle:shuffle,fmt:fmt,S:S,streak:streakInfo,weak:weakList,getSet:getSet}
 };
 })();
