@@ -1,4 +1,5 @@
-/* Edu Library: AI Examination Room (student screen) v1.9
+/* Edu Library: AI Examination Room (student screen) v2.0
+   v2.0: question text now shows __underlined words__ as real underlined text (no more double dashes), and the level/class/subject cards no longer let the text overlap the "papers / questions" badge.
    v1.9: fourth wallpaper "Edu AI" (the robot picture, room-bg-eduai.jpg) with a dark layer over it so the text stays easy to read.
    v1.8: round icons on the level cards (notebook, graduation cap, college) and on the class cards (like the Library), wallpaper is now taken from the website first, then the copy inside the app. Tertiary shows automatically once it has papers.
    v1.7: wallpaper behind every Examination Room screen (3 looks: purple sunset, deep blue night, soft green; a built-in picture is used if the JPG cannot load),
@@ -40,6 +41,8 @@ var wallTok=0,hashOn=false;
 
 function e(s){return String(s==null?"":s).replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c];});}
 function fmt(s){return e(s).replace(/\*\*([^*\n][^*]*?)\*\*/g,"<b>$1</b>");}
+/* question text: __word__ becomes underlined word */
+function qf(s){return e(s).replace(/__([^_\n]+?)__/g,"<u>$1</u>");}
 function stopSpeak(){try{if(typeof window.ttsStop==="function")window.ttsStop();}catch(x){}}
 function spkBtn(i){
   if(!("speechSynthesis" in window)||typeof window.speakText!=="function")return "";
@@ -209,6 +212,7 @@ function css(){
 ".rm .bar{height:6px;border-radius:4px;background:rgba(127,127,127,.25);overflow:hidden;margin:0 0 14px}"+
 ".rm .bar i{display:block;height:100%;background:#2FA36B}"+
 ".rm .q{font-size:17px;line-height:1.5;font-weight:700;color:var(--ink);margin:0 0 14px;white-space:pre-wrap;word-wrap:break-word}"+
+".rm .q u{text-decoration:underline;text-underline-offset:3px;text-decoration-thickness:2px}"+
 ".rm .ch{display:flex;gap:10px;align-items:flex-start;width:100%;text-align:left;border:1.5px solid var(--line);border-radius:12px;padding:12px;margin:0 0 9px;background:rgba(127,127,127,.12);color:var(--ink);font-size:15px;line-height:1.4}"+
 ".rm .ch b{flex:none;width:26px;height:26px;border-radius:50%;background:rgba(127,127,127,.3);display:flex;align-items:center;justify-content:center;font-size:13px}"+
 ".rm .ch span{flex:1;min-width:0;word-wrap:break-word}"+
@@ -236,9 +240,10 @@ function css(){
 ".rm .hist span{color:var(--sub)}"+
 ".rm .lbl{font-size:12px;color:var(--sub);text-align:center;margin:12px 0}"+
 ".rm .qimg{display:block;max-width:100%;max-height:340px;margin:10px auto;border-radius:10px;background:#fff;border:1px solid var(--line)}"+
-".rm .opt b{white-space:nowrap}"+
-".rm .ot{display:flex;align-items:center;gap:12px;min-width:0}"+
-".rm .ol{min-width:0}"+
+/* v2.0: badge may wrap and the text side takes the free space, so nothing overlaps */
+".rm .opt b{white-space:normal;text-align:center;max-width:44%;line-height:1.25;padding:4px 10px}"+
+".rm .ot{display:flex;align-items:center;gap:12px;flex:1 1 0;min-width:0}"+
+".rm .ol{flex:1 1 0;min-width:0;word-wrap:break-word;overflow-wrap:anywhere}"+
 ".rm .oi{flex:none;width:46px;height:46px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-size:22px;font-style:normal;box-shadow:inset 0 0 12px rgba(255,255,255,.2)}"+
 ".rm .oi svg{width:26px;height:26px}"+
 ".rm .opt span small{display:block;font-weight:500;font-size:12px;color:var(--sub);margin-top:2px}"+
@@ -496,9 +501,9 @@ function readHtml(){
     "<p class='n'>Nothing is marked here. Read everything, then "+(fromQuiz?"go back to your question.":"start answering.")+"</p>"+btn;
   S.rd.forEach(function(q,i){
     if(q.w){
-      h+="<div class='card'><span class='tag'>"+e(kindLabel(q.kind))+" \u00B7 "+nm(q.marks)+(q.marks===1?" mark":" marks")+"</span><div class='q' style='font-size:15px'>"+(i+1)+". "+e(q.q)+"</div>"+imgHtml(q)+"<div class='rdo'>Written answer: you type it when you start answering.</div></div>";
+      h+="<div class='card'><span class='tag'>"+e(kindLabel(q.kind))+" \u00B7 "+nm(q.marks)+(q.marks===1?" mark":" marks")+"</span><div class='q' style='font-size:15px'>"+(i+1)+". "+qf(q.q)+"</div>"+imgHtml(q)+"<div class='rdo'>Written answer: you type it when you start answering.</div></div>";
     }else{
-      h+="<div class='card'><div class='q' style='font-size:15px'>"+(i+1)+". "+e(q.q)+"</div>"+imgHtml(q)+q.o.map(function(o){return "<div class='rdo'>\u2022 "+e(o)+"</div>";}).join("")+"</div>";
+      h+="<div class='card'><div class='q' style='font-size:15px'>"+(i+1)+". "+qf(q.q)+"</div>"+imgHtml(q)+q.o.map(function(o){return "<div class='rdo'>\u2022 "+e(o)+"</div>";}).join("")+"</div>";
     }
   });
   return h+btn;
@@ -510,7 +515,7 @@ function quizHtml(){
   var last=(S.i===n-1),lastLabel=S.ws.length?"Submit":"Finish",ok=true;
   if(it.t==="m"){
     var q=S.qs[it.k],sel=S.sel[it.k];
-    h+="<div class='q'>"+e(q.q)+"</div>"+imgHtml(q);
+    h+="<div class='q'>"+qf(q.q)+"</div>"+imgHtml(q);
     q.opts.forEach(function(o,k){
       h+="<button type='button' class='ch"+(sel===k?" sel":"")+"' onclick='EduRoom.choose("+k+")'><b>"+letter(k)+"</b><span>"+e(o)+"</span></button>";
     });
@@ -518,7 +523,7 @@ function quizHtml(){
   }else{
     var w=S.ws[it.k];
     h+="<span class='tag'>"+e(kindLabel(w.kind))+" \u00B7 "+nm(w.marks)+(w.marks===1?" mark":" marks")+"</span>"+
-      "<div class='q'>"+e(w.q)+"</div>"+imgHtml(w)+
+      "<div class='q'>"+qf(w.q)+"</div>"+imgHtml(w)+
       "<textarea class='wa' maxlength='6000' placeholder='Type your answer here...' spellcheck='false' autocorrect='off' autocapitalize='sentences' oninput='EduRoom.type("+it.k+",this.value)' onblur='EduRoom.type("+it.k+",this.value,1)'>"+e(S.wa[w.id]||"")+"</textarea>"+
       "<div class='lbl' style='text-align:left'>Saved on this phone as you type. Write in your own words: spelling and expression can be marked.</div>";
   }
@@ -545,7 +550,7 @@ function wCard(w,i){
   var r=S.wres[w.id]||{},ans=S.wa[w.id]||"",v=VERD[r.verdict]?r.verdict:"wrong";
   var sc=Math.max(0,Math.min(w.marks,Number(r.score)||0));
   var h="<div class='card'><span class='tag'>Question "+(S.qs.length+i+1)+" \u00B7 "+e(kindLabel(w.kind))+"</span>"+
-    "<div class='q' style='font-size:15px'>"+e(w.q)+"</div>"+imgHtml(w)+
+    "<div class='q' style='font-size:15px'>"+qf(w.q)+"</div>"+imgHtml(w)+
     "<div class='box'><small>Your answer</small>"+(ans.trim()?e(ans):"(no answer)")+"</div>"+
     "<div><span class='vd "+v+"'>"+VERD[v]+"</span> <b style='color:var(--ink)'>"+nm(sc)+" out of "+nm(w.marks)+"</b></div>";
   if(r.feedback)h+="<div class='ex'>"+fmt(r.feedback)+"</div>";
@@ -577,7 +582,7 @@ function reviewHtml(){
   var h="<div class='top'><span>Multiple choice: "+S.res.c+" of "+S.res.n+"</span><button type='button' onclick='EduRoom.result()'>Back</button></div>";
   S.qs.forEach(function(q,i){
     var sel=S.sel[i];
-    h+="<div class='card'><div class='q' style='font-size:15px'>"+(i+1)+". "+e(q.q)+"</div>"+imgHtml(q);
+    h+="<div class='card'><div class='q' style='font-size:15px'>"+(i+1)+". "+qf(q.q)+"</div>"+imgHtml(q);
     q.opts.forEach(function(o,k){
       var cls=k===q.ci?" ok":(k===sel?" bad":"");
       h+="<div class='ch"+cls+"'><b>"+letter(k)+"</b><span>"+e(o)+"</span></div>";
@@ -875,7 +880,7 @@ window.EduRoom={
   speak:function(i){if(S.exp[i]&&S.exp[i]!=="Thinking..."&&typeof window.speakText==="function")window.speakText(SPK+i,S.exp[i]);},
   report:report,
   zoom:zoom,
-  version:"1.9",
-  _t:{band:band,shuffle:shuffle,fmt:fmt,S:S,streak:streakInfo,weak:weakList,getSet:getSet}
+  version:"2.0",
+  _t:{band:band,shuffle:shuffle,fmt:fmt,qf:qf,S:S,streak:streakInfo,weak:weakList,getSet:getSet}
 };
 })();
