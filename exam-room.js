@@ -1,4 +1,5 @@
-/* Edu Library: AI Examination Room (student screen) v1.8
+/* Edu Library: AI Examination Room (student screen) v1.9
+   v1.9: fourth wallpaper "Edu AI" (the robot picture, room-bg-eduai.jpg) with a dark layer over it so the text stays easy to read.
    v1.8: round icons on the level cards (notebook, graduation cap, college) and on the class cards (like the Library), wallpaper is now taken from the website first, then the copy inside the app. Tertiary shows automatically once it has papers.
    v1.7: wallpaper behind every Examination Room screen (3 looks: purple sunset, deep blue night, soft green; a built-in picture is used if the JPG cannot load),
    a customizable home dashboard (practice-day streak, weakest subjects, recent results), and a Customize screen (wallpaper, accent colour, text size).
@@ -28,6 +29,7 @@ var SK="edu_room_set",DYK="edu_room_days";
 var WALLS={
   sunset:{name:"Purple sunset",file:"room-bg-sunset.jpg",top:"#2F102D",bot:"#A03A33",ink:"#FDF5E8",sub:"#E8CDA8",line:"rgba(244,195,121,.30)",bar:"rgba(32,6,44,.80)",card:"rgba(40,12,42,.58)",star:"#FFE2BE",moon:"#FFD6AA",book:["#78284A","#AA463C","#C86446"],pen:"#F7B65A"},
   night:{name:"Deep blue night",file:"room-bg-night.jpg",top:"#0B1030",bot:"#204280",ink:"#EEF3FF",sub:"#BFD0F2",line:"rgba(150,190,255,.30)",bar:"rgba(8,14,40,.82)",card:"rgba(10,18,52,.60)",star:"#D6E4FF",moon:"#E1EBFF",book:["#1E326E","#325096","#4664AA"],pen:"#96BEFF"},
+  eduai:{name:"Edu AI",file:"room-bg-eduai.jpg",veil:"linear-gradient(180deg,rgba(24,6,34,.55),rgba(24,6,34,.76) 45%,rgba(24,6,34,.62))",top:"#2F102D",bot:"#A03A33",ink:"#FDF5E8",sub:"#E8CDA8",line:"rgba(244,195,121,.30)",bar:"rgba(32,6,44,.82)",card:"rgba(40,12,42,.60)",star:"#FFE2BE",moon:"#FFD6AA",book:["#78284A","#AA463C","#C86446"],pen:"#F7B65A"},
   green:{name:"Soft green",file:"room-bg-green.jpg",top:"#0F2E27",bot:"#2F7A5A",ink:"#F2FBF5",sub:"#C8E8D6",line:"rgba(170,235,200,.30)",bar:"rgba(8,36,28,.82)",card:"rgba(8,40,30,.58)",star:"#DCF5E6",moon:"#EBFADC",book:["#16503E","#286E50","#3E8C66"],pen:"#C8EB96"}
 };
 var ACCS={orange:["Orange","#F25E1E","#F77864"],pink:["Pink","#C2417F","#E86AA6"],blue:["Blue","#1C6FA6","#3B8FD4"],green:["Green","#2FA36B","#56C48E"],violet:["Violet","#7A4CC2","#A58AEA"]};
@@ -137,7 +139,7 @@ function sceneUri(t){
 function tryWall(el,t,base,tok,list){
   if(!list.length)return;
   var src=list.shift(),im=new Image();
-  im.onload=function(){if(tok===wallTok)el.style.backgroundImage="url(\""+src+"\"),"+base;};
+  im.onload=function(){if(tok===wallTok)el.style.backgroundImage=(t.veil?t.veil+",":"")+"url(\""+src+"\"),"+base;};
   im.onerror=function(){if(tok===wallTok)tryWall(el,t,base,tok,list);};
   im.src=src;
 }
@@ -873,7 +875,7 @@ window.EduRoom={
   speak:function(i){if(S.exp[i]&&S.exp[i]!=="Thinking..."&&typeof window.speakText==="function")window.speakText(SPK+i,S.exp[i]);},
   report:report,
   zoom:zoom,
-  version:"1.8",
+  version:"1.9",
   _t:{band:band,shuffle:shuffle,fmt:fmt,S:S,streak:streakInfo,weak:weakList,getSet:getSet}
 };
 })();
