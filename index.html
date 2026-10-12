@@ -1468,7 +1468,7 @@ async function renderPages(url){
     pvGestures(body,wrap);
     body.addEventListener("scroll",pvSharpSoon,{passive:true});
     return pdf;
-  }catch(e){if(await eduTryWord(url,body))return;body.innerHTML='<div class="empty">Preview unavailable. Use Save.</div>';}
+  }catch(e){if(await eduTryWord(url,body))return;body.innerHTML='<div class="empty">Preview unavailable. Use Save.'+(window.__eduWordWhy?'<div style="font-size:11px;opacity:.6;margin-top:8px">('+String(window.__eduWordWhy).replace(/[<>&]/g,"")+')</div>':'')+'</div>';}
 }
 /* Word (.docx) files: small viewer + reader scripts. A copy is kept on the phone, so Word files also open offline. */
 const EDU_WV_URL="https://edu-library.januarysteven154.workers.dev/word-viewer.js";
@@ -1494,12 +1494,31 @@ async function eduPrefetchWord(){
     if(!window.EduWordViewer&&!localStorage.getItem("edu_js_wordviewer")){const r=await fetch(EDU_WV_URL+"?v="+Date.now(),{cache:"no-store"});if(r.ok){const t=await r.text();if(t.length>200)localStorage.setItem("edu_js_wordviewer",t);}}
   }catch(e){}
 }
+function eduLoadScript(src){
+  return new Promise(function(ok,no){
+    var s=document.createElement("script");
+    s.src=src;
+    s.onload=function(){ok();};
+    s.onerror=function(){no(new Error("script "+src));};
+    document.head.appendChild(s);
+  });
+}
+/* the two Word scripts are first read from the copy saved INSIDE the app (no internet or website permission needed); the website copy is only the back-up */
+async function eduGetScript(local,key,url,flag){
+  if(window[flag])return;
+  try{await eduLoadScript(local);}catch(e){}
+  if(!window[flag])await eduLoadCached(key,url);
+  if(!window[flag])throw new Error("could not load "+local);
+}
 async function eduTryWord(url,body){
+  window.__eduWordWhy="";
   try{
-    if(!window.EduDocReader)await eduLoadCached("edu_js_docreader",EDU_DR_URL);
-    if(!window.EduWordViewer)await eduLoadCached("edu_js_wordviewer",EDU_WV_URL);
-    return await window.EduWordViewer.show(url,body);
-  }catch(e){return false;}
+    await eduGetScript("doc-reader.js","edu_js_docreader",EDU_DR_URL,"EduDocReader");
+    await eduGetScript("word-viewer.js","edu_js_wordviewer",EDU_WV_URL,"EduWordViewer");
+    var ok=await window.EduWordViewer.show(url,body);
+    if(!ok&&!window.__eduWordWhy)window.__eduWordWhy="viewer said no";
+    return ok;
+  }catch(e){window.__eduWordWhy=String((e&&e.message)||e);return false;}
 }
 /* Sharp text when zoomed: the visible part of each page is drawn again at full screen resolution */
 function pvSharpSoon(){
@@ -1650,7 +1669,7 @@ function bookCard(b){
     <div class="acts">${ok?`<button class="open ib" type="button" aria-label="Preview" title="Preview" onclick="previewBook('${bkey(b)}')">${IC_EYE}</button><a class="open dl ib" aria-label="Save" title="Save" href="${esc(dlUrl(b))}"${isFb(b)?` onclick="return fbDl('${bkey(b)}')"`:""}>${IC_DL}</a>`:''}</div></div>`;
 }
 
-function setHeader(html,noAcct){ const srch=(!noAcct && !/class="(back|hamb)"/.test(html))?`<button type="button" class="srchtop" aria-label="Search" title="Search" onclick="location.hash='#/search'"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4.5 4.5"/></svg></button>`:""; document.getElementById("topHeader").innerHTML = `<div class="topbar">${srch}${html}<button type="button" class="accttop"${noAcct?' style="display:none"':''} aria-label="My account" title="My account" onclick="eduOpenAccount()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="3.6"/><path d="M4.5 20c.8-3.7 3.8-5.8 7.5-5.8s6.7 2.1 7.5 5.8"/></svg></button></div>`; }
+function setHeader(html,noAcct,showSearch){ const srch=(showSearch && !noAcct && !/class="(back|hamb)"/.test(html))?`<button type="button" class="srchtop" aria-label="Search" title="Search" onclick="location.hash='#/search'"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4.5 4.5"/></svg></button>`:""; document.getElementById("topHeader").innerHTML = `<div class="topbar">${srch}${html}<button type="button" class="accttop"${noAcct?' style="display:none"':''} aria-label="My account" title="My account" onclick="eduOpenAccount()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="3.6"/><path d="M4.5 20c.8-3.7 3.8-5.8 7.5-5.8s6.7 2.1 7.5 5.8"/></svg></button></div>`; }
 function setActiveNav(key){ document.querySelectorAll(".bottomnav a").forEach(a=>a.classList.toggle("active", a.dataset.r===key)); }
 
 function render(){
@@ -1734,7 +1753,7 @@ function renderExams(app, level, cls){
     setHeader(`<div class="brand"><span class="mark sym"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6.5 3h8l4 4v14h-12z"/><path d="M14.5 3v4h4"/><path d="M9.5 12h6M9.5 16h6"/></svg></span>Examinations</div>`);
     const CL={Primary:"pri",Secondary:"sec",Tertiary:"ter"};
     app.innerHTML=`<div class="pagehead"><h2>Past Papers</h2><p>Choose your education level to find past papers for your class.</p></div>
-      <div class="chooser"><a class="lv ter" href="#/room"><div class="orb2">${LS('<rect x="5" y="8" width="14" height="11" rx="3"/><path d="M12 8V5"/><circle cx="12" cy="4" r="1"/><circle cx="9.5" cy="13" r="1"/><circle cx="14.5" cy="13" r="1"/><path d="M10 16.5h4"/>')}</div><div><b>AI Examination Room</b><em>Practise with multiple-choice questions</em><p>Past-paper questions, marked for you</p></div><i class="chev">›</i></a>${Object.entries(LEVELS).map(([k,l])=>{const n=all.filter(b=>b.level===k).length;
+      <div class="chooser">${Object.entries(LEVELS).map(([k,l])=>{const n=all.filter(b=>b.level===k).length;
         return `<a class="lv ${CL[k]}" href="#/exams/${k}"><div class="orb2">${LS(LVSVG[k]||BOOKP)}</div><div><b>${esc(l.label)}</b><em>${n} past paper${n!==1?"s":""}</em><p>${esc(l.sub||(l.classes[0]+" – "+l.classes[l.classes.length-1]))}</p></div><i class="chev">›</i></a>`;}).join("")}</div>`;
     return;
   }
@@ -1766,7 +1785,7 @@ function recentRows(){
   return row("Continue Reading",rec.slice(0,8))+row("Recently Added",loadBooks().slice(0,8));
 }
 function renderLibrary(app){
-  setHeader(""); setActiveNav("library");
+  setHeader("",false,true); setActiveNav("library");
   const D={Primary:["Build strong foundations for a brighter future.","pri"],Secondary:["Gain knowledge, develop skills, reach your goals.","sec"],Tertiary:["Advance your education, shape your career.","ter"]};
   app.innerHTML=`<div class="phero"><div class="pt"><div class="brandline"><span class="bli">${LS(BOOKP)}</span><b>Edu <i>Library</i></b></div><h2 style="margin-top:18px">Welcome Back!</h2><p>Your journey to knowledge continues here.</p></div><div class="ph wel">${flag()}</div></div><p class="mot" id="mot">${SPARK}<span>Education changes lives</span></p>
    <div class="chooser" style="padding-bottom:0"><a class="lv ter" href="#/room"><div class="orb2">${LS('<rect x="5" y="8" width="14" height="11" rx="3"/><path d="M12 8V5"/><circle cx="12" cy="4" r="1"/><circle cx="9.5" cy="13" r="1"/><circle cx="14.5" cy="13" r="1"/><path d="M10 16.5h4"/>')}</div><div><b>AI Examination Room</b><em>Practise with multiple-choice questions</em><p>Past-paper questions, marked for you</p></div><i class="chev">\u203a</i></a></div>
@@ -3448,7 +3467,7 @@ window.addEventListener("hashchange", render);
 </script>
 <script>
 /* ---------- Reading mode + Settings ---------- */
-const APP_VERSION="1.8.3"; // <- change this when you release a new version
+const APP_VERSION="1.8.4"; // <- change this when you release a new version
 const APP_BUILD_NOTE="Mobile-friendly digital library for students in Malawi — navigation, Settings and account layout update";
 (function(){
   const EYE_SVG='<svg class="sic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-6.5 10-6.5S22 12 22 12s-3.6 6.5-10 6.5S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>',GEAR_SVG='<svg class="sic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h0a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51h0a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v0a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>';
@@ -4019,7 +4038,7 @@ if("serviceWorker" in navigator){window.addEventListener("load",function(){navig
 
   /* ---------- Library landing: add obvious Downloads entry ---------- */
   window.renderLibrary=function(app){
-    setHeader("");setActiveNav("library");
+    setHeader("",false,true);setActiveNav("library");
     const D={Primary:["Build strong foundations for a brighter future.","pri"],Secondary:["Gain knowledge, develop skills, reach your goals.","sec"],Tertiary:["Advance your education, shape your career.","ter"]};
     app.innerHTML=`<div class="phero"><div class="pt"><div class="brandline"><span class="bli">${LS(BOOKP)}</span><b>Edu <i>Library</i></b></div><h2 style="margin-top:18px">Welcome Back!</h2><p>Your journey to knowledge continues here.</p></div><div class="ph wel">${flag()}</div></div><p class="mot" id="mot">${SPARK}<span>Education changes lives</span></p>
       <button type="button" class="downloadHub" onclick="location.hash='#/downloads'"><span>${LS(BOOKP)}</span><div><b>My Downloads</b><small>Read your saved books offline</small></div><i>›</i></button>
