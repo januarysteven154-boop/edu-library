@@ -1,4 +1,5 @@
-/* Edu Library - AI Examination Room, Admin side: Exam Builder v2.3 (saves papers to server C, with a space meter; fills Class, Subject, Title and Year from the file by itself). Builds checked multiple-choice questions (two AIs must agree) AND written questions (the AI finds them and drafts the model answers) from the text of an exam paper (PDF with text, SCANNED PDF read by AI, Word .docx, or .txt) and saves them to server C through the backend. Includes an accuracy test with maths questions whose answers are known.
+/* Edu Library - AI Examination Room, Admin side: Exam Builder v2.4 (saves papers to server C, with a space meter; fills Class, Subject, Title and Year from the file by itself). Builds checked multiple-choice questions (two AIs must agree) AND written questions (the AI finds them and drafts the model answers) from the text of an exam paper (PDF with text, SCANNED PDF read by AI, Word .docx, or .txt) and saves them to server C through the backend. Includes an accuracy test with maths questions whose answers are known.
+   v2.4: Word files keep UNDERLINED words as __word__ in the text sent to the AI (needs backend lib/examBuild.js to explain the markers).
    v2.3: WRITTEN QUESTIONS, FULLY AUTOMATIC. In the same run as the multiple-choice questions, the AI also finds the questions the student must answer in their own words (short answer, structured parts, describe, essay, letter, comprehension, note making) and drafts a model answer for each. You type nothing. One Save puts both kinds into the same paper. A written question that needs a diagram is held (not saved) because its model answer cannot be trusted without seeing the picture; a question where the student must draw is dropped. Works with backend lib/examBuild.js v7, lib/roomStore.js v2 and lib/roomMark.js.
    v2.1: a paper with only written questions now says so clearly; works with backend examBuild.js v6.
    v2.0: FULLY AUTOMATIC. Choosing the file starts everything by itself (read, questions, pictures); only Save is left for you.
@@ -134,14 +135,34 @@ async function zipEntry(buf,wanted){
   }
   return null;
 }
+/* v2.4: underlined words are kept as __word__ (needed for English questions such as "What part of speech is the underlined word?") */
+function runUnderlined(run){
+  var rp=run.match(/<w:rPr>[\s\S]*?<\/w:rPr>/);
+  if(!rp)return false;
+  var u=rp[0].match(/<w:u(?:\s[^>]*)?\/?>/);
+  if(!u)return false;
+  return !/w:val="(?:none|0)"/.test(u[0]);
+}
+function markersToUnderscores(t){
+  return t.replace(/\u0001([\s\S]*?)\u0002/g,function(m,inner){
+    return inner.split("\n").map(function(line){
+      var p=line.match(/^(\s*)([\s\S]*?)(\s*)$/);
+      return p[2]?p[1]+"__"+p[2]+"__"+p[3]:line;
+    }).join("\n");
+  });
+}
 function xmlToText(xml){
-  var t=xml.replace(/<w:instrText[^>]*>[\s\S]*?<\/w:instrText>/g,"")
-    .replace(/<w:tab\s*\/>/g," ").replace(/<w:br[^>]*\/>/g,"\n").replace(/<\/w:p>/g,"\n")
-    .replace(/<[^>]+>/g,"");
-  return t.replace(/&lt;/g,"<").replace(/&gt;/g,">").replace(/&quot;/g,"\"").replace(/&apos;/g,"'")
+  var t=xml.replace(/<w:instrText[^>]*>[\s\S]*?<\/w:instrText>/g,"");
+  t=t.replace(/<w:r[ >][\s\S]*?<\/w:r>/g,function(run){
+    var txt=run.replace(/<w:tab\s*\/>/g," ").replace(/<w:br[^>]*\/>/g,"\n").replace(/<\/w:p>/g,"\n").replace(/<[^>]+>/g,"");
+    return (txt.trim()&&runUnderlined(run))?"\u0001"+txt+"\u0002":txt;
+  }).replace(/\u0002(?:<[^>]*>)*\u0001/g,"");
+  t=t.replace(/<w:tab\s*\/>/g," ").replace(/<w:br[^>]*\/>/g,"\n").replace(/<\/w:p>/g,"\n").replace(/<[^>]+>/g,"");
+  t=t.replace(/&lt;/g,"<").replace(/&gt;/g,">").replace(/&quot;/g,"\"").replace(/&apos;/g,"'")
     .replace(/&#x([0-9a-fA-F]+);/g,function(m,h){return String.fromCharCode(parseInt(h,16));})
     .replace(/&#(\d+);/g,function(m,d){return String.fromCharCode(parseInt(d,10));})
     .replace(/&amp;/g,"&");
+  return markersToUnderscores(t);
 }
 function textToPages(text,cap){
   var paras=text.split(/\r?\n/).map(function(s){return s.replace(/[ \t]+/g," ").trim();}).filter(Boolean);
