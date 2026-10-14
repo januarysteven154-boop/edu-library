@@ -1,4 +1,5 @@
-/* Edu Library - AI Examination Room, Admin side: Exam Builder v2.5 (saves papers to server C, with a space meter; fills Class, Subject, Title and Year from the file by itself). Builds checked multiple-choice questions (two AIs must agree) AND written questions (the AI finds them and drafts the model answers) from the text of an exam paper (PDF with text, SCANNED PDF read by AI, Word .docx, or .txt) and saves them to server C through the backend. Includes an accuracy test with maths questions whose answers are known.
+/* Edu Library - AI Examination Room, Admin side: Exam Builder v2.6 (saves papers to server C, with a space meter; fills Class, Subject, Title and Year from the file by itself). Builds checked multiple-choice questions (two AIs must agree) AND written questions (the AI finds them and drafts the model answers) from the text of an exam paper (PDF with text, SCANNED PDF read by AI, Word .docx, or .txt) and saves them to server C through the backend. Includes an accuracy test with maths questions whose answers are known.
+   v2.6: section 3 lists the papers saved in the Examination Room (newest first) with a Delete button (tap twice), so wrong uploads can be removed and students are not confused. Uses the backend room=index and room=del calls (no backend change).
    v2.5: CHICHEWA papers are built as WRITTEN questions only (no multiple choice, no pictures step), because letters, compositions and grammar were being forced into A-D options. Any paper whose Subject contains "Chichewa" is handled this way.
    v2.4: Word files keep UNDERLINED words as __word__ in the text sent to the AI (needs backend lib/examBuild.js to explain the markers).
    v2.3: WRITTEN QUESTIONS, FULLY AUTOMATIC. In the same run as the multiple-choice questions, the AI also finds the questions the student must answer in their own words (short answer, structured parts, describe, essay, letter, comprehension, note making) and drafts a model answer for each. You type nothing. One Save puts both kinds into the same paper. A written question that needs a diagram is held (not saved) because its model answer cannot be trusted without seeing the picture; a question where the student must draw is dropped. Works with backend lib/examBuild.js v7, lib/roomStore.js v2 and lib/roomMark.js.
@@ -623,6 +624,48 @@ async function showSpace(){
   }
   el.textContent="Space used: "+parts.join("  |  ");
 }
+/* ---------- list of saved papers, with Delete (v2.6) ---------- */
+var PARM={};
+async function loadPapers(){
+  var el=$("ebPapers");if(!el)return;
+  el.textContent="Loading…";
+  try{
+    var j=await roomCall("index",{});
+    ST.papers=(j.papers||[]).slice().sort(function(a,b){return (b.updated||0)-(a.updated||0);});
+    drawPapers();
+  }catch(e){el.textContent="Could not load the list: "+((e&&e.message)||e);}
+}
+function drawPapers(){
+  var el=$("ebPapers");if(!el)return;
+  var ps=ST.papers||[];
+  if(!ps.length){el.innerHTML="<div style='color:var(--sub);font-size:12.5px'>No papers saved yet.</div>";return;}
+  el.innerHTML="<div style='color:var(--sub);font-size:12.5px;margin:0 0 8px'>"+ps.length+" paper(s), newest first.</div>"+ps.map(function(p,i){
+    var w=p.written||0,m=(p.count||0)-w,armed=!!PARM[p.id];
+    return "<div style='border:1px solid var(--line);border-radius:9px;padding:8px 12px;margin:0 0 8px;font-size:13px;word-break:break-word'>"
+      +"<b>"+E(p.title)+"</b>"
+      +"<div style='color:var(--sub);font-size:12px;margin-top:2px'>"+E(p.class)+" · "+E(p.subject)+(p.year?" · "+E(p.year):"")+" · "+m+" multiple choice, "+w+" written · server "+E(String(p.server||"").toUpperCase())+"</div>"
+      +"<button type='button' class='pDel' data-i='"+i+"' style='margin-top:8px;border:1px solid "+(armed?"#d9534f":"var(--line)")+";background:"+(armed?"#d9534f":"rgba(127,127,127,.15)")+";color:"+(armed?"#fff":"var(--ink)")+";border-radius:8px;padding:6px 10px;font-size:12.5px'>"+(armed?"Tap again to delete for good":"Delete this paper")+"</button>"
+      +"</div>";
+  }).join("");
+  var bs=el.querySelectorAll?el.querySelectorAll(".pDel"):[];
+  for(var k=0;k<bs.length;k++)bs[k].onclick=(function(b){return function(){delPaper(parseInt(b.getAttribute("data-i"),10));};})(bs[k]);
+}
+async function delPaper(i){
+  var p=(ST.papers||[])[i];if(!p)return;
+  if(!PARM[p.id]){
+    PARM[p.id]=1;drawPapers();
+    setTimeout(function(){if(PARM[p.id]){delete PARM[p.id];drawPapers();}},5000);
+    return;
+  }
+  delete PARM[p.id];
+  say("ebPapSt","Deleting "+p.title+"…");
+  try{
+    await roomCall("del",{id:p.id});
+    ST.papers=(ST.papers||[]).filter(function(x){return x.id!==p.id;});
+    drawPapers();showSpace();
+    say("ebPapSt","Deleted: "+p.title+". Students will stop seeing it within about a minute.");
+  }catch(e){drawPapers();say("ebPapSt","Could not delete: "+((e&&e.message)||e));}
+}
 async function save(){
   if(ST.busy||(!ST.built.length&&!ST.written.length)||!ST.meta)return;
   ST.busy=true;var m=ST.meta;
@@ -644,7 +687,7 @@ async function save(){
     if(seen>0){msg+=" Check passed: students can read "+seen+" question(s) of this paper ("+(seen-seenW)+" multiple choice, "+seenW+" written"+(seenImg?", "+seenImg+" with a picture":"")+").";if(upOk||upBad)msg+=" Pictures saved: "+upOk+(upBad?". FAILED: "+upBad+" (send this message to Claude)":".");ST.built=[];ST.written=[];ST.pics={};drawResults();}
     else msg+=" WARNING: the check could not read the paper back. Do not save again, send this message to Claude.";
     say("ebSt",msg);
-    showSpace();
+    showSpace();loadPapers();
   }catch(e){say("ebSt","Could not save: "+((e&&e.message)||e));}
   ST.busy=false;
 }
@@ -794,7 +837,11 @@ function render(body){
    +"<div class='row2'><div class='field' style='margin:0 0 8px'><label>Paper title</label><input id='ebTitle' placeholder='e.g. Biology Paper 1'></div>"
    +"<div class='field' style='margin:0 0 8px'><label>Year (optional)</label><input id='ebYear' placeholder='e.g. 2019'></div></div>"
    +"<button type='button' class='btn' id='ebGo'>Read paper and build questions</button>"
-   +"<div id='ebSt' style='color:var(--sub);font-size:12.5px;margin:10px 0'></div><div id='ebList'></div>";
+   +"<div id='ebSt' style='color:var(--sub);font-size:12.5px;margin:10px 0'></div><div id='ebList'></div>"
+   +"<div style='font-weight:700;margin:22px 0 6px'>3. Papers in the Examination Room</div>"
+   +"<div style='color:var(--sub);font-size:12.5px;margin:0 0 8px'>These are the papers students can open. Delete a wrong or old one here.</div>"
+   +"<button type='button' class='btn' id='ebPapRefresh'>Refresh the list</button>"
+   +"<div id='ebPapSt' style='color:var(--sub);font-size:12.5px;margin:8px 0'></div><div id='ebPapers'></div>";
   fillClasses();
   $("ebLevel").onchange=fillClasses;
   $("ebFile").onchange=onFile;
@@ -803,9 +850,11 @@ function render(body){
   $("ebYear").oninput=function(){AUTO.year=false;};
   $("ebAcc").onclick=accuracyTest;
   $("ebGo").onclick=buildPaper;
+  $("ebPapRefresh").onclick=loadPapers;
   drawResults();
   showSpace();
+  loadPapers();
 }
 
-window.EduExamBuilder={render:render,version:"2.5",_readFileText:readFileText,_counts:reportCounts,_guess:guessFrom,_report:reportLines,_looksScanned:looksScanned};
+window.EduExamBuilder={render:render,version:"2.6",_readFileText:readFileText,_counts:reportCounts,_guess:guessFrom,_report:reportLines,_looksScanned:looksScanned};
 })();
