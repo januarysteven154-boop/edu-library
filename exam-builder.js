@@ -1,4 +1,5 @@
-/* Edu Library - AI Examination Room, Admin side: Exam Builder v2.6 (saves papers to server C, with a space meter; fills Class, Subject, Title and Year from the file by itself). Builds checked multiple-choice questions (two AIs must agree) AND written questions (the AI finds them and drafts the model answers) from the text of an exam paper (PDF with text, SCANNED PDF read by AI, Word .docx, or .txt) and saves them to server C through the backend. Includes an accuracy test with maths questions whose answers are known.
+/* Edu Library - AI Examination Room, Admin side: Exam Builder v2.7 (saves papers to server C, with a space meter; fills Class, Subject, Title and Year from the file by itself). Builds checked multiple-choice questions (two AIs must agree) AND written questions (the AI finds them and drafts the model answers) from the text of an exam paper (PDF with text, SCANNED PDF read by AI, Word .docx, or .txt) and saves them to server C through the backend. Includes an accuracy test with maths questions whose answers are known.
+   v2.7: in section 3, each saved paper has a "Review questions" button that opens all its questions (multiple choice with the marked answer, written questions with the model answer) so you can check a paper before or instead of deleting it. Uses the backend room=paper call (no backend change).
    v2.6: section 3 lists the papers saved in the Examination Room (newest first) with a Delete button (tap twice), so wrong uploads can be removed and students are not confused. Uses the backend room=index and room=del calls (no backend change).
    v2.5: CHICHEWA papers are built as WRITTEN questions only (no multiple choice, no pictures step), because letters, compositions and grammar were being forced into A-D options. Any paper whose Subject contains "Chichewa" is handled this way.
    v2.4: Word files keep UNDERLINED words as __word__ in the text sent to the AI (needs backend lib/examBuild.js to explain the markers).
@@ -624,8 +625,9 @@ async function showSpace(){
   }
   el.textContent="Space used: "+parts.join("  |  ");
 }
-/* ---------- list of saved papers, with Delete (v2.6) ---------- */
+/* ---------- list of saved papers, with Review and Delete (v2.6, v2.7) ---------- */
 var PARM={};
+var REV={}; /* v2.7: paper id -> {open, loading, err, qs} for the Review questions button */
 async function loadPapers(){
   var el=$("ebPapers");if(!el)return;
   el.textContent="Loading…";
@@ -635,20 +637,68 @@ async function loadPapers(){
     drawPapers();
   }catch(e){el.textContent="Could not load the list: "+((e&&e.message)||e);}
 }
+/* v2.7: the questions of one paper, so you can check them */
+function reviewHtml(r){
+  if(!r)return "";
+  if(r.loading)return "<div style='margin-top:8px;color:var(--sub);font-size:12.5px'>Loading the questions…</div>";
+  if(r.err)return "<div style='margin-top:8px;color:#d9534f;font-size:12.5px'>Could not load the questions: "+E(r.err)+"</div>";
+  var qs=r.qs||[];
+  if(!qs.length)return "<div style='margin-top:8px;color:var(--sub);font-size:12.5px'>This paper has no questions.</div>";
+  var mc=0,wr=0;
+  qs.forEach(function(x){if(x.type==="written")wr++;else mc++;});
+  var h="<div style='margin-top:8px;border-top:1px solid var(--line);padding-top:8px'>"
+    +"<div style='color:var(--sub);font-size:12px;margin:0 0 6px'>"+qs.length+" question(s): "+mc+" multiple choice, "+wr+" written. Green = the answer saved for marking.</div>";
+  qs.forEach(function(x,i){
+    if(x.type==="written"){
+      h+="<div style='border:1px solid var(--line);border-radius:8px;padding:7px 10px;margin:0 0 6px;font-size:12.5px;word-break:break-word'>"
+        +"<div style='color:var(--sub);font-size:11.5px'>"+(i+1)+". Written · "+E(kindLabel(x.kind))+(x.marks?" · "+x.marks+" mark"+(x.marks>1?"s":""):"")+"</div>"
+        +"<div style='margin-top:3px;white-space:pre-wrap'><b>"+E(x.q)+"</b></div>"
+        +(x.answer?"<details style='margin-top:5px'><summary style='cursor:pointer;color:var(--sub)'>Model answer</summary><div style='margin-top:3px;color:#2FA36B;white-space:pre-wrap'>"+E(x.answer)+"</div></details>":"<div style='margin-top:4px;color:var(--sub);font-size:11.5px'>(the model answer is not sent to this screen by the server)</div>")
+        +"</div>";
+    }else{
+      var opts=x.options||[],hasC=(typeof x.correct==="number");
+      h+="<div style='border:1px solid var(--line);border-radius:8px;padding:7px 10px;margin:0 0 6px;font-size:12.5px;word-break:break-word'>"
+        +"<div><b>"+(i+1)+". "+E(x.q)+"</b></div>"
+        +(x.img?"<div style='color:var(--sub);font-size:11.5px;margin-top:2px'>(this question has a picture)</div>":"")
+        +opts.map(function(o,k){return "<div style='"+(hasC&&k===x.correct?"color:#2FA36B;font-weight:700":"color:var(--sub)")+"'>"+"ABCD"[k]+". "+E(o)+(hasC&&k===x.correct?" ✓":"")+"</div>";}).join("")
+        +(hasC?"":"<div style='margin-top:4px;color:var(--sub);font-size:11.5px'>(the correct answer is not sent to this screen by the server)</div>")
+        +"</div>";
+    }
+  });
+  return h+"</div>";
+}
 function drawPapers(){
   var el=$("ebPapers");if(!el)return;
   var ps=ST.papers||[];
   if(!ps.length){el.innerHTML="<div style='color:var(--sub);font-size:12.5px'>No papers saved yet.</div>";return;}
   el.innerHTML="<div style='color:var(--sub);font-size:12.5px;margin:0 0 8px'>"+ps.length+" paper(s), newest first.</div>"+ps.map(function(p,i){
-    var w=p.written||0,m=(p.count||0)-w,armed=!!PARM[p.id];
+    var w=p.written||0,m=(p.count||0)-w,armed=!!PARM[p.id],rv=REV[p.id],open=!!(rv&&rv.open);
     return "<div style='border:1px solid var(--line);border-radius:9px;padding:8px 12px;margin:0 0 8px;font-size:13px;word-break:break-word'>"
       +"<b>"+E(p.title)+"</b>"
       +"<div style='color:var(--sub);font-size:12px;margin-top:2px'>"+E(p.class)+" · "+E(p.subject)+(p.year?" · "+E(p.year):"")+" · "+m+" multiple choice, "+w+" written · server "+E(String(p.server||"").toUpperCase())+"</div>"
-      +"<button type='button' class='pDel' data-i='"+i+"' style='margin-top:8px;border:1px solid "+(armed?"#d9534f":"var(--line)")+";background:"+(armed?"#d9534f":"rgba(127,127,127,.15)")+";color:"+(armed?"#fff":"var(--ink)")+";border-radius:8px;padding:6px 10px;font-size:12.5px'>"+(armed?"Tap again to delete for good":"Delete this paper")+"</button>"
+      +"<div style='display:flex;gap:8px;margin-top:8px'>"
+      +"<button type='button' class='pRev' data-i='"+i+"' style='flex:1;border:1px solid var(--line);background:rgba(127,127,127,.15);color:var(--ink);border-radius:8px;padding:8px 10px;font-size:12.5px'>"+(open?"Hide questions":"Review questions")+"</button>"
+      +"<button type='button' class='pDel' data-i='"+i+"' style='flex:1;border:1px solid "+(armed?"#d9534f":"var(--line)")+";background:"+(armed?"#d9534f":"rgba(127,127,127,.15)")+";color:"+(armed?"#fff":"var(--ink)")+";border-radius:8px;padding:8px 10px;font-size:12.5px'>"+(armed?"Tap again to delete for good":"Delete this paper")+"</button>"
+      +"</div>"
+      +(open?reviewHtml(rv):"")
       +"</div>";
   }).join("");
   var bs=el.querySelectorAll?el.querySelectorAll(".pDel"):[];
   for(var k=0;k<bs.length;k++)bs[k].onclick=(function(b){return function(){delPaper(parseInt(b.getAttribute("data-i"),10));};})(bs[k]);
+  var rs=el.querySelectorAll?el.querySelectorAll(".pRev"):[];
+  for(var k2=0;k2<rs.length;k2++)rs[k2].onclick=(function(b){return function(){reviewPaper(parseInt(b.getAttribute("data-i"),10));};})(rs[k2]);
+}
+async function reviewPaper(i){
+  var p=(ST.papers||[])[i];if(!p)return;
+  var r=REV[p.id];
+  if(r&&r.open){r.open=false;drawPapers();return;}
+  if(r&&r.qs){r.open=true;drawPapers();return;}
+  REV[p.id]={open:true,loading:true};drawPapers();
+  try{
+    var j=await roomCall("paper",{},"&id="+encodeURIComponent(p.id));
+    REV[p.id]={open:true,qs:j.questions||[]};
+  }catch(e){REV[p.id]={open:true,err:(e&&e.message)||String(e)};}
+  drawPapers();
 }
 async function delPaper(i){
   var p=(ST.papers||[])[i];if(!p)return;
@@ -661,6 +711,7 @@ async function delPaper(i){
   say("ebPapSt","Deleting "+p.title+"…");
   try{
     await roomCall("del",{id:p.id});
+    delete REV[p.id];
     ST.papers=(ST.papers||[]).filter(function(x){return x.id!==p.id;});
     drawPapers();showSpace();
     say("ebPapSt","Deleted: "+p.title+". Students will stop seeing it within about a minute.");
@@ -687,6 +738,7 @@ async function save(){
     if(seen>0){msg+=" Check passed: students can read "+seen+" question(s) of this paper ("+(seen-seenW)+" multiple choice, "+seenW+" written"+(seenImg?", "+seenImg+" with a picture":"")+").";if(upOk||upBad)msg+=" Pictures saved: "+upOk+(upBad?". FAILED: "+upBad+" (send this message to Claude)":".");ST.built=[];ST.written=[];ST.pics={};drawResults();}
     else msg+=" WARNING: the check could not read the paper back. Do not save again, send this message to Claude.";
     say("ebSt",msg);
+    delete REV[j.id];
     showSpace();loadPapers();
   }catch(e){say("ebSt","Could not save: "+((e&&e.message)||e));}
   ST.busy=false;
@@ -839,7 +891,7 @@ function render(body){
    +"<button type='button' class='btn' id='ebGo'>Read paper and build questions</button>"
    +"<div id='ebSt' style='color:var(--sub);font-size:12.5px;margin:10px 0'></div><div id='ebList'></div>"
    +"<div style='font-weight:700;margin:22px 0 6px'>3. Papers in the Examination Room</div>"
-   +"<div style='color:var(--sub);font-size:12.5px;margin:0 0 8px'>These are the papers students can open. Delete a wrong or old one here.</div>"
+   +"<div style='color:var(--sub);font-size:12.5px;margin:0 0 8px'>These are the papers students can open. Review the questions of a paper, or delete a wrong or old one here.</div>"
    +"<button type='button' class='btn' id='ebPapRefresh'>Refresh the list</button>"
    +"<div id='ebPapSt' style='color:var(--sub);font-size:12.5px;margin:8px 0'></div><div id='ebPapers'></div>";
   fillClasses();
@@ -850,11 +902,11 @@ function render(body){
   $("ebYear").oninput=function(){AUTO.year=false;};
   $("ebAcc").onclick=accuracyTest;
   $("ebGo").onclick=buildPaper;
-  $("ebPapRefresh").onclick=loadPapers;
+  $("ebPapRefresh").onclick=function(){REV={};loadPapers();};
   drawResults();
   showSpace();
   loadPapers();
 }
 
-window.EduExamBuilder={render:render,version:"2.6",_readFileText:readFileText,_counts:reportCounts,_guess:guessFrom,_report:reportLines,_looksScanned:looksScanned};
+window.EduExamBuilder={render:render,version:"2.7",_readFileText:readFileText,_counts:reportCounts,_guess:guessFrom,_report:reportLines,_looksScanned:looksScanned};
 })();
