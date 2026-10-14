@@ -1,4 +1,5 @@
-/* Edu Library - AI Examination Room, Admin side: Exam Builder v3.0 (saves papers to server C, with a space meter; fills Class, Subject, Title and Year from the file by itself). Builds checked multiple-choice questions (two AIs must agree) AND written questions (the AI finds them and drafts the model answers) from the text of an exam paper (PDF with text, SCANNED PDF read by AI, Word .docx, or .txt) and saves them to server C through the backend. Includes an accuracy test with maths questions whose answers are known.
+/* Edu Library - AI Examination Room, Admin side: Exam Builder v3.1 (saves papers to server C, with a space meter; fills Class, Subject, Title and Year from the file by itself). Builds checked multiple-choice questions (two AIs must agree) AND written questions (the AI finds them and drafts the model answers) from the text of an exam paper (PDF with text, SCANNED PDF read by AI, Word .docx, or .txt) and saves them to server C through the backend. Includes an accuracy test with maths questions whose answers are known.
+   v3.1: old Word .doc files can now be opened (text is read straight from the file, no library); .docx, PDF and .txt work as before.
    v3.0: NEW LOOK (gold and blue, scoped under the .eb class so the Library Manager is not touched): own title, collapsible how-it-works card, Server C / Server D usage bars, numbered cards 1 Accuracy check and 2 Build from a paper, big file box with the chosen file name, Build exam and Clear buttons. All the building, saving, review and delete logic is unchanged.
    v2.8: the list of saved papers moved to its own screen. A button "Uploaded exams" at the top of the builder opens it (Review questions and Delete for each paper) and "Back to builder" returns. The builder screen is shorter and cleaner.
    v2.7: in section 3, each saved paper has a "Review questions" button that opens all its questions (multiple choice with the marked answer, written questions with the model answer) so you can check a paper before or instead of deleting it. Uses the backend room=paper call (no backend change).
@@ -186,11 +187,126 @@ async function readDocx(file){
   return textToPages(xmlToText(new TextDecoder().decode(data)));
 }
 async function readTxt(file){return textToPages(await file.text());}
+/* ---------- reading an old Word .doc (no library needed) ---------- */
+function docOle(u8){
+  var dv=new DataView(u8.buffer,u8.byteOffset,u8.byteLength),i;
+  var ss=1<<dv.getUint16(30,true),ms=1<<dv.getUint16(32,true);
+  var nFat=dv.getUint32(44,true),dirStart=dv.getUint32(48,true),cutoff=dv.getUint32(56,true);
+  var mfStart=dv.getUint32(60,true),difStart=dv.getUint32(68,true),nDif=dv.getUint32(72,true);
+  function secOff(s){return (s+1)*ss;}
+  var fatSecs=[];
+  for(i=0;i<109&&fatSecs.length<nFat;i++){var v=dv.getUint32(76+i*4,true);if(v<0xFFFFFFFA)fatSecs.push(v);}
+  var ds=difStart,per=ss/4-1;
+  while(nDif-->0&&ds<0xFFFFFFFA){
+    var o=secOff(ds);
+    for(i=0;i<per&&fatSecs.length<nFat;i++){var v2=dv.getUint32(o+i*4,true);if(v2<0xFFFFFFFA)fatSecs.push(v2);}
+    ds=dv.getUint32(o+per*4,true);
+  }
+  var fat=[];
+  fatSecs.forEach(function(s){var o=secOff(s);for(var k=0;k<ss/4;k++)fat.push(dv.getUint32(o+k*4,true));});
+  function chain(start,table){var out=[],s=start,g=0;while(s<0xFFFFFFFA&&g++<2000000){out.push(s);s=table[s];if(s===undefined)break;}return out;}
+  function readFat(start,size){
+    var secs=chain(start,fat),out=new Uint8Array(secs.length*ss);
+    secs.forEach(function(s,k){var o=secOff(s);out.set(u8.subarray(o,Math.min(o+ss,u8.length)),k*ss);});
+    return size==null?out:out.subarray(0,size);
+  }
+  var dir=readFat(dirStart),ddv=new DataView(dir.buffer,dir.byteOffset,dir.byteLength),ents=[];
+  for(i=0;i+128<=dir.length;i+=128){
+    var nl=ddv.getUint16(i+64,true),nm="";
+    for(var c=0;c<(nl/2)-1;c++)nm+=String.fromCharCode(ddv.getUint16(i+c*2,true));
+    ents.push({name:nm,type:dir[i+66],start:ddv.getUint32(i+116,true),size:ddv.getUint32(i+120,true)});
+  }
+  var mini=null,miniFat=null;
+  function ensureMini(){
+    if(mini)return;
+    mini=readFat(ents[0].start,ents[0].size);
+    var mfb=readFat(mfStart),mdv=new DataView(mfb.buffer,mfb.byteOffset,mfb.byteLength);miniFat=[];
+    for(var k=0;k<mfb.length/4;k++)miniFat.push(mdv.getUint32(k*4,true));
+  }
+  function stream(name){
+    for(var k=0;k<ents.length;k++){
+      var e=ents[k];
+      if(e.type===2&&e.name===name){
+        if(e.size<cutoff){
+          ensureMini();
+          var secs=chain(e.start,miniFat),out=new Uint8Array(secs.length*ms);
+          secs.forEach(function(s,j){out.set(mini.subarray(s*ms,s*ms+ms),j*ms);});
+          return out.subarray(0,e.size);
+        }
+        return readFat(e.start,e.size);
+      }
+    }
+    return null;
+  }
+  return {stream:stream};
+}
+function docClean(s){
+  var st=[],o="",prev7=false,i,ch;
+  for(i=0;i<s.length;i++){
+    ch=s.charCodeAt(i);
+    if(ch===19){st.push(true);continue;}
+    if(ch===20){if(st.length)st[st.length-1]=false;continue;}
+    if(ch===21){st.pop();continue;}
+    if(st.indexOf(true)>-1)continue;
+    if(ch===7){o+=prev7?"\n":"\t";prev7=true;continue;}
+    prev7=false;
+    if(ch===13||ch===11)o+="\n";
+    else if(ch===12)o+="\n\n";
+    else if(ch===30)o+="-";
+    else if(ch===9||ch===10||ch>=32)o+=s.charAt(i);
+  }
+  return o.replace(/\t+\n/g,"\n").replace(/\n{3,}/g,"\n\n");
+}
+function docText(u8){
+  var bad="This .doc file cannot be read here. Open it in Word or WPS, save it as .docx, then choose it again.";
+  var ole=docOle(u8),wd=ole.stream("WordDocument");
+  if(!wd||wd.length<200)throw new Error(bad);
+  var dv=new DataView(wd.buffer,wd.byteOffset,wd.byteLength);
+  if(dv.getUint16(0,true)!==0xA5EC)throw new Error("This .doc file was saved by a very old Word and cannot be read. Open it in Word or WPS, save it as .docx, then choose it again.");
+  var flags=dv.getUint16(10,true);
+  if(flags&0x0100)throw new Error("This Word file is password protected. Remove the password, save it, then choose it again.");
+  var tb=ole.stream((flags&0x0200)?"1Table":"0Table");
+  if(!tb)throw new Error(bad);
+  var p=32,csw=dv.getUint16(p,true);p+=2+csw*2;
+  var cslw=dv.getUint16(p,true);p+=2;
+  var ccpText=dv.getInt32(p+12,true);p+=cslw*4;
+  p+=2;
+  var fcClx=dv.getUint32(p+33*8,true),lcbClx=dv.getUint32(p+33*8+4,true);
+  var tdv=new DataView(tb.buffer,tb.byteOffset,tb.byteLength),q=fcClx,end=fcClx+lcbClx,plc=null;
+  while(q<end){
+    var t=tb[q];
+    if(t===1)q+=3+tdv.getUint16(q+1,true);
+    else if(t===2){plc=[q+5,tdv.getUint32(q+1,true)];break;}
+    else break;
+  }
+  if(!plc)throw new Error(bad);
+  var n=Math.floor((plc[1]-4)/12),base=plc[0],parts=[],i;
+  var dAnsi=new TextDecoder("windows-1252"),dUni=new TextDecoder("utf-16le");
+  for(i=0;i<n;i++){
+    var cp0=tdv.getUint32(base+i*4,true),cp1=tdv.getUint32(base+(i+1)*4,true);
+    if(cp0>=ccpText)break;
+    if(cp1>ccpText)cp1=ccpText;
+    var fc=tdv.getUint32(base+(n+1)*4+i*8+2,true),len=cp1-cp0;
+    if(fc&0x40000000){var off=Math.floor((fc&0x3FFFFFFF)/2);parts.push(dAnsi.decode(wd.subarray(off,off+len)));}
+    else parts.push(dUni.decode(wd.subarray(fc,fc+len*2)));
+  }
+  return docClean(parts.join(""));
+}
+async function readDoc(file){
+  var u8=new Uint8Array(await file.arrayBuffer());
+  if(u8[0]===0x50&&u8[1]===0x4B)return await readDocx(file);
+  var sig=[0xD0,0xCF,0x11,0xE0,0xA1,0xB1,0x1A,0xE1],ok=u8.length>600;
+  for(var i=0;i<8&&ok;i++)if(u8[i]!==sig[i])ok=false;
+  if(!ok)throw new Error("This file is named .doc but is not a normal Word file. Open it in Word or WPS, save it as .docx, then choose it again.");
+  var txt=docText(u8);
+  if(txt.replace(/\s/g,"").length<20)throw new Error("No text was found in this Word file. If it is a scan, save it as PDF and choose the PDF.");
+  return textToPages(txt);
+}
 async function readFileText(file){
   var n=(file.name||"").toLowerCase();
   if(/\.docx$/.test(n))return await readDocx(file);
   if(/\.txt$/.test(n))return await readTxt(file);
-  if(/\.doc$/.test(n))throw new Error("Old .doc files are not supported. Open it in Word or WPS and save it as .docx, then choose it again.");
+  if(/\.doc$/.test(n))return await readDoc(file);
   return await readPdf(file);
 }
 function chunkPages(pages){
@@ -344,7 +460,7 @@ async function writtenPass(chunksW,c){
 async function buildPaper(){
   if(ST.busy)return;
   var f=$("ebFile").files[0],c=ctxNow();
-  if(!f){say("ebSt","Choose a file first (PDF, Word .docx or .txt).");return;}
+  if(!f){say("ebSt","Choose a file first (PDF, Word .docx, .doc or .txt).");return;}
   if(!c.cls||!c.subject||!c.title){var ms=[];if(!c.cls)ms.push("Class");if(!c.subject)ms.push("Subject");if(!c.title)ms.push("Paper title");say("ebSt","Please fill in: "+ms.join(", ")+".");return;}
   ST.busy=true;ST.built=[];ST.held=[];ST.lost=[];ST.pics={};ST.written=[];ST.wheld=[];ST.wlost=[];ST.meta=null;ST.pdfFile=null;drawResults();
   var limitHit=false;
@@ -789,7 +905,7 @@ function guessFrom(name,text){
 async function peekText(file){
   try{
     var n=(file.name||"").toLowerCase();
-    if(/\.(docx|txt)$/.test(n)){var r=await readFileText(file);return String(r.pages[0]||"").slice(0,1500);}
+    if(/\.(docx|doc|txt)$/.test(n)){var r=await readFileText(file);return String(r.pages[0]||"").slice(0,1500);}
     if(/\.pdf$/.test(n)){
       var buf=await file.arrayBuffer();
       var pdf=await pdfjsLib.getDocument({data:new Uint8Array(buf)}).promise;
@@ -968,7 +1084,7 @@ function render(body){
    +"<div class='eb-card'><div class='eb-h'><span class='eb-n'>2</span><span>Build from a paper</span></div>"
    +"<div class='eb-d'>Choose a past examination paper to generate a practice exam.</div>"
    +"<div class='eb-drop' id='ebDrop'>"+ico(ICO.up,34)+"<b>Choose PDF, Word or text file</b><span>Tap to select a past paper from your device</span></div>"
-   +"<input id='ebFile' type='file' accept='application/pdf,.pdf,.docx,.txt,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain' style='display:none'>"
+   +"<input id='ebFile' type='file' accept='application/pdf,.pdf,.docx,.doc,application/msword,.txt,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain' style='display:none'>"
    +"<div class='eb-fn' id='ebFileName'></div>"
    +"<label class='eb-chk'><input type='checkbox' id='ebScan'><span>This is a scanned or photographed paper<small>The AI reads the page pictures (slower, more accurate). It ticks itself when the PDF looks like a scan; you can change it.</small></span></label>"
    +"<div class='eb-g'><div><label class='eb-lab'>Education level <em>*</em></label><select id='ebLevel' class='eb-in'>"+lv+"</select></div>"
@@ -1010,5 +1126,5 @@ function showPapers(body){
   loadPapers();
 }
 
-window.EduExamBuilder={render:render,version:"3.0",_readFileText:readFileText,_counts:reportCounts,_guess:guessFrom,_report:reportLines,_looksScanned:looksScanned};
+window.EduExamBuilder={render:render,version:"3.1",_readFileText:readFileText,_counts:reportCounts,_guess:guessFrom,_report:reportLines,_looksScanned:looksScanned};
 })();
