@@ -1,4 +1,4 @@
-/* Edu Library - AI Library Manager v1.4: the AI sorts each PDF or Word (.docx) file. 80% sure or more = uploads by itself (PDF only; Word files always wait for your OK until the student app can open Word files). Below 80% = waits for your Approve, collected in ONE box at the top with Approve all / Reject all. Stops cleanly when the AI limit is reached. Exact duplicates (same file content + size) AND files whose title + class already exist in the library are rejected automatically. "Check anyway" brings a skipped file back. */
+/* Edu Library - AI Library Manager v1.5: the AI sorts each PDF or Word (.docx or old .doc) file. 80% sure or more = uploads by itself (PDF only; Word files always wait for your OK). Below 80% = waits for your Approve, collected in ONE box at the top with Approve all / Reject all. Stops cleanly when the AI limit is reached. Exact duplicates (same file content + size) AND files whose title + class already exist in the library are rejected automatically. "Check anyway" brings a skipped file back. */
 (function(){
 "use strict";
 var URL_CLASSIFY="https://edu-ai-backend-three.vercel.app/api/book-link?classify=1";
@@ -20,9 +20,9 @@ var IC={ok:ic("<path d='m5 12.5 4.5 4.5L19 7'/>"),no:ic("<path d='M6 6l12 12M18 
 function hex(buf){return Array.prototype.map.call(new Uint8Array(buf),function(x){return ("0"+x.toString(16)).slice(-2);}).join("");}
 function mb(n){return (n/1048576).toFixed(1)+" MB";}
 function clean(s){return String(s||"").replace(/[\\\/]+/g,"-").replace(/~+/g,"-").replace(/\s+/g," ").trim();}
-function baseName(n){return String(n||"").replace(/\.(pdf|docx)$/i,"").replace(/_+/g," ").trim();}
+function baseName(n){return String(n||"").replace(/\.(pdf|docx?)$/i,"").replace(/_+/g," ").trim();}
 function pct(x){return Math.round((x||0)*100)+"%";}
-function isWordFile(f){return /\.docx$/i.test((f&&f.name)||"");}
+function isWordFile(f){return /\.docx?$/i.test((f&&f.name)||"");}
 function isPdfFile(f){return /\.pdf$/i.test((f&&f.name)||"")||(f&&f.type==="application/pdf");}
 async function token(){
   var s=await sb.auth.getSession();
@@ -49,9 +49,10 @@ async function readPdf(file){
   var readable=excerpt.replace(/\[Page \d+\]|\s/g,"").length>=80;
   return {pages:n,hash:hash,excerpt:excerpt,readable:readable,read:p>maxp?maxp:p};
 }
-/* ---------- reading a Word (.docx) file: the shared reader file is loaded once, when first needed ---------- */
+/* ---------- reading a Word file (.docx or old .doc): the shared reader file is loaded once, when first needed ---------- */
 function ensureReader(){
-  if(window.EduDocReader)return Promise.resolve();
+  /* the copy that can read old .doc files is marked oldDoc; an older copy already on the page is replaced */
+  if(window.EduDocReader&&window.EduDocReader.oldDoc)return Promise.resolve();
   return new Promise(function(ok,no){
     var s=document.createElement("script");
     s.src=URL_READER+"?v="+Date.now();
@@ -232,7 +233,7 @@ function whyNot(it){
   if(!(p.confidence>=AUTO_MIN))w.push("AI is only "+pct(p.confidence)+" sure (below "+pct(AUTO_MIN)+")");
   if(p.needsReview||(p.flags&&p.flags.length))w.push("the AI flagged something");
   if(it.dups.length)w.push("possible duplicate");
-  if(it.word&&!WORD_AUTO)w.push("Word file: the student app may not be able to open it yet");
+  if(it.word&&!WORD_AUTO)w.push("Word file: Word files always wait for your OK");
   var pr=problems(it);if(pr.length)w.push(pr.join(", "));
   return w.join("; ");
 }
@@ -650,7 +651,7 @@ function pick(files){
   try{
     var all=Array.prototype.slice.call(files||[]);
     var list=all.filter(function(f){return isPdfFile(f)||isWordFile(f);});
-    if(!list.length){alert(all.some(function(f){return /\.doc$/i.test(f.name||"");})?"Old .doc files are not supported. Open it in Word or WPS and save it as .docx, then choose it again.":"Please choose PDF or Word (.docx) files.");return;}
+    if(!list.length){alert("Please choose PDF or Word (.docx or .doc) files.");return;}
     /* tidy the list when nothing is busy: drop uploaded and rejected cards */
     if(!running&&!uploading){
       var keep=items.filter(function(x){return x.up!=="done"&&x.dec!=="rejected";});
@@ -681,8 +682,8 @@ function pick(files){
 function render(body){
   items=ST.items;bookServer=ST.bookServer;
   var so=SERVERS.filter(function(x){return !x.exam;}).map(function(x){return "<option value='"+x.id+"'"+(x.ok?"":" disabled")+(x.id===bookServer?" selected":"")+">"+E(x.name)+(x.ok?"":" (not connected)")+"</option>";}).join("");
-  body.innerHTML="<div class='note' style='margin-top:0'>AI Library — choose PDF or Word (.docx) files. The AI works out where each one belongs. <b>If it is "+pct(AUTO_MIN)+" sure or more, a PDF uploads by itself.</b> Below "+pct(AUTO_MIN)+", or if it sees a problem, the file waits for your OK in <b>one box at the top</b>, where you can <b>Approve all</b> or <b>Reject all</b>. <b>Word files always wait for your OK</b>, because the student app may not open them yet. <b>Files already in the library (exact copies, or the same title and class) are skipped automatically.</b> Tap <b>Check anyway</b> on a skipped card to bring it back.<br><b>Tip:</b> each time you choose files they are <b>added</b> to the list. Tap <b>Details</b> on a card to edit it.</div>"
-   +"<input id='lmFile' type='file' accept='application/pdf,.pdf,.docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document' multiple style='display:none'>"
+  body.innerHTML="<div class='note' style='margin-top:0'>AI Library — choose PDF or Word (.docx or old .doc) files. The AI works out where each one belongs. <b>If it is "+pct(AUTO_MIN)+" sure or more, a PDF uploads by itself.</b> Below "+pct(AUTO_MIN)+", or if it sees a problem, the file waits for your OK in <b>one box at the top</b>, where you can <b>Approve all</b> or <b>Reject all</b>. <b>Word files always wait for your OK.</b> <b>Files already in the library (exact copies, or the same title and class) are skipped automatically.</b> Tap <b>Check anyway</b> on a skipped card to bring it back.<br><b>Tip:</b> each time you choose files they are <b>added</b> to the list. Tap <b>Details</b> on a card to edit it.</div>"
+   +"<input id='lmFile' type='file' accept='application/pdf,.pdf,.docx,.doc,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document' multiple style='display:none'>"
    +"<button type='button' class='btn' id='lmPick'>Choose PDF or Word files</button>"
    +"<label style='display:flex;gap:10px;align-items:center;margin:12px 0 0;font-size:13.5px'><input type='checkbox' id='lmAuto'"+(ST.auto?" checked":"")+" style='width:20px;height:20px;flex:none'> <span>Upload PDFs automatically when the AI is "+pct(AUTO_MIN)+" sure or more</span></label>"
    +"<div class='field' style='margin:10px 0 0'><label>Save books to (exams always go to Server C)</label><select id='lmSrv'>"+so+"</select></div>"
@@ -730,5 +731,5 @@ function render(body){
   };
 })();
 
-window.EduLibraryManager={render:render,set:setField,decide:decide,hand:hand,retry:retry,toggle:toggle,resume:resume,force:force,bulkApprove:bulkApprove,bulkReject:bulkReject,version:"1.4",_readAny:readAny};
+window.EduLibraryManager={render:render,set:setField,decide:decide,hand:hand,retry:retry,toggle:toggle,resume:resume,force:force,bulkApprove:bulkApprove,bulkReject:bulkReject,version:"1.5",_readAny:readAny};
 })();
