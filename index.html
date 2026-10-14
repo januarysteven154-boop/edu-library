@@ -1020,7 +1020,7 @@ body.light .phero .brandline .bli{color:#fff}
 .orb2 svg{width:40px;height:40px;stroke-width:1.5;color:#fff}
 
 /* ADMIN PANEL REDESIGN: Malawi sunset glass look, own bottom nav, floating Edu Library AI */
-body.admpanel{background:linear-gradient(rgba(30,8,28,.18),rgba(30,8,28,.5)),url(https://edu-library.januarysteven154.workers.dev/admin-bg.jpg) center top/cover no-repeat fixed,linear-gradient(180deg,#3a1a6e,#f25e1e 55%,#f9b81f)!important;background-color:#2f102d!important}
+body.admpanel{background:linear-gradient(rgba(30,8,28,.18),rgba(30,8,28,.5)),url(https://edu-library.edulibrary.workers.dev/admin-bg.jpg) center top/cover no-repeat fixed,linear-gradient(180deg,#3a1a6e,#f25e1e 55%,#f9b81f)!important;background-color:#2f102d!important}
 body.admpanel::before{display:none!important}
 body.admpanel #topHeader,body.admpanel .bottomnav,body.admpanel #aiFab{display:none!important}
 body.admpanel .wrap{padding-bottom:160px}
@@ -1471,8 +1471,8 @@ async function renderPages(url){
   }catch(e){if(await eduTryWord(url,body))return;body.innerHTML='<div class="empty">Preview unavailable. Use Save.'+(window.__eduWordWhy?'<div style="font-size:11px;opacity:.6;margin-top:8px">('+String(window.__eduWordWhy).replace(/[<>&]/g,"")+')</div>':'')+'</div>';}
 }
 /* Word (.docx) files: small viewer + reader scripts. A copy is kept on the phone, so Word files also open offline. */
-const EDU_WV_URL="https://edu-library.januarysteven154.workers.dev/word-viewer.js";
-const EDU_DR_URL="https://edu-library.januarysteven154.workers.dev/doc-reader.js";
+const EDU_WV_URL="https://edu-library.edulibrary.workers.dev/word-viewer.js";
+const EDU_DR_URL="https://edu-library.edulibrary.workers.dev/doc-reader.js";
 async function eduLoadCached(key,url){
   let txt=null;
   try{txt=localStorage.getItem(key);}catch(e){}
@@ -1724,7 +1724,7 @@ function eduRoomOpen(app){
   setHeader(`<h2>AI Examination Room</h2>`);
   app.innerHTML='<div class="empty">Loading...</div>';
   const sc=document.createElement("script");
-  sc.src="https://edu-library.januarysteven154.workers.dev/exam-room.js?v="+Date.now();
+  sc.src="https://edu-library.edulibrary.workers.dev/exam-room.js?v="+Date.now();
   sc.onload=go;
   sc.onerror=()=>{
     /* website not reachable (offline): use the copy of exam-room.js saved inside the app */
@@ -2025,7 +2025,12 @@ function renderAdmin(app){
 /* AI Library Manager: loads /library-manager.js only when the admin opens the AI Library tab */
 function loadLibraryManager(){
   if(window.EduLibraryManager)return Promise.resolve();
-  return new Promise(function(ok,bad){var s=document.createElement("script");s.src="https://edu-library.januarysteven154.workers.dev/library-manager.js?v="+Date.now();s.onload=ok;s.onerror=function(){bad(new Error("Could not load library-manager.js"));};document.head.appendChild(s);});
+  return new Promise(function(ok,bad){var s=document.createElement("script");s.src="https://edu-library.edulibrary.workers.dev/library-manager.js?v="+Date.now();s.onload=ok;s.onerror=function(){bad(new Error("Could not load library-manager.js"));};document.head.appendChild(s);});
+}
+/* AI Examination Room builder: loads /exam-builder.js only when the admin opens the Upload Exams tab */
+function loadExamBuilder(){
+  if(window.EduExamBuilder)return Promise.resolve();
+  return new Promise(function(ok,bad){var s=document.createElement("script");s.src="https://edu-library.edulibrary.workers.dev/exam-builder.js?v="+Date.now();s.onload=ok;s.onerror=function(){bad(new Error("Could not load exam-builder.js"));};document.head.appendChild(s);});
 }
 let adminTab = "home";
 function admGo(t){adminTab=t;renderAdminPanel(document.getElementById("app"));window.scrollTo(0,0);}
@@ -2110,26 +2115,8 @@ function renderAdminPanel(app){
     document.getElementById("f_level").onchange = fillClasses;
     fillClasses();
   } else if(adminTab==="exams"){
-    const ES=SERVERS.filter(x=>x.exam), first=(ES.find(x=>x.ok)||{}).id;
-    body.innerHTML = `
-      <div class="card" style="max-width:100%;margin:0">
-        <p style="color:var(--sub);font-size:13px;margin:0 0 14px">Upload exam papers as PDF. They are saved on the examination servers.</p>
-        <div class="field"><label>Exam title</label><input id="x_title" placeholder="e.g. 2023 Paper 1"></div>
-        <div class="field"><label>Exam subject</label><input id="x_subject" placeholder="e.g. Mathematics"></div>
-        <div class="row2">
-          <div class="field"><label>Education level</label><select id="x_level">${Object.keys(LEVELS).map(k=>`<option value="${k}">${LEVELS[k].label}</option>`).join("")}</select></div>
-          <div class="field"><label id="x_classLbl">Class</label><select id="x_class"></select></div>
-        </div>
-        <div class="field" id="x_bodyWrap" style="display:none"><label>Examination</label><select id="x_body"></select></div>
-        <div class="note" id="x_dest"></div>
-        <div class="field"><label>Description (optional)</label><textarea id="x_desc" rows="3"></textarea></div>
-        <div class="field"><label>Examination server</label><select id="x_server">${ES.map(x=>`<option value="${x.id}"${x.ok?"":" disabled"}${x.id===first?" selected":""}>${x.name}${x.ok?"":" (not connected yet)"}</option>`).join("")}</select></div>
-        <div class="field"><label>Exam PDF file</label><input id="x_file" type="file" accept="application/pdf"></div>
-        <button class="btn green" id="saveExamBtn" onclick="saveExam()">Upload PDF Exam</button>
-        <div class="msg" id="examMsg"></div>
-      </div>`;
-    document.getElementById("x_level").onchange = fillExamClasses;
-    fillExamClasses();
+    body.innerHTML = `<p style="color:var(--sub);font-size:13px">Loading Examination Room…</p>`;
+    loadExamBuilder().then(function(){EduExamBuilder.render(body);}).catch(function(e){body.innerHTML='<div class="note">'+esc(e.message)+'</div>';});
   } else if(adminTab==="library"){
     body.innerHTML = `<p style="color:var(--sub);font-size:13px">Loading AI Library…</p>`;
     loadLibraryManager().then(function(){EduLibraryManager.render(body);}).catch(function(e){body.innerHTML='<div class="note">'+esc(e.message)+'</div>';});
