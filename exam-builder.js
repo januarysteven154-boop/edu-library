@@ -1,4 +1,5 @@
-/* Edu Library - AI Examination Room, Admin side: Exam Builder v2.7 (saves papers to server C, with a space meter; fills Class, Subject, Title and Year from the file by itself). Builds checked multiple-choice questions (two AIs must agree) AND written questions (the AI finds them and drafts the model answers) from the text of an exam paper (PDF with text, SCANNED PDF read by AI, Word .docx, or .txt) and saves them to server C through the backend. Includes an accuracy test with maths questions whose answers are known.
+/* Edu Library - AI Examination Room, Admin side: Exam Builder v2.8 (saves papers to server C, with a space meter; fills Class, Subject, Title and Year from the file by itself). Builds checked multiple-choice questions (two AIs must agree) AND written questions (the AI finds them and drafts the model answers) from the text of an exam paper (PDF with text, SCANNED PDF read by AI, Word .docx, or .txt) and saves them to server C through the backend. Includes an accuracy test with maths questions whose answers are known.
+   v2.8: the list of saved papers moved to its own screen. A button "Uploaded exams" at the top of the builder opens it (Review questions and Delete for each paper) and "Back to builder" returns. The builder screen is shorter and cleaner.
    v2.7: in section 3, each saved paper has a "Review questions" button that opens all its questions (multiple choice with the marked answer, written questions with the model answer) so you can check a paper before or instead of deleting it. Uses the backend room=paper call (no backend change).
    v2.6: section 3 lists the papers saved in the Examination Room (newest first) with a Delete button (tap twice), so wrong uploads can be removed and students are not confused. Uses the backend room=index and room=del calls (no backend change).
    v2.5: CHICHEWA papers are built as WRITTEN questions only (no multiple choice, no pictures step), because letters, compositions and grammar were being forced into A-D options. Any paper whose Subject contains "Chichewa" is handled this way.
@@ -875,7 +876,7 @@ async function onFile(){
 /* ---------- screen ---------- */
 function render(body){
   var lv=Object.keys(LEVELS).map(function(k){return "<option value=\""+E(k)+"\">"+E(LEVELS[k].label||k)+"</option>";}).join("");
-  body.innerHTML="<div class='note' style='margin-top:0'><b>AI Examination Room — Exam Builder.</b> The AI reads the paper and builds both kinds of questions: multiple choice (two different AIs must agree on each answer) and written questions (the AI writes a model answer that is used only for marking). Chichewa papers are built as written questions only. Nothing is saved until you tap Save.</div>"
+  body.innerHTML="<button type='button' class='btn' id='ebOpenPap' style='margin:0 0 12px'>Uploaded exams (review / delete)</button><div class='note' style='margin-top:0'><b>AI Examination Room — Exam Builder.</b> The AI reads the paper and builds both kinds of questions: multiple choice (two different AIs must agree on each answer) and written questions (the AI writes a model answer that is used only for marking). Chichewa papers are built as written questions only. Nothing is saved until you tap Save.</div>"
    +"<div id='ebSpace' style='color:var(--sub);font-size:12px;margin:8px 0 0'>Checking space...</div>"
    +"<div style='font-weight:700;margin:10px 0 6px'>1. Accuracy test</div>"
    +"<button type='button' class='btn' id='ebAcc'>Run accuracy test (12 maths questions)</button>"
@@ -890,10 +891,7 @@ function render(body){
    +"<div class='field' style='margin:0 0 8px'><label>Year (optional)</label><input id='ebYear' placeholder='e.g. 2019'></div></div>"
    +"<button type='button' class='btn' id='ebGo'>Read paper and build questions</button>"
    +"<div id='ebSt' style='color:var(--sub);font-size:12.5px;margin:10px 0'></div><div id='ebList'></div>"
-   +"<div style='font-weight:700;margin:22px 0 6px'>3. Papers in the Examination Room</div>"
-   +"<div style='color:var(--sub);font-size:12.5px;margin:0 0 8px'>These are the papers students can open. Review the questions of a paper, or delete a wrong or old one here.</div>"
-   +"<button type='button' class='btn' id='ebPapRefresh'>Refresh the list</button>"
-   +"<div id='ebPapSt' style='color:var(--sub);font-size:12.5px;margin:8px 0'></div><div id='ebPapers'></div>";
+   ;
   fillClasses();
   $("ebLevel").onchange=fillClasses;
   $("ebFile").onchange=onFile;
@@ -902,11 +900,24 @@ function render(body){
   $("ebYear").oninput=function(){AUTO.year=false;};
   $("ebAcc").onclick=accuracyTest;
   $("ebGo").onclick=buildPaper;
-  $("ebPapRefresh").onclick=function(){REV={};loadPapers();};
+  $("ebOpenPap").onclick=function(){
+    if(ST.busy){say("ebSt","The builder is working. Wait until it is finished, then open Uploaded exams.");return;}
+    showPapers(body);
+  };
   drawResults();
   showSpace();
+}
+/* v2.8: the saved papers have their own screen */
+function showPapers(body){
+  body.innerHTML="<button type='button' class='btn' id='ebBack' style='margin:0 0 12px'>← Back to builder</button>"
+   +"<div style='font-weight:700;font-size:16px;margin:0 0 6px'>Uploaded exams</div>"
+   +"<div style='color:var(--sub);font-size:12.5px;margin:0 0 8px'>These are the papers students can open. Tap Review questions to check a paper, or delete a wrong or old one.</div>"
+   +"<button type='button' class='btn' id='ebPapRefresh'>Refresh the list</button>"
+   +"<div id='ebPapSt' style='color:var(--sub);font-size:12.5px;margin:8px 0'></div><div id='ebPapers'></div>";
+  $("ebBack").onclick=function(){render(body);};
+  $("ebPapRefresh").onclick=function(){REV={};loadPapers();};
   loadPapers();
 }
 
-window.EduExamBuilder={render:render,version:"2.7",_readFileText:readFileText,_counts:reportCounts,_guess:guessFrom,_report:reportLines,_looksScanned:looksScanned};
+window.EduExamBuilder={render:render,version:"2.8",_readFileText:readFileText,_counts:reportCounts,_guess:guessFrom,_report:reportLines,_looksScanned:looksScanned};
 })();
