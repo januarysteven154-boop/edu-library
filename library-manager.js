@@ -2,7 +2,7 @@
 (function(){
 "use strict";
 var URL_CLASSIFY="https://edu-ai-backend-three.vercel.app/api/book-link?classify=1";
-var URL_READER="https://edu-library.januarysteven154.workers.dev/doc-reader.js";
+var URL_READER="https://edu-library.edulibrary.workers.dev/doc-reader.js";
 var GAP_MS=5500,UP_GAP_MS=7000,MAX_FILES=30,TAIL=1400,HEAD=5500,MAX_READ=15,ENOUGH=1500;
 var AUTO_MIN=0.80; /* at or above this, a file uploads without asking you */
 var WORD_AUTO=false; /* Word files never upload by themselves until the student app can open them */
@@ -720,7 +720,7 @@ function render(body){
         var go=function(){window.EduExamBuilder.render(body);};
         if(window.EduExamBuilder){go();return;}
         var s=document.createElement("script");
-        s.src="https://edu-library.januarysteven154.workers.dev/exam-builder.js?v="+Date.now();
+        s.src="https://edu-library.edulibrary.workers.dev/exam-builder.js?v="+Date.now();
         s.onload=go;
         s.onerror=function(){body.innerHTML="<div class='note'>Could not load exam-builder.js</div>";};
         document.head.appendChild(s);
