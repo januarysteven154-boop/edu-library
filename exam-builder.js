@@ -1,4 +1,5 @@
-/* Edu Library - AI Examination Room, Admin side: Exam Builder v2.8 (saves papers to server C, with a space meter; fills Class, Subject, Title and Year from the file by itself). Builds checked multiple-choice questions (two AIs must agree) AND written questions (the AI finds them and drafts the model answers) from the text of an exam paper (PDF with text, SCANNED PDF read by AI, Word .docx, or .txt) and saves them to server C through the backend. Includes an accuracy test with maths questions whose answers are known.
+/* Edu Library - AI Examination Room, Admin side: Exam Builder v3.0 (saves papers to server C, with a space meter; fills Class, Subject, Title and Year from the file by itself). Builds checked multiple-choice questions (two AIs must agree) AND written questions (the AI finds them and drafts the model answers) from the text of an exam paper (PDF with text, SCANNED PDF read by AI, Word .docx, or .txt) and saves them to server C through the backend. Includes an accuracy test with maths questions whose answers are known.
+   v3.0: NEW LOOK (gold and blue, scoped under the .eb class so the Library Manager is not touched): own title, collapsible how-it-works card, Server C / Server D usage bars, numbered cards 1 Accuracy check and 2 Build from a paper, big file box with the chosen file name, Build exam and Clear buttons. All the building, saving, review and delete logic is unchanged.
    v2.8: the list of saved papers moved to its own screen. A button "Uploaded exams" at the top of the builder opens it (Review questions and Delete for each paper) and "Back to builder" returns. The builder screen is shorter and cleaner.
    v2.7: in section 3, each saved paper has a "Review questions" button that opens all its questions (multiple choice with the marked answer, written questions with the model answer) so you can check a paper before or instead of deleting it. Uses the backend room=paper call (no backend change).
    v2.6: section 3 lists the papers saved in the Examination Room (newest first) with a Delete button (tap twice), so wrong uploads can be removed and students are not confused. Uses the backend room=index and room=del calls (no backend change).
@@ -573,7 +574,7 @@ function drawResults(){
   if(q.length){
     h+="<div style='font-weight:700;margin:6px 0'>Multiple choice ("+q.length+")</div>";
     q.forEach(function(it,i){
-      h+="<div style='border:1px solid var(--line);border-radius:9px;padding:8px 12px;margin:0 0 8px;font-size:13px;word-break:break-word'><b>"+(i+1)+". "+E(it.q)+"</b>"
+      h+="<div style='background:#0C2850;border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin:0 0 10px;font-size:13px;word-break:break-word'><b>"+(i+1)+". "+E(it.q)+"</b>"
         +(it.preview?"<img alt='Picture for this question' src=\""+E(it.preview)+"\" style='display:block;max-width:100%;max-height:260px;margin:8px auto;border-radius:8px;background:#fff;border:1px solid var(--line)'>":"")
         +it.options.map(function(o,k){return "<div style='"+(k===it.correct?"color:#2FA36B;font-weight:700":"color:var(--sub)")+"'>"+"ABCD"[k]+". "+E(o)+(k===it.correct?" ✓":"")+"</div>";}).join("")
         +(it.img?"<button type='button' class='ebDrop' data-i='"+i+"' style='margin-top:8px;border:1px solid var(--line);background:rgba(127,127,127,.15);color:var(--ink);border-radius:8px;padding:6px 10px;font-size:12.5px'>Don't save this question</button>":"")
@@ -583,7 +584,7 @@ function drawResults(){
   if(w.length){
     h+="<div style='font-weight:700;margin:10px 0 6px'>Written questions ("+w.length+")</div>";
     w.forEach(function(it,i){
-      h+="<div style='border:1px solid var(--line);border-radius:9px;padding:8px 12px;margin:0 0 8px;font-size:13px;word-break:break-word'>"
+      h+="<div style='background:#0C2850;border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin:0 0 10px;font-size:13px;word-break:break-word'>"
         +"<div style='color:var(--sub);font-size:12px'>"+(it.n?"No. "+it.n+" · ":"")+E(kindLabel(it.kind))+" · "+it.marks+" mark"+(it.marks>1?"s":"")+"</div>"
         +"<div style='margin-top:4px;white-space:pre-wrap'><b>"+E(it.q.length>400?it.q.slice(0,400)+"…":it.q)+"</b></div>"
         +"<details style='margin-top:6px'><summary style='cursor:pointer;color:var(--sub);font-size:12.5px'>Model answer the AI wrote (students never see it)</summary><div style='margin-top:4px;color:#2FA36B;font-size:12.5px;white-space:pre-wrap'>"+E(it.answer)+"</div></details>"
@@ -611,20 +612,19 @@ async function roomCall(action,payload,extra){
 }
 function fmtBytes(n){return n>=1073741824?(n/1073741824).toFixed(2)+" GB":(n/1048576).toFixed(1)+" MB";}
 async function showSpace(){
-  var el=$("ebSpace");if(!el)return;
   var tok;try{tok=await token();}catch(e){return;}
-  var parts=[];
-  var list=[["C","",5],["D","&s=d",10]];
+  var list=[["","ebSrvC",5],["&s=d","ebSrvD",10]];
   for(var i=0;i<list.length;i++){
+    var t=$(list[i][1]+"t"),bar=$(list[i][1]+"b");
     try{
-      var r=await fetch(URL_USAGE+list[i][1],{method:"POST",headers:{"Authorization":"Bearer "+tok,"Content-Type":"application/json"},body:"{}"});
+      var r=await fetch(URL_USAGE+list[i][0],{method:"POST",headers:{"Authorization":"Bearer "+tok,"Content-Type":"application/json"},body:"{}"});
       var j=await r.json();
-      if(!r.ok)throw new Error("x");
+      if(!r.ok||typeof j.bytes!=="number")throw new Error("x");
       var pct=Math.round(j.bytes/(list[i][2]*1073741824)*100);
-      parts.push("Server "+list[i][0]+": "+fmtBytes(j.bytes)+" of "+list[i][2]+" GB ("+pct+"%)"+(pct>=80?" - nearly full, new papers go to the next server":""));
-    }catch(e){parts.push("Server "+list[i][0]+": not available");}
+      if(t)t.textContent=fmtBytes(j.bytes)+" / "+list[i][2]+" GB ("+pct+"%)"+(pct>=80?" - nearly full":"");
+      if(bar)bar.style.width=(pct>0?Math.max(3,Math.min(100,pct)):0)+"%";
+    }catch(e){if(t)t.textContent="Not available";}
   }
-  el.textContent="Space used: "+parts.join("  |  ");
 }
 /* ---------- list of saved papers, with Review and Delete (v2.6, v2.7) ---------- */
 var PARM={};
@@ -674,7 +674,7 @@ function drawPapers(){
   if(!ps.length){el.innerHTML="<div style='color:var(--sub);font-size:12.5px'>No papers saved yet.</div>";return;}
   el.innerHTML="<div style='color:var(--sub);font-size:12.5px;margin:0 0 8px'>"+ps.length+" paper(s), newest first.</div>"+ps.map(function(p,i){
     var w=p.written||0,m=(p.count||0)-w,armed=!!PARM[p.id],rv=REV[p.id],open=!!(rv&&rv.open);
-    return "<div style='border:1px solid var(--line);border-radius:9px;padding:8px 12px;margin:0 0 8px;font-size:13px;word-break:break-word'>"
+    return "<div style='background:#0C2850;border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin:0 0 10px;font-size:13px;word-break:break-word'>"
       +"<b>"+E(p.title)+"</b>"
       +"<div style='color:var(--sub);font-size:12px;margin-top:2px'>"+E(p.class)+" · "+E(p.subject)+(p.year?" · "+E(p.year):"")+" · "+m+" multiple choice, "+w+" written · server "+E(String(p.server||"").toUpperCase())+"</div>"
       +"<div style='display:flex;gap:8px;margin-top:8px'>"
@@ -846,6 +846,7 @@ function setAuto(id,key,val){
 }
 async function onFile(){
   var f=$("ebFile").files[0];if(!f)return;
+  var fnEl=$("ebFileName");if(fnEl)fnEl.textContent="Selected: "+f.name;
   say("ebSt","Reading the file to fill in the boxes…");
   var g=guessFrom(f.name,""),need=!g.cls||!g.subject||!g.year;
   if(need){var g2=guessFrom(f.name,await peekText(f));g.cls=g2.cls;g.subject=g2.subject;g.year=g2.year;}
@@ -873,33 +874,122 @@ async function onFile(){
   }
 }
 
-/* ---------- screen ---------- */
+/* ---------- screen (v3.0 look) ---------- */
+var EB_CSS=[
+".eb{--ink:#F5F7FF;--sub:#B9C8E5;--line:rgba(120,160,230,.30);color:#F5F7FF;padding:4px 0 100px;font-size:14px;line-height:1.45}",
+".eb *{box-sizing:border-box}",
+".eb-title{display:flex;align-items:center;gap:10px;font-size:22px;font-weight:800;margin:2px 0 2px;color:#fff}",
+".eb-title svg{color:#D9AD4F;flex:none}",
+".eb-sub{color:#B9C8E5;font-size:13.5px;margin:0 0 12px}",
+".eb-card{background:#0C2850;border:1px solid rgba(120,160,230,.25);border-radius:16px;padding:14px;margin:0 0 12px;box-shadow:0 6px 18px rgba(0,0,0,.25)}",
+".eb-info{border-color:rgba(217,173,79,.45)}",
+".eb-info summary{cursor:pointer;list-style:none;display:flex;align-items:center;gap:10px;font-weight:700;color:#F4D58A}",
+".eb-info summary::-webkit-details-marker{display:none}",
+".eb-info svg{color:#D9AD4F;flex:none}",
+".eb-info ul{margin:10px 0 0;padding-left:18px;color:#B9C8E5;font-size:13px}",
+".eb-info li{margin:0 0 4px}",
+".eb-store{display:grid;grid-template-columns:1fr 1fr;gap:14px}",
+".eb-srv b{display:block;font-size:13px;color:#fff}",
+".eb-srv span{display:block;font-size:12px;color:#B9C8E5;margin:2px 0 6px}",
+".eb-bar{height:7px;border-radius:6px;background:rgba(255,255,255,.12);overflow:hidden}",
+".eb-bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,#1769E0,#168BFF);border-radius:6px}",
+".eb-h{display:flex;align-items:center;gap:10px;font-size:17px;font-weight:800;color:#fff;margin:0 0 4px}",
+".eb-n{flex:none;width:30px;height:30px;border-radius:50%;background:#1769E0;color:#fff;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:800;box-shadow:0 0 0 2px rgba(217,173,79,.6)}",
+".eb-d{color:#B9C8E5;font-size:13px;margin:0 0 10px}",
+".eb .btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;min-height:48px;padding:12px 14px;border:0;border-radius:12px;background:linear-gradient(90deg,#1769E0,#168BFF);color:#fff;font-size:15px;font-weight:700;cursor:pointer}",
+".eb .btn.green{background:linear-gradient(90deg,#16a37a,#20C997);color:#04210f}",
+".eb .btn:disabled{opacity:.55}",
+".eb .btn.eb-ghost{background:transparent;border:1.5px solid #1769E0;color:#F5F7FF}",
+".eb-drop{text-align:center;border:2px dashed rgba(22,139,255,.7);border-radius:14px;padding:18px 10px;margin:0 0 8px;color:#F5F7FF;cursor:pointer;background:rgba(22,105,224,.08)}",
+".eb-drop svg{color:#168BFF}",
+".eb-drop b{display:block;font-size:16px;margin-top:4px}",
+".eb-drop span{display:block;font-size:12.5px;color:#B9C8E5;margin-top:2px}",
+".eb-fn{font-size:13px;color:#F4D58A;margin:0 0 10px;word-break:break-all}",
+".eb-chk{display:flex;gap:10px;align-items:flex-start;margin:0 0 12px;font-size:14px}",
+".eb-chk input{width:20px;height:20px;margin-top:2px;flex:none}",
+".eb-chk small{display:block;color:#B9C8E5;font-size:12px;margin-top:1px}",
+".eb-g{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:0 0 10px}",
+".eb-g1{margin:0 0 10px}",
+".eb-row{display:grid;grid-template-columns:2fr 1fr;gap:10px;margin:0 0 10px}",
+".eb-acts{display:grid;grid-template-columns:2fr 1fr;gap:10px;margin:6px 0 0}",
+"@media(max-width:340px){.eb-g,.eb-store,.eb-row,.eb-acts{grid-template-columns:1fr}}",
+".eb-lab{display:block;font-size:13px;font-weight:700;color:#F5F7FF;margin:0 0 4px}",
+".eb-lab em{color:#F4D58A;font-style:normal}",
+".eb-in{display:block;width:100%;height:46px;padding:0 12px;border-radius:12px;border:1px solid rgba(22,139,255,.55);background:#0A2145;color:#F5F7FF;font-size:16px}",
+".eb-in::placeholder{color:#8fa3c6}",
+".eb-st{color:#B9C8E5;font-size:13px;margin:10px 0;word-break:break-word}"
+].join("\n");
+function ensureStyle(){
+  if($("ebStyle"))return;
+  var st=document.createElement("style");st.id="ebStyle";st.textContent=EB_CSS;document.head.appendChild(st);
+}
+function ico(d,sz){sz=sz||20;return "<svg viewBox='0 0 24 24' width='"+sz+"' height='"+sz+"' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'>"+d+"</svg>";}
+var ICO={
+  cap:"<path d='M2 9l10-5 10 5-10 5z'/><path d='M6 11v5c0 1.5 3 3 6 3s6-1.5 6-3v-5'/>",
+  shield:"<path d='M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z'/><path d='m9 12 2 2 4-4'/>",
+  up:"<path d='M7 18a4 4 0 0 1-.5-8A5.5 5.5 0 0 1 17 8.5 4.5 4.5 0 0 1 17 18'/><path d='M12 12v8M9 15l3-3 3 3'/>",
+  gear:"<circle cx='12' cy='12' r='3'/><path d='M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1 7 17M17 7l2.1-2.1'/>",
+  trash:"<path d='M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13'/>",
+  doc:"<path d='M6 3h9l4 4v14H6z'/><path d='M14 3v5h5M9 13h7M9 17h5'/>",
+  bulb:"<path d='M9 18h6M10 21h4M12 3a6 6 0 0 0-3.5 10.9c.6.5 1 1.3 1 2.1h5c0-.8.4-1.6 1-2.1A6 6 0 0 0 12 3z'/>",
+  back:"<path d='M15 5l-7 7 7 7'/>"
+};
+function clearAll(){
+  if(ST.busy){say("ebSt","The builder is working. Wait until it is finished.");return;}
+  if((ST.built.length||ST.written.length)&&!confirm("Clear the form and throw away the questions that are not saved yet?"))return;
+  ST.built=[];ST.held=[];ST.lost=[];ST.pics={};ST.written=[];ST.wheld=[];ST.wlost=[];ST.meta=null;ST.pdfFile=null;ST.ocr=null;
+  AUTO.subj=false;AUTO.title=false;AUTO.year=false;
+  var f=$("ebFile");if(f)f.value="";
+  $("ebFileName").textContent="";$("ebScan").checked=false;$("ebSubj").value="";$("ebTitle").value="";$("ebYear").value="";$("ebClass").value="";
+  say("ebSt","");drawResults();
+}
 function render(body){
+  ensureStyle();
   var lv=Object.keys(LEVELS).map(function(k){return "<option value=\""+E(k)+"\">"+E(LEVELS[k].label||k)+"</option>";}).join("");
-  body.innerHTML="<button type='button' class='btn' id='ebOpenPap' style='margin:0 0 12px'>Uploaded exams (review / delete)</button><div class='note' style='margin-top:0'><b>AI Examination Room — Exam Builder.</b> The AI reads the paper and builds both kinds of questions: multiple choice (two different AIs must agree on each answer) and written questions (the AI writes a model answer that is used only for marking). Chichewa papers are built as written questions only. Nothing is saved until you tap Save.</div>"
-   +"<div id='ebSpace' style='color:var(--sub);font-size:12px;margin:8px 0 0'>Checking space...</div>"
-   +"<div style='font-weight:700;margin:10px 0 6px'>1. Accuracy test</div>"
-   +"<button type='button' class='btn' id='ebAcc'>Run accuracy test (12 maths questions)</button>"
-   +"<div id='ebAccSt' style='color:var(--sub);font-size:12.5px;margin:8px 0'></div><div id='ebAccOut'></div>"
-   +"<div style='font-weight:700;margin:16px 0 6px'>2. Build from a paper</div>"
-   +"<input id='ebFile' type='file' accept='application/pdf,.pdf,.docx,.txt,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain' style='margin:0 0 10px;max-width:100%'>"
-   +"<label style='display:flex;gap:8px;align-items:flex-start;font-size:13px;line-height:1.4;margin:0 0 10px'><input type='checkbox' id='ebScan' style='margin-top:3px'><span>Scanned or photographed paper. The AI reads the page pictures (slower, but much more accurate than the hidden scan text). It ticks itself when the PDF looks like a scan.</span></label>"
-   +"<div class='row2'><div class='field' style='margin:0 0 8px'><label>Level</label><select id='ebLevel'>"+lv+"</select></div>"
-   +"<div class='field' style='margin:0 0 8px'><label>Class</label><select id='ebClass'></select></div></div>"
-   +"<div class='field' style='margin:0 0 8px'><label>Subject</label><input id='ebSubj' placeholder='e.g. Biology'></div>"
-   +"<div class='row2'><div class='field' style='margin:0 0 8px'><label>Paper title</label><input id='ebTitle' placeholder='e.g. Biology Paper 1'></div>"
-   +"<div class='field' style='margin:0 0 8px'><label>Year (optional)</label><input id='ebYear' placeholder='e.g. 2019'></div></div>"
-   +"<button type='button' class='btn' id='ebGo'>Read paper and build questions</button>"
-   +"<div id='ebSt' style='color:var(--sub);font-size:12.5px;margin:10px 0'></div><div id='ebList'></div>"
-   ;
+  var subs=SUBJECTS.map(function(x){return "<option value=\""+E(x[0])+"\">";}).join("");
+  body.innerHTML="<div class='eb'>"
+   +"<div class='eb-title'>"+ico(ICO.cap,28)+"<span>AI Examination Room</span></div>"
+   +"<div class='eb-sub'>Build practice exams from past papers.</div>"
+   +"<button type='button' class='btn eb-ghost' id='ebOpenPap' style='margin:0 0 12px'>"+ico(ICO.doc,18)+" Uploaded exams (review / delete)</button>"
+   +"<details class='eb-card eb-info'><summary>"+ico(ICO.bulb,20)+"<span>How it works</span></summary><ul>"
+   +"<li>The AI reads your examination paper and builds a practice exam.</li>"
+   +"<li>Multiple choice: two different AIs must agree on each answer, otherwise the question is not kept.</li>"
+   +"<li>Written questions: the AI drafts a model answer, used only for marking.</li>"
+   +"<li>Chichewa papers are built as written questions only.</li>"
+   +"<li>Nothing is saved until you tap Save.</li></ul></details>"
+   +"<div class='eb-card'><div class='eb-store'>"
+   +"<div class='eb-srv'><b>Server C</b><span id='ebSrvCt'>Checking…</span><div class='eb-bar'><i id='ebSrvCb'></i></div></div>"
+   +"<div class='eb-srv'><b>Server D</b><span id='ebSrvDt'>Checking…</span><div class='eb-bar'><i id='ebSrvDb'></i></div></div>"
+   +"</div></div>"
+   +"<div class='eb-card'><div class='eb-h'><span class='eb-n'>1</span><span>Accuracy check</span></div>"
+   +"<div class='eb-d'>Check the maths-answer accuracy of the examination AI before building a paper.</div>"
+   +"<button type='button' class='btn' id='ebAcc'>"+ico(ICO.shield,20)+" Run 12-question maths test</button>"
+   +"<div id='ebAccSt' class='eb-st'></div><div id='ebAccOut'></div></div>"
+   +"<div class='eb-card'><div class='eb-h'><span class='eb-n'>2</span><span>Build from a paper</span></div>"
+   +"<div class='eb-d'>Choose a past examination paper to generate a practice exam.</div>"
+   +"<div class='eb-drop' id='ebDrop'>"+ico(ICO.up,34)+"<b>Choose PDF, Word or text file</b><span>Tap to select a past paper from your device</span></div>"
+   +"<input id='ebFile' type='file' accept='application/pdf,.pdf,.docx,.txt,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain' style='display:none'>"
+   +"<div class='eb-fn' id='ebFileName'></div>"
+   +"<label class='eb-chk'><input type='checkbox' id='ebScan'><span>This is a scanned or photographed paper<small>The AI reads the page pictures (slower, more accurate). It ticks itself when the PDF looks like a scan; you can change it.</small></span></label>"
+   +"<div class='eb-g'><div><label class='eb-lab'>Education level <em>*</em></label><select id='ebLevel' class='eb-in'>"+lv+"</select></div>"
+   +"<div><label class='eb-lab'>Class <em>*</em></label><select id='ebClass' class='eb-in'></select></div></div>"
+   +"<div class='eb-g1'><label class='eb-lab'>Subject <em>*</em></label><input id='ebSubj' class='eb-in' list='ebSubjList' placeholder='Choose or type the subject'><datalist id='ebSubjList'>"+subs+"</datalist></div>"
+   +"<div class='eb-row'><div><label class='eb-lab'>Paper title <em>*</em></label><input id='ebTitle' class='eb-in' placeholder='e.g. Biology Paper 1'></div>"
+   +"<div><label class='eb-lab'>Year</label><input id='ebYear' class='eb-in' placeholder='2019'></div></div>"
+   +"<div class='eb-acts'><button type='button' class='btn' id='ebGo'>"+ico(ICO.gear,20)+" Build exam</button>"
+   +"<button type='button' class='btn eb-ghost' id='ebClear'>"+ico(ICO.trash,18)+" Clear</button></div>"
+   +"<div id='ebSt' class='eb-st'></div></div>"
+   +"<div id='ebList'></div></div>";
   fillClasses();
   $("ebLevel").onchange=fillClasses;
+  $("ebDrop").onclick=function(){$("ebFile").click();};
   $("ebFile").onchange=onFile;
   $("ebSubj").oninput=function(){AUTO.subj=false;};
   $("ebTitle").oninput=function(){AUTO.title=false;};
   $("ebYear").oninput=function(){AUTO.year=false;};
-  $("ebAcc").onclick=accuracyTest;
-  $("ebGo").onclick=buildPaper;
+  $("ebAcc").onclick=async function(){var b=this;b.disabled=true;try{await accuracyTest();}finally{b.disabled=false;}};
+  $("ebGo").onclick=async function(){var b=this;b.disabled=true;try{await buildPaper();}finally{b.disabled=false;}};
+  $("ebClear").onclick=clearAll;
   $("ebOpenPap").onclick=function(){
     if(ST.busy){say("ebSt","The builder is working. Wait until it is finished, then open Uploaded exams.");return;}
     showPapers(body);
@@ -907,17 +997,18 @@ function render(body){
   drawResults();
   showSpace();
 }
-/* v2.8: the saved papers have their own screen */
+/* the saved papers have their own screen */
 function showPapers(body){
-  body.innerHTML="<button type='button' class='btn' id='ebBack' style='margin:0 0 12px'>← Back to builder</button>"
-   +"<div style='font-weight:700;font-size:16px;margin:0 0 6px'>Uploaded exams</div>"
-   +"<div style='color:var(--sub);font-size:12.5px;margin:0 0 8px'>These are the papers students can open. Tap Review questions to check a paper, or delete a wrong or old one.</div>"
+  ensureStyle();
+  body.innerHTML="<div class='eb'><button type='button' class='btn eb-ghost' id='ebBack' style='margin:0 0 12px'>"+ico(ICO.back,18)+" Back to builder</button>"
+   +"<div class='eb-title'>"+ico(ICO.doc,26)+"<span>Uploaded exams</span></div>"
+   +"<div class='eb-sub'>These are the papers students can open. Review the questions, or delete a wrong or old paper.</div>"
    +"<button type='button' class='btn' id='ebPapRefresh'>Refresh the list</button>"
-   +"<div id='ebPapSt' style='color:var(--sub);font-size:12.5px;margin:8px 0'></div><div id='ebPapers'></div>";
+   +"<div id='ebPapSt' class='eb-st'></div><div id='ebPapers'></div></div>";
   $("ebBack").onclick=function(){render(body);};
   $("ebPapRefresh").onclick=function(){REV={};loadPapers();};
   loadPapers();
 }
 
-window.EduExamBuilder={render:render,version:"2.8",_readFileText:readFileText,_counts:reportCounts,_guess:guessFrom,_report:reportLines,_looksScanned:looksScanned};
+window.EduExamBuilder={render:render,version:"3.0",_readFileText:readFileText,_counts:reportCounts,_guess:guessFrom,_report:reportLines,_looksScanned:looksScanned};
 })();
