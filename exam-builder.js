@@ -1,4 +1,5 @@
-/* Edu Library - AI Examination Room, Admin side: Exam Builder v2.4 (saves papers to server C, with a space meter; fills Class, Subject, Title and Year from the file by itself). Builds checked multiple-choice questions (two AIs must agree) AND written questions (the AI finds them and drafts the model answers) from the text of an exam paper (PDF with text, SCANNED PDF read by AI, Word .docx, or .txt) and saves them to server C through the backend. Includes an accuracy test with maths questions whose answers are known.
+/* Edu Library - AI Examination Room, Admin side: Exam Builder v2.5 (saves papers to server C, with a space meter; fills Class, Subject, Title and Year from the file by itself). Builds checked multiple-choice questions (two AIs must agree) AND written questions (the AI finds them and drafts the model answers) from the text of an exam paper (PDF with text, SCANNED PDF read by AI, Word .docx, or .txt) and saves them to server C through the backend. Includes an accuracy test with maths questions whose answers are known.
+   v2.5: CHICHEWA papers are built as WRITTEN questions only (no multiple choice, no pictures step), because letters, compositions and grammar were being forced into A-D options. Any paper whose Subject contains "Chichewa" is handled this way.
    v2.4: Word files keep UNDERLINED words as __word__ in the text sent to the AI (needs backend lib/examBuild.js to explain the markers).
    v2.3: WRITTEN QUESTIONS, FULLY AUTOMATIC. In the same run as the multiple-choice questions, the AI also finds the questions the student must answer in their own words (short answer, structured parts, describe, essay, letter, comprehension, note making) and drafts a model answer for each. You type nothing. One Save puts both kinds into the same paper. A written question that needs a diagram is held (not saved) because its model answer cannot be trusted without seeing the picture; a question where the student must draw is dropped. Works with backend lib/examBuild.js v7, lib/roomStore.js v2 and lib/roomMark.js.
    v2.1: a paper with only written questions now says so clearly; works with backend examBuild.js v6.
@@ -252,6 +253,8 @@ async function accuracyTest(){
 
 /* ---------- build from a paper ---------- */
 function ctxNow(){return {level:$("ebLevel").value,cls:$("ebClass").value,subject:clean($("ebSubj").value),title:clean($("ebTitle").value),year:clean($("ebYear").value)};}
+/* v2.5: papers of these subjects are built as written questions only (no multiple choice) */
+function writtenOnly(subject){return /chichewa/i.test(String(subject||""));}
 function fillClasses(){
   var lv=$("ebLevel").value,cl=(LEVELS[lv]&&LEVELS[lv].classes)||[];
   $("ebClass").innerHTML="<option value=''>— choose —</option>"+cl.map(function(c){return "<option value=\""+E(c)+"\">"+E(c)+"</option>";}).join("");
@@ -345,6 +348,7 @@ async function buildPaper(){
     var isPdf=!/\.(docx|txt|doc)$/i.test(f.name||"");
     ST.pdfFile=isPdf?f:null;
     var useScan=isPdf&&$("ebScan")&&$("ebScan").checked;
+    var onlyW=writtenOnly(c.subject);
     var rd,chunks,scanNote="";
     if(useScan){
       say("ebSt","Reading the page pictures with AI…");
@@ -372,7 +376,8 @@ async function buildPaper(){
       (j.held||[]).forEach(function(h){var key=norm(h.q);if(seenH[key])return;seenH[key]=1;ST.held.push(h);});
       (j.droppedList||[]).forEach(function(d){var key=norm(d.q);if(seenL[key])return;seenL[key]=1;ST.lost.push(d);});
     };
-    for(var k=0;k<chunks.length;k++){
+    /* v2.5: a written-only subject (Chichewa) skips the whole multiple-choice step */
+    for(var k=0;k<chunks.length&&!onlyW;k++){
       say("ebSt","Multiple choice: part "+(k+1)+" of "+chunks.length+" (parts of the file read: "+rd.pages.length+" of "+rd.total+")… kept so far: "+ST.built.length);
       try{await runChunk(k);}
       catch(e){
@@ -410,12 +415,13 @@ async function buildPaper(){
     if(!limitHit){
       var chunksW=chunkPagesW(rd.pages);
       if(chunksW.length){
-        await wait(GAP_MS);
+        if(!onlyW)await wait(GAP_MS);
         var wr=await writtenPass(chunksW,c);
         if(wr.limit){limitHit=true;wNote=" Written questions stopped: the AI limit was reached.";}
         else if(wr.failed)wNote=" "+wr.failed+" written part(s) failed ("+wr.lastErr+"); run the same file again later, Save skips questions already saved.";
       }
     }
+    if(onlyW)wNote+=" "+c.subject+" is built as written questions only (no multiple choice). The model answers are drafted by AI, which is weak in Chichewa: look at them before you save.";
     ST.busy=false;drawResults();
     var cn=reportCounts(ST.built,ST.held,ST.lost,wNums()),withPic=ST.built.filter(function(b){return b.img;}).length;
     say("ebSt",(limitHit?"Stopped: the AI limit was reached. ":(failedIdx.length?"Finished with problems. ":"Done. "))+"Ready to save: "+cn.kept+" multiple choice"+(withPic?" ("+withPic+" with a picture)":"")+" · "+ST.written.length+" written · Held: "+(cn.held+ST.wheld.length)+" · Dropped: "+(cn.dropped+ST.wlost.length)+(cn.missing?" · Not found: "+cn.missing:"")+"."+(picNote?" "+picNote:"")+scanNote+wNote+(failedIdx.length?" "+failedIdx.length+" multiple-choice part(s) failed twice ("+lastErr+"). Save what is ready, then run the same file again later; Save skips questions already saved.":"")+((ST.built.length||ST.written.length)?" Everything is ready: look at the questions, then tap Save.":(!ST.held.length&&!ST.wheld.length&&!cn.dropped&&!ST.wlost.length?" No questions were found in this file.":"")));
@@ -774,7 +780,7 @@ async function onFile(){
 /* ---------- screen ---------- */
 function render(body){
   var lv=Object.keys(LEVELS).map(function(k){return "<option value=\""+E(k)+"\">"+E(LEVELS[k].label||k)+"</option>";}).join("");
-  body.innerHTML="<div class='note' style='margin-top:0'><b>AI Examination Room — Exam Builder.</b> The AI reads the paper and builds both kinds of questions: multiple choice (two different AIs must agree on each answer) and written questions (the AI writes a model answer that is used only for marking). Nothing is saved until you tap Save.</div>"
+  body.innerHTML="<div class='note' style='margin-top:0'><b>AI Examination Room — Exam Builder.</b> The AI reads the paper and builds both kinds of questions: multiple choice (two different AIs must agree on each answer) and written questions (the AI writes a model answer that is used only for marking). Chichewa papers are built as written questions only. Nothing is saved until you tap Save.</div>"
    +"<div id='ebSpace' style='color:var(--sub);font-size:12px;margin:8px 0 0'>Checking space...</div>"
    +"<div style='font-weight:700;margin:10px 0 6px'>1. Accuracy test</div>"
    +"<button type='button' class='btn' id='ebAcc'>Run accuracy test (12 maths questions)</button>"
@@ -801,5 +807,5 @@ function render(body){
   showSpace();
 }
 
-window.EduExamBuilder={render:render,version:"2.3",_readFileText:readFileText,_counts:reportCounts,_guess:guessFrom,_report:reportLines,_looksScanned:looksScanned};
+window.EduExamBuilder={render:render,version:"2.5",_readFileText:readFileText,_counts:reportCounts,_guess:guessFrom,_report:reportLines,_looksScanned:looksScanned};
 })();
