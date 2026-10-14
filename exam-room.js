@@ -1,5 +1,5 @@
 /* Edu Library: AI Examination Room (student screen) v2.1
-   v2.1: new clean sunset wallpaper (no words, books and lamp only at the bottom corners) replaces the old purple sunset JPG; light dark layer over it; picture centred.
+   v2.1: new clean sunset wallpaper (no words, books and lamp only at the bottom corners) replaces the old purple sunset JPG; light dark layer over it; picture centred. The website address was changed to edu-library.edulibrary.workers.dev (the old address no longer exists, so the wallpaper could not load and the drawn pencils picture showed instead).
    v2.0: question text now shows __underlined words__ as real underlined text (no more double dashes), and the level/class/subject cards no longer let the text overlap the "papers / questions" badge.
    v1.9: fourth wallpaper "Edu AI" (the robot picture, room-bg-eduai.jpg) with a dark layer over it so the text stays easy to read.
    v1.8: round icons on the level cards (notebook, graduation cap, college) and on the class cards (like the Library), wallpaper is now taken from the website first, then the copy inside the app. Tertiary shows automatically once it has papers.
@@ -37,7 +37,7 @@ var WALLS={
 var ACCS={orange:["Orange","#F25E1E","#F77864"],pink:["Pink","#C2417F","#E86AA6"],blue:["Blue","#1C6FA6","#3B8FD4"],green:["Green","#2FA36B","#56C48E"],violet:["Violet","#7A4CC2","#A58AEA"]};
 var SIZES={s:["Small",.92],m:["Normal",1],l:["Large",1.12],x:["Extra large",1.25]};
 var DEF={wall:"sunset",acc:"orange",size:"m"};
-var SITE="https://edu-library.januarysteven154.workers.dev/";
+var SITE="https://edu-library.edulibrary.workers.dev/";
 var wallTok=0,hashOn=false;
 
 function e(s){return String(s==null?"":s).replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c];});}
@@ -887,7 +887,7 @@ window.EduRoom={
   speak:function(i){if(S.exp[i]&&S.exp[i]!=="Thinking..."&&typeof window.speakText==="function")window.speakText(SPK+i,S.exp[i]);},
   report:report,
   zoom:zoom,
-  version:"2.0",
+  version:"2.1",
   _t:{band:band,shuffle:shuffle,fmt:fmt,qf:qf,S:S,streak:streakInfo,weak:weakList,getSet:getSet}
 };
 })();
