@@ -4942,5 +4942,26 @@ body.landing .l2 .inside .fg3 b,body.landing .l2 .inside .insnote,body.landing .
   });
 })();
 </script>
+<style id="eduTablet">
+/* TABLET LAYOUT (v1.7): only applies on screens 768px wide or more. Phones never run these rules. */
+@media (min-width:768px){
+  .wrap{max-width:860px}
+  .topbar{max-width:none}
+  .cgrid{grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
+  .cgrid.Tertiary{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .sublist{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+  .picks{grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:18px}
+  #classBooks{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));column-gap:14px;align-items:stretch}
+  #classBooks .empty{grid-column:1/-1}
+  .aiwrap{max-width:860px}
+  .bottomnav{left:0;right:0;margin:0 auto;width:min(100%,720px)}
+  .bottomnav a{font-size:11.5px;padding-top:11px;padding-bottom:10px}
+}
+@media (min-width:1100px){
+  .wrap{max-width:1000px}
+  .cgrid{grid-template-columns:repeat(4,minmax(0,1fr))}
+  .cgrid.Tertiary{grid-template-columns:repeat(3,minmax(0,1fr))}
+}
+</style>
 </body>
 </html>
