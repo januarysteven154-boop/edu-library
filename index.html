@@ -4919,5 +4919,28 @@ body.landing .l2 .inside .fg3 b,body.landing .l2 .inside .insnote,body.landing .
 .srvwarn{margin-top:6px;color:#E0892B;font-weight:700}
 .srverr{color:#E0892B}
 </style>
+<script>
+/* PHONE BACK BUTTON (1.6.3): the book viewer now gets its own history step, so Back closes the book and returns to the page you were on (Search, Library, etc.) instead of jumping to the Library. */
+(function(){
+  var PVH=false,PVHASH="";
+  function pvOpen(){return !!document.querySelector(".pv");}
+  function sync(){
+    var open=pvOpen();
+    if(open&&!PVH){
+      PVH=true;PVHASH=location.hash;
+      try{history.pushState({edupv:1},"",location.href);}catch(e){PVH=false;}
+    }else if(!open&&PVH){
+      PVH=false;
+      /* closed with the X button: take the extra step back. If the page itself changed, leave history alone. */
+      if(location.hash===PVHASH&&history.state&&history.state.edupv){try{history.back();}catch(e){}}
+    }
+  }
+  try{new MutationObserver(sync).observe(document.body,{childList:true});}catch(e){}
+  /* phone Back pressed while a book is open: close only the book */
+  window.addEventListener("popstate",function(){
+    if(pvOpen()){PVH=false;try{closePreview();}catch(e){var m=document.querySelector(".pv");if(m)m.remove();}}
+  });
+})();
+</script>
 </body>
 </html>
