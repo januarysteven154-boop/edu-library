@@ -3704,7 +3704,7 @@ window.addEventListener("hashchange", render);
 </script>
 <script>
 /* ---------- Reading mode + Settings ---------- */
-const APP_VERSION="1.8.14";
+const APP_VERSION="1.8.15";
 const APP_CHANGES=[
  "1.8.11: chats are now kept separately for each signed-in student on a shared phone; Delete my chats always clears this phone; clearer sign-in, privacy and PIN wording; Past Papers named the same everywhere.",
  "1.8.10: on the Privacy and Terms page the email and WhatsApp number can be tapped to write an email or open WhatsApp.",
@@ -5132,17 +5132,40 @@ body.libbg:not(.gate):not(.light):not(.sunset) .pops button,body.exbg:not(.gate)
 })();
 </script>
 <script>
-/* PHONE BACK BUTTON, WHOLE APP (1.8.14): one Back press goes back exactly one step.
-   Steps that do not change the page address (Exam Room screens, Admin tabs and folders, pop-ups, sheets, the chat history drawer) now get their own history step, so Back closes/undoes only that step instead of jumping to the Library.
+/* PHONE BACK BUTTON, WHOLE APP (1.8.15): one Back press goes back exactly one step.
+   Screens that do not change the page address (Exam Room levels/classes/subjects/questions, Admin tabs and folders, pop-ups, sheets, the chat history drawer) get one real history step for EACH step you go forward (added when you tap, like normal pages), so Back undoes exactly one step and never leaves the app early.
    The on-screen arrow also goes back through the real history when it points at the page you came from, so Back never loops between two pages. */
 (function(){
-  var guarded=false,GHASH="",skip=false,timer=null,prog=false;
+  var G=0,skip=0,timer=null,prog=false;
   var stack=[location.hash||"#/"];
   function inRoom(){return (location.hash||"").indexOf("#/room")===0;}
   function pvOpen(){return !!document.querySelector(".pv");}
-  function roomBack(){return inRoom()?document.querySelector("#topHeader .back"):null;}
-  function admDrill(){try{return ADM_STEPS.some(function(k){return admNav[k]!=="";});}catch(e){return false;}}
-  /* one Back press inside the Examination Room = one screen back */
+  function admDrill(){var n=0;try{ADM_STEPS.forEach(function(k){if(admNav[k]!=="")n++;});}catch(e){}return n;}
+  function roomDepth(S){
+    var d=(S.lv?1:0)+(S.cls?1:0)+(S.sub?1:0)+((S.paper||S.mix)?1:0),sc=S.screen;
+    if(sc==="custom")return 1;
+    if(sc==="result")return 1;
+    if(sc==="review")return 2;
+    if(sc==="quiz"||sc==="marking")return d+1+(S.i||0);
+    if(sc==="read")return S.back==="quiz"?d+2+(S.i||0):d+1;
+    return d;
+  }
+  /* how many "extra steps" are on screen right now (each one needs one history entry) */
+  function depth(){
+    if(pvOpen())return 0; /* the book viewer has its own history step */
+    var n=document.querySelectorAll(".aimodal").length;
+    if(document.getElementById("aiAddSheet"))n++;
+    var dr=document.getElementById("aiHist");if(dr&&dr.classList.contains("open"))n++;
+    if(document.getElementById("rmPop"))n++;
+    if(document.body.classList.contains("admpanel")){
+      var tab="home";try{tab=adminTab;}catch(e){}
+      if(tab!=="home"){n++;if(tab==="dashboard")n+=admDrill();}
+    }
+    var R=window.EduRoom;
+    if(inRoom()&&R&&R._t&&R._t.S){try{n+=roomDepth(R._t.S);}catch(e){}}
+    return n;
+  }
+  /* close the top-most extra step */
   function roomClose(R,S){
     try{
       var sc=S.screen;
@@ -5155,44 +5178,41 @@ body.libbg:not(.gate):not(.light):not(.sunset) .pops button,body.exbg:not(.gate)
       else R.up();
     }catch(x){}
   }
-  /* what is the top-most "extra step" on screen right now (null = a normal page) */
-  function top(){
-    if(pvOpen())return null; /* the book viewer has its own history step */
+  function closeTop(){
+    if(pvOpen())return;
     var m=document.querySelectorAll(".aimodal");
-    if(m.length){var mm=m[m.length-1];return{close:function(){mm.click();}};}
-    if(document.getElementById("aiAddSheet"))return{close:function(){try{aiAddSheet(false);}catch(e){var x=document.getElementById("aiAddSheet");if(x)x.remove();}}};
+    if(m.length){m[m.length-1].click();return;}
+    if(document.getElementById("aiAddSheet")){try{aiAddSheet(false);}catch(e){var x=document.getElementById("aiAddSheet");if(x)x.remove();}return;}
     var d=document.getElementById("aiHist");
-    if(d&&d.classList.contains("open"))return{close:function(){try{toggleAIHist(false);}catch(e){d.classList.remove("open");}}};
+    if(d&&d.classList.contains("open")){try{toggleAIHist(false);}catch(e){d.classList.remove("open");}return;}
     var p=document.getElementById("rmPop");
-    if(p)return{close:function(){p.remove();}};
+    if(p){p.remove();return;}
     if(document.body.classList.contains("admpanel")){
       var tab="home";try{tab=adminTab;}catch(e){}
-      if(tab==="dashboard"&&admDrill())return{close:function(){try{admBackOne();}catch(e){}}};
-      if(tab!=="home")return{close:function(){try{admGo("home");}catch(e){}}};
+      if(tab==="dashboard"&&admDrill()){try{admBackOne();}catch(e){}return;}
+      if(tab!=="home"){try{admGo("home");}catch(e){}return;}
     }
-    /* AI Examination Room: its screens (level > class > subject > paper > questions > result) live inside the page */
     var R=window.EduRoom;
     if(inRoom()&&R&&R._t&&R._t.S){
-      var RS=R._t.S;
-      if(RS.screen!=="setup"||RS.lv)return{close:function(){roomClose(R,RS);}};
+      var S=R._t.S;
+      if(roomDepth(S)>0)roomClose(R,S);
     }
-    var rb=roomBack();
-    if(rb)return{close:function(){prog=true;try{rb.click();}catch(e){}prog=false;}};
-    return null;
   }
   function check(){
     timer=null;
-    var t=top();
-    if(t&&!guarded){
-      guarded=true;GHASH=location.hash;
-      try{history.pushState({eduguard:1},"",location.href);}catch(e){guarded=false;}
-    }else if(!t&&guarded){
-      guarded=false;
-      /* the step was closed with its own button: remove the extra history step (unless the page itself changed) */
-      if(location.hash===GHASH&&history.state&&history.state.eduguard){skip=true;try{history.back();}catch(e){skip=false;}}
+    var D=depth();
+    if(D>G){
+      /* went forward: add one history step per new level (this runs right after your tap) */
+      while(G<D){
+        try{history.pushState({eduguard:G+1},"",location.href);G++;}catch(e){G=D;break;}
+      }
+    }else if(D<G){
+      /* went back with an on-screen button: remove the extra history steps */
+      var k=G-D;G=D;
+      if(history.state&&history.state.eduguard){skip++;try{history.go(-k);}catch(e){skip=0;}}
     }
   }
-  function later(){if(!timer)timer=setTimeout(check,80);}
+  function later(){if(!timer)timer=setTimeout(check,60);}
   function watch(){
     if(!document.body)return setTimeout(watch,200);
     try{new MutationObserver(later).observe(document.body,{childList:true,subtree:true,attributes:true,attributeFilter:["class"]});}catch(e){}
@@ -5203,21 +5223,22 @@ body.libbg:not(.gate):not(.light):not(.sunset) .pops button,body.exbg:not(.gate)
     var h=location.hash||"#/";
     if(stack.length>1&&stack[stack.length-2]===h)stack.pop();
     else if(stack[stack.length-1]!==h){stack.push(h);if(stack.length>60)stack.shift();}
+    G=0; /* the page changed: old steps are left behind */
     later();
   });
   window.addEventListener("popstate",function(e){
-    if(skip){skip=false;return;}
+    if(skip>0){skip--;return;}
     if(pvOpen())return; /* the book viewer handles its own Back */
-    var st=e.state;
-    if(st&&st.eduguard&&!guarded){
-      /* a leftover step from a screen that is already gone: skip over it */
-      try{history.back();}catch(x){}
+    var m=(e.state&&e.state.eduguard)||0;
+    if(m>G){
+      /* landed on a leftover step from a screen that is already gone: skip over it */
+      if(G===0){try{history.back();}catch(x){}}
       return;
     }
-    if(!guarded)return;
-    guarded=false;
-    var t=top();
-    if(t){try{t.close();}catch(x){}}
+    var popped=G-m;
+    if(popped<=0)return;
+    G=m;
+    for(var i=0;i<popped&&i<3;i++){try{closeTop();}catch(x){}}
     later();
   });
   /* on-screen arrow: when it points at the page we came from, go back through the real history */
