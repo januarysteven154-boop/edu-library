@@ -3704,7 +3704,7 @@ window.addEventListener("hashchange", render);
 </script>
 <script>
 /* ---------- Reading mode + Settings ---------- */
-const APP_VERSION="1.8.11";
+const APP_VERSION="1.8.13";
 const APP_CHANGES=[
  "1.8.11: chats are now kept separately for each signed-in student on a shared phone; Delete my chats always clears this phone; clearer sign-in, privacy and PIN wording; Past Papers named the same everywhere.",
  "1.8.10: on the Privacy and Terms page the email and WhatsApp number can be tapped to write an email or open WhatsApp.",
@@ -5129,6 +5129,91 @@ body.libbg:not(.gate):not(.light):not(.sunset) .pops button,body.exbg:not(.gate)
   window.addEventListener("popstate",function(){
     if(pvOpen()){PVH=false;try{closePreview();}catch(e){var m=document.querySelector(".pv");if(m)m.remove();}}
   });
+})();
+</script>
+<script>
+/* PHONE BACK BUTTON, WHOLE APP (1.8.13): one Back press goes back exactly one step.
+   Steps that do not change the page address (Exam Room screens, Admin tabs and folders, pop-ups, sheets, the chat history drawer) now get their own history step, so Back closes/undoes only that step instead of jumping to the Library.
+   The on-screen arrow also goes back through the real history when it points at the page you came from, so Back never loops between two pages. */
+(function(){
+  var guarded=false,GHASH="",skip=false,timer=null,prog=false;
+  var stack=[location.hash||"#/"];
+  function inRoom(){return (location.hash||"").indexOf("#/room")===0;}
+  function pvOpen(){return !!document.querySelector(".pv");}
+  function roomBack(){return inRoom()?document.querySelector("#topHeader .back"):null;}
+  function admDrill(){try{return ADM_STEPS.some(function(k){return admNav[k]!=="";});}catch(e){return false;}}
+  /* what is the top-most "extra step" on screen right now (null = a normal page) */
+  function top(){
+    if(pvOpen())return null; /* the book viewer has its own history step */
+    var m=document.querySelectorAll(".aimodal");
+    if(m.length){var mm=m[m.length-1];return{close:function(){mm.click();}};}
+    if(document.getElementById("aiAddSheet"))return{close:function(){try{aiAddSheet(false);}catch(e){var x=document.getElementById("aiAddSheet");if(x)x.remove();}}};
+    var d=document.getElementById("aiHist");
+    if(d&&d.classList.contains("open"))return{close:function(){try{toggleAIHist(false);}catch(e){d.classList.remove("open");}}};
+    var p=document.getElementById("rmPop");
+    if(p)return{close:function(){p.remove();}};
+    if(document.body.classList.contains("admpanel")){
+      var tab="home";try{tab=adminTab;}catch(e){}
+      if(tab==="dashboard"&&admDrill())return{close:function(){try{admBackOne();}catch(e){}}};
+      if(tab!=="home")return{close:function(){try{admGo("home");}catch(e){}}};
+    }
+    var rb=roomBack();
+    if(rb)return{close:function(){prog=true;try{rb.click();}catch(e){}prog=false;}};
+    return null;
+  }
+  function check(){
+    timer=null;
+    var t=top();
+    if(t&&!guarded){
+      guarded=true;GHASH=location.hash;
+      try{history.pushState({eduguard:1},"",location.href);}catch(e){guarded=false;}
+    }else if(!t&&guarded){
+      guarded=false;
+      /* the step was closed with its own button: remove the extra history step (unless the page itself changed) */
+      if(location.hash===GHASH&&history.state&&history.state.eduguard){skip=true;try{history.back();}catch(e){skip=false;}}
+    }
+  }
+  function later(){if(!timer)timer=setTimeout(check,80);}
+  function watch(){
+    if(!document.body)return setTimeout(watch,200);
+    try{new MutationObserver(later).observe(document.body,{childList:true,subtree:true,attributes:true,attributeFilter:["class"]});}catch(e){}
+    later();
+  }
+  watch();
+  window.addEventListener("hashchange",function(){
+    var h=location.hash||"#/";
+    if(stack.length>1&&stack[stack.length-2]===h)stack.pop();
+    else if(stack[stack.length-1]!==h){stack.push(h);if(stack.length>60)stack.shift();}
+    later();
+  });
+  window.addEventListener("popstate",function(e){
+    if(skip){skip=false;return;}
+    if(pvOpen())return; /* the book viewer handles its own Back */
+    var st=e.state;
+    if(st&&st.eduguard&&!guarded){
+      /* a leftover step from a screen that is already gone: skip over it */
+      try{history.back();}catch(x){}
+      return;
+    }
+    if(!guarded)return;
+    guarded=false;
+    var t=top();
+    if(t){try{t.close();}catch(x){}}
+    later();
+  });
+  /* on-screen arrow: when it points at the page we came from, go back through the real history */
+  document.addEventListener("click",function(e){
+    if(prog)return;
+    var b=e.target&&e.target.closest?e.target.closest("button.back"):null;
+    if(!b)return;
+    var oc=b.getAttribute("onclick")||"";
+    var m=oc.match(/^\s*location\.hash\s*=\s*'([^']*)'\s*;?\s*$/);
+    if(!m)return;
+    if(stack.length>1&&stack[stack.length-2]===m[1]){
+      e.preventDefault();e.stopImmediatePropagation();
+      try{history.back();}catch(x){location.hash=m[1];}
+    }
+  },true);
 })();
 </script>
 <style id="eduTablet">
