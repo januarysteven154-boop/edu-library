@@ -3704,7 +3704,7 @@ window.addEventListener("hashchange", render);
 </script>
 <script>
 /* ---------- Reading mode + Settings ---------- */
-const APP_VERSION="1.8.13";
+const APP_VERSION="1.8.14";
 const APP_CHANGES=[
  "1.8.11: chats are now kept separately for each signed-in student on a shared phone; Delete my chats always clears this phone; clearer sign-in, privacy and PIN wording; Past Papers named the same everywhere.",
  "1.8.10: on the Privacy and Terms page the email and WhatsApp number can be tapped to write an email or open WhatsApp.",
@@ -5132,7 +5132,7 @@ body.libbg:not(.gate):not(.light):not(.sunset) .pops button,body.exbg:not(.gate)
 })();
 </script>
 <script>
-/* PHONE BACK BUTTON, WHOLE APP (1.8.13): one Back press goes back exactly one step.
+/* PHONE BACK BUTTON, WHOLE APP (1.8.14): one Back press goes back exactly one step.
    Steps that do not change the page address (Exam Room screens, Admin tabs and folders, pop-ups, sheets, the chat history drawer) now get their own history step, so Back closes/undoes only that step instead of jumping to the Library.
    The on-screen arrow also goes back through the real history when it points at the page you came from, so Back never loops between two pages. */
 (function(){
@@ -5142,6 +5142,19 @@ body.libbg:not(.gate):not(.light):not(.sunset) .pops button,body.exbg:not(.gate)
   function pvOpen(){return !!document.querySelector(".pv");}
   function roomBack(){return inRoom()?document.querySelector("#topHeader .back"):null;}
   function admDrill(){try{return ADM_STEPS.some(function(k){return admNav[k]!=="";});}catch(e){return false;}}
+  /* one Back press inside the Examination Room = one screen back */
+  function roomClose(R,S){
+    try{
+      var sc=S.screen;
+      if(sc==="custom")R.customDone();
+      else if(sc==="read")R.unread();
+      else if(sc==="review")R.result();
+      else if(sc==="result")R.home();
+      else if(sc==="marking"){if(S.mk&&S.mk.err)R.unmark();}
+      else if(sc==="quiz"){if(S.i>0)R.step(-1);else R.quit();}
+      else R.up();
+    }catch(x){}
+  }
   /* what is the top-most "extra step" on screen right now (null = a normal page) */
   function top(){
     if(pvOpen())return null; /* the book viewer has its own history step */
@@ -5156,6 +5169,12 @@ body.libbg:not(.gate):not(.light):not(.sunset) .pops button,body.exbg:not(.gate)
       var tab="home";try{tab=adminTab;}catch(e){}
       if(tab==="dashboard"&&admDrill())return{close:function(){try{admBackOne();}catch(e){}}};
       if(tab!=="home")return{close:function(){try{admGo("home");}catch(e){}}};
+    }
+    /* AI Examination Room: its screens (level > class > subject > paper > questions > result) live inside the page */
+    var R=window.EduRoom;
+    if(inRoom()&&R&&R._t&&R._t.S){
+      var RS=R._t.S;
+      if(RS.screen!=="setup"||RS.lv)return{close:function(){roomClose(R,RS);}};
     }
     var rb=roomBack();
     if(rb)return{close:function(){prog=true;try{rb.click();}catch(e){}prog=false;}};
