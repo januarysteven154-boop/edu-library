@@ -1858,6 +1858,7 @@ function route(){
   if(parts[0] === "ai") return renderAI(app);
   if(parts[0] === "admin" && parts[1] === "panel") return isAdmin() ? renderAdminPanel(app) : (location.hash="#/admin");
   if(parts[0] === "admin") return renderAdmin(app);
+  if(parts[0] === "classroom") return eduClassroomOpen(app);
   return renderHome(app);
 }
 
@@ -1880,6 +1881,19 @@ function eduRoomOpen(app){
     lc.onerror=()=>{app.innerHTML='<div class="empty">Could not open the Examination Room. Check your internet and try again.</div>';};
     document.head.appendChild(lc);
   };
+  document.head.appendChild(sc);
+}
+/* AI Classroom (test): small script loaded on demand from the website */
+function eduClassroomOpen(app){
+  setActiveNav("settings");
+  const go=()=>window.EduClassroom.open(app);
+  if(window.EduClassroom)return go();
+  setHeader(`<button class="back" onclick="location.hash='#/settings'">←</button><h2>AI Classroom</h2>`);
+  app.innerHTML='<div class="empty">Loading...</div>';
+  const sc=document.createElement("script");
+  sc.src="https://edu-library.edulibrary.workers.dev/classroom.js?v="+Date.now();
+  sc.onload=go;
+  sc.onerror=()=>{try{sc.remove();}catch(x){}app.innerHTML='<div class="empty">Could not open the Classroom. Check your internet and try again.</div>';};
   document.head.appendChild(sc);
 }
 function renderHome(app){
@@ -2058,6 +2072,7 @@ function renderSettings(app,sub){
         ${item("reading","Reading mode","Warmer screen, colour and strength")}
         ${item("language","Language","Choose your app language")}
         ${item("about","About app","Version information and credentials")}
+        ${(window.EduAcct&&window.EduAcct.user&&window.EduAcct.user()==="billz")?`<a class="setitem" href="#/classroom"><span><b>AI Classroom (test)</b><small>Test account only</small></span>${chev}</a>`:""}
       </div>
     </div>`;
     try{applyLang();}catch(e){}
@@ -3704,8 +3719,9 @@ window.addEventListener("hashchange", render);
 </script>
 <script>
 /* ---------- Reading mode + Settings ---------- */
-const APP_VERSION="1.8.15";
+const APP_VERSION="1.8.16";
 const APP_CHANGES=[
+ "1.8.16: hidden AI Classroom test screen (only for the test account, Settings); nothing else changed.",
  "1.8.11: chats are now kept separately for each signed-in student on a shared phone; Delete my chats always clears this phone; clearer sign-in, privacy and PIN wording; Past Papers named the same everywhere.",
  "1.8.10: on the Privacy and Terms page the email and WhatsApp number can be tapped to write an email or open WhatsApp.",
  "1.8.9: new Privacy and Terms page (opens without internet), linked from the agreement page and from Settings > About app.",
