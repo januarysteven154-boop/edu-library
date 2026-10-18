@@ -2072,7 +2072,7 @@ function renderSettings(app,sub){
         ${item("reading","Reading mode","Warmer screen, colour and strength")}
         ${item("language","Language","Choose your app language")}
         ${item("about","About app","Version information and credentials")}
-        ${(window.EduAcct&&window.EduAcct.user&&window.EduAcct.user()==="billz")?`<a class="setitem" href="#/classroom"><span><b>AI Classroom (test)</b><small>Test account only</small></span>${chev}</a>`:""}
+        ${(window.EduAcct&&window.EduAcct.user&&["billz","brey"].indexOf(window.EduAcct.user())>-1)?`<a class="setitem" href="#/classroom"><span><b>AI Classroom (test)</b><small>Test account only</small></span>${chev}</a>`:""}
       </div>
     </div>`;
     try{applyLang();}catch(e){}
