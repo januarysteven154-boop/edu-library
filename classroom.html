@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AI Classroom (test)</title>
+<style>
+body{font-family:sans-serif;margin:0;padding:12px;background:#f5f7fa;color:#111}
+h1{font-size:20px}h2{font-size:17px;margin:14px 0 6px}
+.card{background:#fff;border-radius:10px;padding:12px;margin:10px 0;box-shadow:0 1px 3px #0002}
+input,button{font-size:16px;padding:10px;margin:4px 0;width:100%;box-sizing:border-box}
+button{background:#1a6b3c;color:#fff;border:0;border-radius:8px}
+button:disabled{background:#999}
+.msg{white-space:pre-wrap;line-height:1.5}
+.err{color:#b00020}
+.small{font-size:13px;color:#555}
+</style>
+</head>
+<body>
+<h1>AI Classroom (test page)</h1>
+
+<div class="card" id="loginBox">
+  <input id="user" placeholder="Username" autocomplete="off">
+  <input id="pin" placeholder="6-digit PIN" type="password" inputmode="numeric">
+  <input id="sid" placeholder="Class code (session id)" autocomplete="off">
+  <button id="loginBtn">Join class</button>
+  <div id="loginErr" class="err"></div>
+</div>
+
+<div id="classBox" style="display:none">
+  <div class="card">
+    <div id="status" class="small"></div>
+    <h2>Lesson</h2>
+    <select id="lessonSel" style="font-size:16px;padding:8px;width:100%"></select>
+    <div id="lesson" class="msg"></div>
+  </div>
+  <div class="card">
+    <h2>Ask the AI teacher</h2>
+    <input id="q" maxlength="300" placeholder="Your maths question (5 to 300 letters)">
+    <button id="askBtn">Ask</button>
+    <div id="askErr" class="err"></div>
+  </div>
+  <div class="card">
+    <h2>Class answers</h2>
+    <div id="feed" class="msg"></div>
+  </div>
+</div>
+
+<script>
+var API = "https://edu-ai-backend-three.vercel.app";
+var token = "", sid = "", pack = null, timer = null, busy = false;
+function $(i){return document.getElementById(i);}
+function clean(s){
+  return String(s||"")
+    .replace(/\\frac\{([^}]*)\}\{([^}]*)\}/g,"$1/$2")
+    .replace(/\\times/g,"\u00d7")
+    .replace(/\\\(|\\\)|\\\[|\\\]/g,"")
+    .replace(/\\,/g," ")
+    .replace(/\*\*/g,"");
+}
+function rid(){
+  var a="abcdefghijklmnopqrstuvwxyz0123456789", s="r";
+  for(var i=0;i<20;i++) s+=a[Math.floor(Math.random()*a.length)];
+  return s+Date.now();
+}
+function post(path, body, cb){
+  var h={"Content-Type":"application/json"};
+  if(token) h.Authorization="Bearer "+token;
+  fetch(API+path,{method:"POST",headers:h,body:JSON.stringify(body||{})})
+    .then(function(r){return r.json().catch(function(){return {error:"Bad reply"};});})
+    .then(cb)
+    .catch(function(){cb({error:"No connection. Please try again."});});
+}
+$("loginBtn").onclick=function(){
+  $("loginErr").textContent="";
+  var u=$("user").value.trim(), p=$("pin").value.trim();
+  sid=$("sid").value.trim();
+  if(!u||!p||!sid){$("loginErr").textContent="Fill in all three boxes.";return;}
+  post("/api/student-login",{username:u,pin:p},function(d){
+    $("pin").value="";
+    if(!d||!d.session||!d.session.access_token){
+      $("loginErr").textContent=(d&&d.error)||"Sign-in failed.";return;}
+    token=d.session.access_token;
+    $("loginBox").style.display="none";
+    $("classBox").style.display="block";
+    loadLessons();
+    poll();
+    timer=setInterval(poll,8000);
+  });
+};
+function loadLessons(){
+  fetch("lessons/std7-math.json").then(function(r){return r.json();}).then(function(j){
+    pack=j;
+    var sel=$("lessonSel");
+    sel.innerHTML="";
+    j.lessons.forEach(function(l,i){
+      var o=document.createElement("option");
+      o.value=i;o.textContent=l.title;sel.appendChild(o);
+    });
+    sel.onchange=showLesson;
+    showLesson();
+  }).catch(function(){
+    $("lesson").textContent="Lesson could not load.";
+  });
+}
+function showLesson(){
+  var l=pack.lessons[$("lessonSel").value], t="";
+  l.steps.forEach(function(s,i){t+=(i+1)+". "+s+"\n";});
+  t+="\nExamples:\n";
+  l.examples.forEach(function(e){t+=e.q+"  =>  "+e.a+"\n";});
+  t+="\nPractice:\n";
+  l.practice.forEach(function(e){t+=e.q+"\n";});
+  t+="\n("+pack.status+")";
+  $("lesson").textContent=t;
+}
+function poll(){
+  post("/api/book-link?classroom=feed&session="+sid,{},function(d){
+    if(d.error&&!d.items){$("status").textContent=d.error;return;}
+    $("status").textContent=(d.open?"Class is open. ":"Class is closed. ")+
+      "Answers used: "+d.used+" of "+d.max+(d.paused?" (AI is resting)":"");
+    var t="";
+    (d.items||[]).forEach(function(it){t+=clean(it.answer)+"\n\n-----\n\n";});
+    $("feed").textContent=t||"No answers yet.";
+  });
+}
+$("askBtn").onclick=function(){
+  if(busy)return;
+  var q=$("q").value.trim();
+  $("askErr").textContent="";
+  if(q.length<5){$("askErr").textContent="Write a longer question.";return;}
+  busy=true;$("askBtn").disabled=true;$("askBtn").textContent="Thinking...";
+  post("/api/book-link?classroom=ask&session="+sid,{requestId:rid(),question:q},function(d){
+    busy=false;$("askBtn").disabled=false;$("askBtn").textContent="Ask";
+    if(d.ok){$("q").value="";}
+    else{$("askErr").textContent=d.error||"Something went wrong.";}
+    poll();
+  });
+};
+</script>
+</body>
+</html>
