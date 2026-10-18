@@ -1,4 +1,4 @@
-/* AI Classroom (test) v0.3 - loaded on demand by index.html. Needs a signed-in student. */
+/* AI Classroom (test) v0.4 - loaded on demand by index.html. Needs a signed-in student. */
 (function(){
 var PACK={status:"NEEDS REVIEW",lessons:[
 {title:"Fractions: add, subtract, multiply",steps:["To add or subtract fractions, the bottom numbers (denominators) must be the same. Find a common denominator first.","Change each fraction so it has that denominator, then add or subtract only the top numbers (numerators).","To multiply fractions, multiply the tops together and the bottoms together. Then simplify."],examples:[["2/3 + 1/6","2/3 = 4/6. So 4/6 + 1/6 = 5/6."],["3/4 - 1/3","Common denominator is 12. 9/12 - 4/12 = 5/12."],["2/5 x 3/4","6/20, which simplifies to 3/10."]],practice:["1/2 + 1/3","7/8 - 1/4","3/5 x 2/3"]},
@@ -10,7 +10,24 @@ function base(){try{return aiBase();}catch(e){return "https://edu-ai-backend-thr
 function el(tag,txt,st){var e=document.createElement(tag);if(txt!=null)e.textContent=txt;if(st)e.style.cssText=st;return e;}
 function clean(s){return String(s||"").replace(/\\[dt]?frac\{([^}]*)\}\{([^}]*)\}/g,function(m,a,b){function w(x){x=x.trim();return /^[0-9A-Za-z.]+$/.test(x)?x:"("+x+")";}return w(a)+"/"+w(b);}).replace(/\\text\{([^}]*)\}/g,"$1").replace(/\\times/g,"\u00d7").replace(/\\div/g,"\u00f7").replace(/\\cdot/g,"\u00b7").replace(/\\left|\\right/g,"").replace(/\\\(|\\\)|\\\[|\\\]/g,"").replace(/\\,/g," ").replace(/\*\*/g,"");}
 function rid(){var a="abcdefghijklmnopqrstuvwxyz0123456789",s="r";for(var i=0;i<20;i++)s+=a[Math.floor(Math.random()*a.length)];return s+Date.now();}
-function stop(){if(timer){clearInterval(timer);timer=null;}}
+function hush(){try{if(window.speechSynthesis)speechSynthesis.cancel();}catch(e){}}
+function say(t){
+  if(!window.speechSynthesis||typeof SpeechSynthesisUtterance==="undefined")return false;
+  hush();
+  var s=String(t||"").replace(/(\d+(?:\.\d+)?)\s*\/\s*(\d+(?:\.\d+)?)/g,"$1 over $2").replace(/\u00d7/g," times ").replace(/\u00f7/g," divided by ").replace(/=>/g,". ").replace(/=/g," equals ").replace(/\+/g," plus ").replace(/ - /g," minus ").replace(/[()*]/g," ").replace(/-----/g," ");
+  var parts=s.match(/[^.!?\n]+[.!?]?/g)||[];
+  parts.forEach(function(p){if(!p.trim())return;var u=new SpeechSynthesisUtterance(p.trim());u.rate=0.9;u.lang="en";speechSynthesis.speak(u);});
+  return true;
+}
+function listenRow(getText,msgEl){
+  var row=el("div",null,"display:flex;gap:8px;margin:8px 0");
+  var b1=el("button","Listen","flex:1;font-size:16px;padding:10px");
+  var b2=el("button","Stop","flex:1;font-size:16px;padding:10px");
+  b1.onclick=function(){msgEl.textContent="";if(!say(getText()))msgEl.textContent="Voice is not available on this phone.";};
+  b2.onclick=hush;
+  row.appendChild(b1);row.appendChild(b2);return row;
+}
+function stop(){hush();if(timer){clearInterval(timer);timer=null;}}
 function post(path,body){
   return window.EduAcct.token().then(function(tk){
     if(!tk)return {error:"Please sign in again."};
@@ -49,7 +66,7 @@ function build(cls){
   PACK.lessons.forEach(function(l,i){var o=el("option",l.title);o.value=i;sel.appendChild(o);});
   var ls=el("div",null,"white-space:pre-wrap;line-height:1.5");
   function show(){var l=PACK.lessons[sel.value],t="";l.steps.forEach(function(s,i){t+=(i+1)+". "+s+"\n";});t+="\nExamples:\n";l.examples.forEach(function(e){t+=e[0]+"  =>  "+e[1]+"\n";});t+="\nPractice:\n";l.practice.forEach(function(e){t+=e+"\n";});ls.textContent=t;}
-  sel.onchange=show;show();c1.appendChild(sel);c1.appendChild(ls);cls.appendChild(c1);
+  sel.onchange=show;show();var lm=el("div",null,"color:#e0455a");c1.appendChild(sel);c1.appendChild(listenRow(function(){return ls.textContent;},lm));c1.appendChild(lm);c1.appendChild(ls);cls.appendChild(c1);
   var c2=el("div",null,"background:rgba(127,127,127,.16);border-radius:14px;padding:12px;margin-bottom:12px");
   c2.appendChild(el("b","Ask the AI teacher"));
   var q=el("input");q.maxLength=300;q.placeholder="Your maths question";q.style.cssText="width:100%;box-sizing:border-box;font-size:16px;padding:10px;margin:8px 0";
@@ -66,7 +83,7 @@ function build(cls){
   c2.appendChild(q);c2.appendChild(ask);c2.appendChild(qe);cls.appendChild(c2);
   var c3=el("div",null,"background:rgba(127,127,127,.16);border-radius:14px;padding:12px");
   c3.appendChild(el("b","Class answers (newest first)"));
-  var fd=el("div",null,"white-space:pre-wrap;line-height:1.5;margin-top:8px");ui.feed=fd;c3.appendChild(fd);cls.appendChild(c3);
+  var fd=el("div",null,"white-space:pre-wrap;line-height:1.5;margin-top:8px");ui.feed=fd;var am=el("div",null,"color:#e0455a");c3.appendChild(listenRow(function(){return fd.textContent.split("-----")[0];},am));c3.appendChild(am);c3.appendChild(fd);cls.appendChild(c3);
 }
 function refresh(done){
   if(!ui.status||!document.body.contains(ui.status)){stop();return;}
