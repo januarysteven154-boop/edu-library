@@ -1,0 +1,64 @@
+{
+  "pack": "std7-math-pack-1",
+  "status": "NEEDS REVIEW",
+  "note": "Written by Claude from general Standard 7 topics. Not checked against the Malawi curriculum or any textbook.",
+  "lessons": [
+    {
+      "id": "fractions",
+      "title": "Fractions: add, subtract, multiply",
+      "steps": [
+        "To add or subtract fractions, the bottom numbers (denominators) must be the same. Find a common denominator first.",
+        "Change each fraction so it has that denominator, then add or subtract only the top numbers (numerators).",
+        "To multiply fractions, multiply the tops together and the bottoms together. Then simplify."
+      ],
+      "examples": [
+        {"q": "2/3 + 1/6", "a": "2/3 = 4/6. So 4/6 + 1/6 = 5/6."},
+        {"q": "3/4 - 1/3", "a": "Common denominator is 12. 9/12 - 4/12 = 5/12."},
+        {"q": "2/5 x 3/4", "a": "6/20, which simplifies to 3/10."}
+      ],
+      "practice": [
+        {"q": "1/2 + 1/3", "a": "5/6"},
+        {"q": "7/8 - 1/4", "a": "5/8"},
+        {"q": "3/5 x 2/3", "a": "2/5"}
+      ]
+    },
+    {
+      "id": "decimals",
+      "title": "Decimals: add, subtract, multiply",
+      "steps": [
+        "When you add or subtract decimals, line up the decimal points. Add zeros if it helps.",
+        "Work from the right, like normal numbers, and keep the decimal point in the same place in the answer.",
+        "To multiply decimals, multiply as whole numbers, then count the decimal places in both numbers together."
+      ],
+      "examples": [
+        {"q": "3.45 + 2.7", "a": "3.45 + 2.70 = 6.15."},
+        {"q": "5.2 - 1.75", "a": "5.20 - 1.75 = 3.45."},
+        {"q": "0.4 x 0.3", "a": "4 x 3 = 12. There are 2 decimal places in total, so 0.12."}
+      ],
+      "practice": [
+        {"q": "12.5 + 4.75", "a": "17.25"},
+        {"q": "10 - 3.6", "a": "6.4"},
+        {"q": "0.5 x 0.6", "a": "0.3"}
+      ]
+    },
+    {
+      "id": "percentages",
+      "title": "Percentages",
+      "steps": [
+        "Percent means out of 100. 25% means 25 out of 100.",
+        "To find a percentage of an amount, divide the amount by 100, then multiply by the percentage.",
+        "To change a fraction to a percentage, make the bottom 100, or multiply the fraction by 100."
+      ],
+      "examples": [
+        {"q": "20% of MK 5000", "a": "5000 / 100 = 50. 50 x 20 = MK 1000."},
+        {"q": "Write 3/4 as a percentage", "a": "3/4 x 100 = 75%."},
+        {"q": "A shirt costs MK 2000. It has 10% off. What is the new price?", "a": "10% of 2000 = 200. 2000 - 200 = MK 1800."}
+      ],
+      "practice": [
+        {"q": "50% of MK 840", "a": "MK 420"},
+        {"q": "25% of 80", "a": "20"},
+        {"q": "Write 0.35 as a percentage", "a": "35%"}
+      ]
+    }
+  ]
+}
