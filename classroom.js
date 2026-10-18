@@ -1,4 +1,4 @@
-/* AI Classroom (test) v0.1 - loaded on demand by index.html. Needs a signed-in student. */
+/* AI Classroom (test) v0.2 - loaded on demand by index.html. Needs a signed-in student. */
 (function(){
 var PACK={status:"NEEDS REVIEW",lessons:[
 {title:"Fractions: add, subtract, multiply",steps:["To add or subtract fractions, the bottom numbers (denominators) must be the same. Find a common denominator first.","Change each fraction so it has that denominator, then add or subtract only the top numbers (numerators).","To multiply fractions, multiply the tops together and the bottoms together. Then simplify."],examples:[["2/3 + 1/6","2/3 = 4/6. So 4/6 + 1/6 = 5/6."],["3/4 - 1/3","Common denominator is 12. 9/12 - 4/12 = 5/12."],["2/5 x 3/4","6/20, which simplifies to 3/10."]],practice:["1/2 + 1/3","7/8 - 1/4","3/5 x 2/3"]},
@@ -8,7 +8,7 @@ var PACK={status:"NEEDS REVIEW",lessons:[
 var timer=null,busy=false,sid="",root=null;
 function base(){try{return aiBase();}catch(e){return "https://edu-ai-backend-three.vercel.app/api";}}
 function el(tag,txt,st){var e=document.createElement(tag);if(txt!=null)e.textContent=txt;if(st)e.style.cssText=st;return e;}
-function clean(s){return String(s||"").replace(/\\frac\{([^}]*)\}\{([^}]*)\}/g,"$1/$2").replace(/\\text\{([^}]*)\}/g,"$1").replace(/\\times/g,"\u00d7").replace(/\\div/g,"\u00f7").replace(/\\cdot/g,"\u00b7").replace(/\\left|\\right/g,"").replace(/\\\(|\\\)|\\\[|\\\]/g,"").replace(/\\,/g," ").replace(/\*\*/g,"");}
+function clean(s){return String(s||"").replace(/\\[dt]?frac\{([^}]*)\}\{([^}]*)\}/g,"$1/$2").replace(/\\text\{([^}]*)\}/g,"$1").replace(/\\times/g,"\u00d7").replace(/\\div/g,"\u00f7").replace(/\\cdot/g,"\u00b7").replace(/\\left|\\right/g,"").replace(/\\\(|\\\)|\\\[|\\\]/g,"").replace(/\\,/g," ").replace(/\*\*/g,"");}
 function rid(){var a="abcdefghijklmnopqrstuvwxyz0123456789",s="r";for(var i=0;i<20;i++)s+=a[Math.floor(Math.random()*a.length)];return s+Date.now();}
 function stop(){if(timer){clearInterval(timer);timer=null;}}
 function post(path,body){
@@ -60,21 +60,23 @@ function build(cls){
     busy=true;ask.disabled=true;ask.textContent="Thinking...";
     post("/book-link?classroom=ask&session="+encodeURIComponent(sid),{requestId:rid(),question:t}).then(function(d){
       busy=false;ask.disabled=false;ask.textContent="Ask";
-      if(d&&d.ok)q.value="";else qe.textContent=(d&&d.error)||"Something went wrong.";
-      refresh();});};
+      if(d&&d.ok){q.value="";qe.style.color="#5ec27a";qe.textContent="Answer added. See Class answers below.";}
+      else{qe.style.color="#e0455a";qe.textContent=(d&&d.error)||"Something went wrong.";}
+      refresh(function(){if(d&&d.ok){try{c3.scrollIntoView({behavior:"smooth",block:"start"});}catch(e){}}});});};
   c2.appendChild(q);c2.appendChild(ask);c2.appendChild(qe);cls.appendChild(c2);
   var c3=el("div",null,"background:rgba(127,127,127,.16);border-radius:14px;padding:12px");
-  c3.appendChild(el("b","Class answers"));
+  c3.appendChild(el("b","Class answers (newest first)"));
   var fd=el("div",null,"white-space:pre-wrap;line-height:1.5;margin-top:8px");ui.feed=fd;c3.appendChild(fd);cls.appendChild(c3);
 }
-function refresh(){
+function refresh(done){
   if(!ui.status||!document.body.contains(ui.status)){stop();return;}
   post("/book-link?classroom=feed&session="+encodeURIComponent(sid),{}).then(function(d){
     if(!ui.status||!document.body.contains(ui.status))return;
     if(!d||d.error&&!d.items){ui.status.textContent=(d&&d.error)||"";return;}
     ui.status.textContent=(d.open?"Class is open. ":"Class is closed. ")+"Answers used: "+d.used+" of "+d.max+(d.paused?" (AI is resting)":"");
-    var t="";(d.items||[]).forEach(function(it){t+=clean(it.answer)+"\n\n-----\n\n";});
-    ui.feed.textContent=t||"No answers yet.";});
+    var t="";(d.items||[]).slice().reverse().forEach(function(it){t+=clean(it.answer)+"\n\n-----\n\n";});
+    ui.feed.textContent=t||"No answers yet.";
+    if(typeof done==="function")done();});
 }
 window.EduClassroom={open:open,stop:stop};
 })();
