@@ -1,4 +1,4 @@
-/* AI Classroom v2.0 - loaded on demand by index.html. Needs a signed-in student.
+/* AI Classroom v2.1 - loaded on demand by index.html. Needs a signed-in student.
    Flow: choose level -> see the open class for that level -> Join -> live class screen
    (approved lesson, AI teacher card, hand raising, turns, shared answers). */
 (function(){
@@ -98,8 +98,8 @@ function lessonCard(l){
 /* ---------- start: choose level / find open class / join ---------- */
 function openScreen(app){
   stop();ui={};feedKey="";last=null;sid="";appRef=app;
-  try{setActiveNav("settings");}catch(e){}
-  try{setHeader('<button class="back" onclick="location.hash=\'#/settings\'">\u2190</button><h2>AI Classroom</h2>');}catch(e){}
+  try{setActiveNav("classroom");}catch(e){}
+  try{setHeader('<h2>AI Classroom</h2>');}catch(e){}
   app.innerHTML="";
   var box=el("div",null,"padding:14px");app.appendChild(box);
   if(!(window.EduAcct&&window.EduAcct.isIn&&window.EduAcct.isIn())){
