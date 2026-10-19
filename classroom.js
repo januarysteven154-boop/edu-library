@@ -1,7 +1,9 @@
-/* AI Classroom v3.1 - loaded on demand by index.html. Needs a signed-in student.
+/* AI Classroom v3.2 - loaded on demand by index.html. Needs a signed-in student.
    Same flow and same backend calls as v2.1:
    choose level -> no class / class open -> Join -> live class (lesson, AI teacher, hand raising, shared answers).
-   v3.0 = redesign; v3.1 = three education cards (Primary / Secondary / Tertiary) on the level screen. No backend change: sunset palette, light + dark, cards, status chips. No backend change.
+   v3.0 = redesign; v3.1 = three education cards (Primary / Secondary / Tertiary) on the level screen.
+   v3.2 = class timetable (month calendar) shown under "No class is open" and under "A class is open now".
+          Uses ONLY the backend action  POST /book-link?classroom=calendar  {from,to}. Statuses and the countdown use the server time.
    WALLPAPER LATER: put   .ecr{--ecr-wallpaper:url(classroom-bg.jpg)}   in any local CSS. Nothing else changes. */
 (function(){
 var LEVELS=[["standard1","Standard 1"],["standard2","Standard 2"],["standard3","Standard 3"],["standard4","Standard 4"],["standard5","Standard 5"],["standard6","Standard 6"],["standard7","Standard 7"],["standard8","Standard 8"],["form1","Form 1"],["form2","Form 2"],["form3","Form 3"],["form4","Form 4"]];
@@ -71,6 +73,30 @@ var CSS=[
 ".ecr-lv.on{border-color:var(--acc);background:var(--card2)}.ecr-lv:active{opacity:.85}",
 ".ecr button.ecr-cat:focus-visible,.ecr button.ecr-lv:focus-visible{outline:3px solid var(--speak);outline-offset:2px}",
 ".ecr-spin{display:inline-block;width:16px;height:16px;margin-right:8px;border:2px solid currentColor;border-right-color:transparent;border-radius:50%;animation:ecrs .8s linear infinite}@keyframes ecrs{to{transform:rotate(360deg)}}",
+/* timetable: navy and blue with subtle plum accents (own colours, scoped to .ecr-cal) */
+".ecr-cal{--c-bg:#0F1D42;--c-card:#162A57;--c-card2:#1F376E;--c-line:#34508F;--c-ink:#EAF1FF;--c-ink2:#A9BDE6;--c-blue:#6AB0FF;--c-onblue:#0A1530;--c-plum:#C79BEA;--c-onplum:#1E1030;--c-live:#35C779;--c-warn:#FFAA45;--c-bad:#FF7A80;--c-mute:#8C9AB8;margin:0 0 12px;padding:14px;border:1px solid var(--c-line);border-radius:16px;background:var(--c-bg);color:var(--c-ink)}",
+"body.light .ecr-cal{--c-bg:#EEF3FF;--c-card:#FFFFFF;--c-card2:#DCE7FF;--c-line:#BFCDEE;--c-ink:#10244B;--c-ink2:#4A5F8C;--c-blue:#1F5FBF;--c-onblue:#FFFFFF;--c-plum:#7B3FA0;--c-onplum:#FFFFFF;--c-live:#1B7A45;--c-warn:#9A5800;--c-bad:#B3261E;--c-mute:#6B7896}",
+".ecr-cal h2{margin:0 0 2px;font-size:19px;line-height:1.3;font-weight:700}",
+".cal-sub{margin:0 0 4px;font-size:14px;color:var(--c-ink2)}",
+".cal-card{margin-top:10px;padding:12px;border:1px solid var(--c-line);border-radius:12px;background:var(--c-card)}",
+".cal-kick{margin:0 0 4px;font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--c-plum)}",
+".cal-b{margin:0;font-size:17px;line-height:1.35;font-weight:700}.cal-m{margin:2px 0 0;font-size:14px;color:var(--c-ink2)}",
+".cal-btn{min-height:44px;padding:8px 12px;border:1.5px solid var(--c-line);border-radius:10px;background:transparent;color:var(--c-ink);font:600 15px/1.2 Roboto,'Noto Sans','Segoe UI',sans-serif;cursor:pointer;-webkit-tap-highlight-color:transparent}",
+".cal-btn.pri{background:var(--c-blue);border-color:var(--c-blue);color:var(--c-onblue)}.cal-btn:active{opacity:.8}",
+".ecr-cal button:focus-visible{outline:3px solid var(--c-blue);outline-offset:2px}",
+".cal-row{display:flex;gap:8px;margin-top:10px}.cal-row .cal-btn{flex:1;padding:8px 4px}",
+".cal-mh{display:flex;align-items:center;gap:8px;margin-top:12px}.cal-mh b{flex:1;font-size:17px;text-align:center}.cal-mh .cal-btn{flex:0 0 auto;min-width:44px}",
+".cal-wk,.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}.cal-wk{margin-top:10px}.cal-wk span{text-align:center;font-size:12px;font-weight:700;color:var(--c-ink2)}.cal-grid{margin-top:4px}",
+".cal-day{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;min-height:50px;padding:2px;border:1.5px solid transparent;border-radius:10px;background:var(--c-card);color:var(--c-ink);font:600 15px/1 Roboto,'Noto Sans','Segoe UI',sans-serif;cursor:pointer;-webkit-tap-highlight-color:transparent}",
+".cal-day .n{padding:3px 7px;border-radius:10px}.cal-day.today .n{background:var(--c-plum);color:var(--c-onplum)}",
+".cal-day.sel{border-color:var(--c-blue);background:var(--c-card2)}.cal-day.next{outline:2px dashed var(--c-blue);outline-offset:-4px}",
+".cal-blank{min-height:50px}.cal-dots{display:flex;gap:3px;min-height:7px}",
+".cal-dot{display:inline-block;flex:0 0 7px;width:7px;height:7px;border-radius:50%;background:var(--c-blue)}",
+".cal-dot.s-starting_soon{background:var(--c-warn)}.cal-dot.s-live{background:var(--c-live)}.cal-dot.s-completed{background:var(--c-mute)}.cal-dot.s-cancelled,.cal-dot.s-not_held{background:var(--c-bad)}",
+".cal-leg{display:flex;flex-wrap:wrap;gap:6px 14px;margin-top:10px;font-size:13px;color:var(--c-ink2)}.cal-leg span{display:inline-flex;align-items:center;gap:6px}",
+".cal-it{margin-top:8px;padding:10px 12px;border:1px solid var(--c-line);border-radius:10px;background:var(--c-bg)}",
+".cal-chip{display:inline-flex;align-items:center;gap:6px;margin-top:6px;padding:3px 10px;border:1px solid var(--c-line);border-radius:999px;font-size:13px;font-weight:700}",
+".cal-err{margin:12px 0 0;font-size:14px;font-weight:600;color:var(--c-bad)}.cal-load{margin:12px 0 0;font-size:14px;color:var(--c-ink2)}",
 "@media (prefers-reduced-motion:reduce){.ecr-spin{animation:none}}"
 ].join("\n");
 function ensureStyle(){
@@ -102,7 +128,7 @@ function listenRow(getText,msgEl){
   b2.onclick=function(){hush();msgEl.textContent="";};
   row.appendChild(b1);row.appendChild(b2);return row;
 }
-function stop(){gen++;hush();if(timer){clearTimeout(timer);timer=null;}if(tick){clearInterval(tick);tick=null;}}
+function stop(){gen++;hush();if(timer){clearTimeout(timer);timer=null;}if(tick){clearInterval(tick);tick=null;}if(calTick){clearInterval(calTick);calTick=null;}cal=null;}
 function post(path,body){
   return window.EduAcct.token().then(function(tk){
     if(!tk)return {error:"Please sign in again."};
@@ -178,6 +204,256 @@ function lessonCard(l){
   var lm=h("div","ecr-msg err");lm.setAttribute("role","status");
   c.appendChild(listenRow(function(){return spoken.join(". ");},lm));c.appendChild(lm);
   return c;
+}
+
+/* ---------- timetable (month calendar) ----------
+   Data comes ONLY from the backend action "calendar". Nothing is invented: no data = an honest empty message.
+   Dates (run_date) and times (start_local / end_local) are Malawi time (Africa/Blantyre, UTC+2, no daylight saving).
+   "Now" is the SERVER time (d.now) adjusted by an offset, so a wrong phone clock does not change statuses or the countdown. */
+var BT=2*3600000;
+var MON=["January","February","March","April","May","June","July","August","September","October","November","December"];
+var DOWS=["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
+var DOWL=["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"];
+var STAT={scheduled:["Scheduled","scheduled"],starting_soon:["Starting soon","starting_soon"],live:["Live now","live"],completed:["Completed","completed"],cancelled:["Cancelled","cancelled"],not_held:["Not held","not_held"]};
+var cal=null,calTick=null;
+
+function p2(n){return n<10?"0"+n:""+n;}
+function ymd(y,m,d){return y+"-"+p2(m+1)+"-"+p2(d);}
+function pd(s){var a=String(s).split("-");return {y:+a[0],m:+a[1]-1,d:+a[2]};}
+function ud(s){var a=pd(s);return new Date(Date.UTC(a.y,a.m,a.d));}
+function addDays(s,n){var t=ud(s);t.setUTCDate(t.getUTCDate()+n);return t.toISOString().slice(0,10);}
+function mStart(s){return String(s).slice(0,7)+"-01";}
+function mEnd(s){var a=pd(s);return ymd(a.y,a.m,new Date(Date.UTC(a.y,a.m+1,0)).getUTCDate());}
+function addMonth(key,n){var a=pd(key+"-01");var t=new Date(Date.UTC(a.y,a.m+n,1));return t.getUTCFullYear()+"-"+p2(t.getUTCMonth()+1);}
+function longDate(s){var t=ud(s);return DOWL[(t.getUTCDay()+6)%7]+" "+t.getUTCDate()+" "+MON[t.getUTCMonth()]+" "+t.getUTCFullYear();}
+function calNow(){return Date.now()+(cal?cal.off:0);}
+function calToday(){return new Date(calNow()+BT).toISOString().slice(0,10);}
+function dayWord(s){var t=calToday();return s===t?"Today":(s===addDays(t,1)?"Tomorrow":longDate(s));}
+function statOf(it){return STAT[it.status]||[String(it.status||"Scheduled"),"scheduled"];}
+function until(ms){
+  if(ms<60000)return "less than a minute";
+  var m=Math.ceil(ms/60000);
+  if(m<60)return m+" min";
+  var hr=Math.floor(m/60);
+  if(hr<24){var r=m%60;return hr+" h"+(r?" "+r+" min":"");}
+  var d=Math.floor(hr/24);return d+(d===1?" day":" days");
+}
+function cdText(c){
+  var n=calNow();
+  if(n>=c.cdEnd)return "Class time is over.";
+  if(n>=c.cdStart)return "Class time has started.";
+  return "Starts in "+until(c.cdStart-n);
+}
+function itemsOn(c,date){
+  var out=[];
+  Object.keys(c.items).forEach(function(k){if(c.items[k].run_date===date)out.push(c.items[k]);});
+  out.sort(function(a,b){return Date.parse(a.starts_at)-Date.parse(b.starts_at);});
+  return out;
+}
+function calNext(c){
+  var n=calNow(),best=null;
+  Object.keys(c.items).forEach(function(k){
+    var it=c.items[k];
+    if(it.status!=="scheduled"&&it.status!=="starting_soon"&&it.status!=="live")return;
+    var s=Date.parse(it.starts_at),e=Date.parse(it.ends_at);
+    if(!isFinite(s)||!isFinite(e)||e<=n)return;
+    if(!best||s<best.s)best={it:it,s:s,e:e};
+  });
+  return best;
+}
+function cb(label,cls,fn,aria){
+  var b=h("button","cal-btn"+(cls?" "+cls:""),label);b.type="button";
+  if(aria)b.setAttribute("aria-label",aria);
+  b.onclick=fn;return b;
+}
+
+/* ----- loading data ----- */
+function calFetch(c,from,to,quiet){
+  if(navigator.onLine===false){
+    if(!quiet){c.err="You are offline. Connect to the internet to see the timetable.";calPaint(c);}
+    return;
+  }
+  c.loading=true;
+  if(!quiet){c.err="";calPaint(c);}
+  post(plain("calendar"),{from:from,to:to}).then(function(d){
+    if(cal!==c)return;
+    c.loading=false;
+    if(d&&d.ok===true){
+      var t=Date.parse(d.now);
+      if(isFinite(t))c.off=t-Date.now();
+      c.fetchedAt=Date.now();c.err="";
+      if(d.level)c.level=d.level;
+      Object.keys(c.items).forEach(function(k){var dt=c.items[k].run_date;if(dt>=from&&dt<=to)delete c.items[k];});
+      (d.items||[]).forEach(function(it){
+        if(!it||!it.run_date||!it.slot_id)return;
+        it.run_date=String(it.run_date).slice(0,10);
+        c.items[it.slot_id+"|"+it.run_date]=it;
+      });
+      var k=from.slice(0,7);if(mStart(k)<from)k=addMonth(k,1);
+      while(mEnd(k)<=to){c.loaded[k]=true;k=addMonth(k,1);}
+      c.ready=true;
+      if(!c.synced){c.synced=true;c.sel=calToday();c.vm=c.sel.slice(0,7);}
+      calEnsure(c);
+    }else if(!quiet){
+      c.err=(d&&d.error)||"Could not load the timetable.";
+      calPaint(c);
+    }else calPaint(c);
+  });
+}
+/* this month plus the next 28 days (max 59 days, the server allows 62): gives the "Next class" card something to look at */
+function calWindow(c,quiet){
+  var t=calToday(),end=mEnd(t),far=addDays(t,28);
+  calFetch(c,mStart(t),far>end?far:end,quiet);
+}
+function calEnsure(c){
+  if(c.ready&&c.vm&&!c.loaded[c.vm]&&!c.loading){var f=mStart(c.vm);calFetch(c,f,mEnd(f));}
+  else calPaint(c);
+}
+function calGo(c,date){c.sel=date;c.vm=date.slice(0,7);c.err="";calEnsure(c);}
+function calMonth(c,n){
+  var key=addMonth(c.vm,n),t=calToday();
+  calGo(c,key===t.slice(0,7)?t:key+"-01");
+}
+function calStartTick(c){
+  if(calTick)clearInterval(calTick);
+  calTick=setInterval(function(){
+    if(cal!==c||!inDoc(c.root)){clearInterval(calTick);calTick=null;return;}
+    var n=calNow();
+    if(c.cdEnd&&n>=c.cdEnd){calPaint(c);return;}
+    if(c.cd)c.cd.textContent=cdText(c);
+    var nx=calNext(c);
+    /* near a class start: refresh quietly at most once a minute so "Starting soon" / "Live now" stay true */
+    if(!document.hidden&&!c.loading&&nx&&(nx.s-n)<30*60000&&Date.now()-c.fetchedAt>60000)calWindow(c,true);
+  },30000);
+}
+
+/* ----- drawing ----- */
+function loadBlock(r,text){
+  var p=h("p","cal-load");p.setAttribute("role","status");
+  p.appendChild(h("span","ecr-spin"));p.appendChild(document.createTextNode(text));r.appendChild(p);
+}
+function errBlock(c,r){
+  var p=h("p","cal-err",c.err);p.setAttribute("role","alert");r.appendChild(p);
+  var b=cb("Try again","pri",function(){c.err="";if(!c.ready)calWindow(c,false);else calEnsure(c);});
+  b.style.marginTop="10px";b.style.width="100%";r.appendChild(b);
+}
+function chipFor(it){
+  var st=statOf(it),chip=h("span","cal-chip");
+  chip.appendChild(h("span","cal-dot s-"+st[1]));chip.appendChild(document.createTextNode(st[0]));
+  return chip;
+}
+function nextCard(c){
+  var card=h("div","cal-card"),nx=calNext(c);
+  card.appendChild(h("p","cal-kick","Next class"));
+  c.cdStart=0;c.cdEnd=0;c.cd=null;
+  if(!nx){card.appendChild(h("p","cal-m","No upcoming class is in the timetable yet."));return card;}
+  var it=nx.it;
+  card.appendChild(h("p","cal-b",clean(it.title)||"Class"));
+  card.appendChild(h("p","cal-m",(it.level_name||levelName(it.level))+" \u00b7 "+dayWord(it.run_date)+", "+(it.start_local||"")+" - "+(it.end_local||"")));
+  card.appendChild(chipFor(it));
+  c.cdStart=nx.s;c.cdEnd=nx.e;
+  c.cd=h("p","cal-b",cdText(c));c.cd.style.marginTop="10px";card.appendChild(c.cd);
+  var row=h("div","cal-row");
+  if(it.status==="live")row.appendChild(cb("Open the class","pri",function(){loadOpen(c.box);}));
+  row.appendChild(cb("Show on calendar","",function(){calGo(c,it.run_date);}));
+  card.appendChild(row);
+  return card;
+}
+function dayPanel(c){
+  var p=h("div","cal-card"),s=c.sel,its=itemsOn(c,s);
+  p.appendChild(h("p","cal-kick",s===calToday()?"Today":"Selected day"));
+  p.appendChild(h("h3","cal-b",longDate(s)));
+  var row=h("div","cal-row");
+  row.appendChild(cb("\u2039 Week","",function(){calGo(c,addDays(s,-7));},"Back one week"));
+  row.appendChild(cb("\u2039 Day","",function(){calGo(c,addDays(s,-1));},"Previous day"));
+  row.appendChild(cb("Day \u203a","",function(){calGo(c,addDays(s,1));},"Next day"));
+  row.appendChild(cb("Week \u203a","",function(){calGo(c,addDays(s,7));},"Forward one week"));
+  p.appendChild(row);
+  if(!its.length){
+    var mc=0;
+    Object.keys(c.items).forEach(function(k){if(c.items[k].run_date.slice(0,7)===c.vm)mc++;});
+    p.appendChild(h("p","cal-b","No classes are scheduled")).style.marginTop="12px";
+    p.appendChild(h("p","cal-m",mc?"There is no class on this day.":"Nothing is scheduled this month for your level yet."));
+    return p;
+  }
+  its.forEach(function(it){
+    var box=h("div","cal-it");
+    box.appendChild(h("p","cal-b",clean(it.title)||"Class"));
+    box.appendChild(h("p","cal-m",(it.level_name||levelName(it.level))+" \u00b7 "+(it.start_local||"")+" - "+(it.end_local||"")));
+    box.appendChild(chipFor(it));
+    if(it.status==="live"){
+      var jb=cb("Open the class","pri",function(){loadOpen(c.box);});
+      jb.style.marginTop="10px";jb.style.width="100%";box.appendChild(jb);
+    }
+    p.appendChild(box);
+  });
+  return p;
+}
+function legend(){
+  var l=h("div","cal-leg");
+  [["scheduled","Upcoming"],["live","Live"],["completed","Done"],["cancelled","Cancelled"]].forEach(function(x){
+    var s=h("span");s.appendChild(h("span","cal-dot s-"+x[0]));s.appendChild(document.createTextNode(x[1]));l.appendChild(s);
+  });
+  return l;
+}
+function calPaint(c){
+  var r=c.root;if(!r)return;
+  r.innerHTML="";c.cd=null;
+  r.appendChild(h("h2",null,"Class timetable"));
+  r.appendChild(h("p","cal-sub","Times are Malawi time. A dot means a class on that date."));
+  if(!c.ready){
+    if(c.err)errBlock(c,r);else loadBlock(r,"Loading the timetable...");
+    return;
+  }
+  r.appendChild(nextCard(c));
+  var a=pd(c.vm+"-01"),today=calToday();
+  var mh=h("div","cal-mh");
+  mh.appendChild(cb("\u2039","",function(){calMonth(c,-1);},"Previous month"));
+  mh.appendChild(h("b",null,MON[a.m]+" "+a.y));
+  mh.appendChild(cb("Today","",function(){calGo(c,today);},"Go to today"));
+  mh.appendChild(cb("\u203a","",function(){calMonth(c,1);},"Next month"));
+  r.appendChild(mh);
+  if(!c.loaded[c.vm]){
+    if(c.err)errBlock(c,r);else loadBlock(r,"Loading "+MON[a.m]+"...");
+    return;
+  }
+  var wk=h("div","cal-wk");wk.setAttribute("aria-hidden","true");
+  DOWS.forEach(function(d){wk.appendChild(h("span",null,d));});
+  r.appendChild(wk);
+  var gr=h("div","cal-grid");
+  var lead=(new Date(Date.UTC(a.y,a.m,1)).getUTCDay()+6)%7;
+  var dim=new Date(Date.UTC(a.y,a.m+1,0)).getUTCDate();
+  var nx=calNext(c),nxDate=nx?nx.it.run_date:"";
+  for(var i=0;i<lead;i++)gr.appendChild(h("span","cal-blank"));
+  for(var d=1;d<=dim;d++)(function(d){
+    var s=ymd(a.y,a.m,d),its=itemsOn(c,s);
+    var b=h("button","cal-day"+(s===today?" today":"")+(s===c.sel?" sel":"")+(s===nxDate?" next":""));
+    b.type="button";
+    b.appendChild(h("span","n",String(d)));
+    var dots=h("span","cal-dots");
+    its.slice(0,3).forEach(function(it){dots.appendChild(h("span","cal-dot s-"+statOf(it)[1]));});
+    b.appendChild(dots);
+    b.setAttribute("aria-label",longDate(s)+", "+(its.length?its.length+(its.length===1?" class":" classes"):"no classes")+(s===today?", today":""));
+    b.setAttribute("aria-pressed",s===c.sel?"true":"false");
+    if(s===today)b.setAttribute("aria-current","date");
+    b.onclick=function(){c.sel=s;calPaint(c);};
+    gr.appendChild(b);
+  })(d);
+  r.appendChild(gr);
+  r.appendChild(legend());
+  r.appendChild(dayPanel(c));
+}
+function calendarCard(box,level){
+  var c=(cal&&cal.ready&&cal.level===level&&Date.now()-cal.fetchedAt<45000)?cal:null;
+  if(!c){
+    c={items:{},loaded:{},off:0,sel:"",vm:"",err:"",loading:false,ready:false,synced:false,fetchedAt:0,level:level,cdStart:0,cdEnd:0,cd:null};
+    cal=c;
+  }
+  c.box=box;c.root=h("section","ecr-cal");
+  c.root.setAttribute("aria-label","Class timetable");
+  box.appendChild(c.root);
+  calStartTick(c);
+  if(c.ready)calPaint(c);else calWindow(c,false);
 }
 
 /* ---------- start: choose level / find open class / join ---------- */
@@ -294,7 +570,7 @@ function noClass(box,level,checked){
   var c=h("div","ecr-card");
   var ch=h("span","ecr-chip");ch.appendChild(h("span","ecr-dot closed"));ch.appendChild(h("span",null,"No class open"));c.appendChild(ch);
   c.appendChild(h("h2",null,"No class is open right now")).style.marginTop="12px";
-  c.appendChild(h("p","ecr-sub","Your level: "+levelName(level)+". Come back when your teacher's class time starts."));
+  c.appendChild(h("p","ecr-sub","Your level: "+levelName(level)+". Check the timetable below for your next class."));
   var note=h("div","ecr-msg",checked?"Checked just now. Still no class is open for your level.":"");note.setAttribute("role","status");
   var b1=btn("Check again"),b2=btn("Change level","sec");
   b1.onclick=function(){
@@ -303,6 +579,7 @@ function noClass(box,level,checked){
   };
   b2.onclick=function(){box.innerHTML="";levelPicker(box,level,true);};
   c.appendChild(b1);c.appendChild(b2);c.appendChild(note);box.appendChild(c);
+  calendarCard(box,level);
 }
 function joinCard(box,d){
   box.appendChild(pageHead("AI Classroom"));
@@ -329,6 +606,7 @@ function joinCard(box,d){
   var b2=btn("Change level","sec");
   b2.onclick=function(){box.innerHTML="";levelPicker(box,d.level,true);};
   c.appendChild(go);c.appendChild(b2);c.appendChild(msg);box.appendChild(c);
+  calendarCard(box,d.level);
 }
 function enter(box,d){
   box.innerHTML="";
