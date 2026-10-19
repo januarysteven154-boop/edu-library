@@ -1069,7 +1069,7 @@ body.light .hsearch input::placeholder{color:#6b7a99}
 <main class="wrap" id="app"></main>
 <button class="aifab" id="aiFab" onclick="location.hash='#/ai'" title="Edu AI Assistant">🤖</button>
 <nav class="bottomnav">
-  <a href="#/" data-r="/"><span class="ic"><svg class="nic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 10.2V20h13v-9.8"/><path d="M10 20v-5.5h4V20"/></svg></span>Home</a>
+  <a href="#/classroom" data-r="classroom"><span class="ic"><svg class="nic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 10 12 5 2 10l10 5 10-5z"/><path d="M6 12v5c3 2 9 2 12 0v-5"/><path d="M22 10v6"/></svg></span>Classroom</a>
   <a href="#/room" data-r="room"><span class="ic"><svg class="nic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="4.5" width="14" height="16.5" rx="2"/><path d="M9 4.5h6V7H9z"/><path d="m8.8 13.4 2.2 2.2 4.2-4.6"/></svg></span>Exam Room</a>
   <a href="#/library" data-r="library"><span class="ic"><svg class="nic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="4" width="4.6" height="16" rx="1"/><rect x="9.6" y="4" width="4.6" height="16" rx="1"/><path d="m16.2 5.6 3.7-1 3 14.6-3.7 1z" transform="translate(-1.6 0)"/></svg></span>Library</a>
   <a href="#/exams" data-r="exams"><span class="ic"><svg class="nic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6.5 3h8l4 4v14h-12z"/><path d="M14.5 3v4h4"/><path d="M9.5 12h6M9.5 16h6"/></svg></span>Past Papers</a>
@@ -1883,12 +1883,12 @@ function eduRoomOpen(app){
   };
   document.head.appendChild(sc);
 }
-/* AI Classroom (test): small script loaded on demand from the website */
+/* AI Classroom: small script loaded on demand from the website */
 function eduClassroomOpen(app){
-  setActiveNav("settings");
+  setActiveNav("classroom");
   const go=()=>window.EduClassroom.open(app);
   if(window.EduClassroom)return go();
-  setHeader(`<button class="back" onclick="location.hash='#/settings'">←</button><h2>AI Classroom</h2>`);
+  setHeader(`<h2>AI Classroom</h2>`);
   app.innerHTML='<div class="empty">Loading...</div>';
   const sc=document.createElement("script");
   sc.src="https://edu-library.edulibrary.workers.dev/classroom.js?v="+Date.now();
@@ -2072,7 +2072,6 @@ function renderSettings(app,sub){
         ${item("reading","Reading mode","Warmer screen, colour and strength")}
         ${item("language","Language","Choose your app language")}
         ${item("about","About app","Version information and credentials")}
-        ${(window.EduAcct&&window.EduAcct.user&&["billz","brey"].indexOf(window.EduAcct.user())>-1)?`<a class="setitem" href="#/classroom"><span><b>AI Classroom (test)</b><small>Test account only</small></span>${chev}</a>`:""}
       </div>
     </div>`;
     try{applyLang();}catch(e){}
@@ -3115,7 +3114,7 @@ function renderAIMessages(streamingText){
   const sc=document.getElementById("aiScroll");if(sc)sc.scrollTop=sc.scrollHeight;
 }
 
-const GATED=["level","exams","start","library","search","ai","room"];
+const GATED=["level","exams","start","library","search","ai","room","classroom"];
 window.eduGoSignIn=function(){
   document.querySelectorAll(".aimodal,#acctTopModal,#acctModal").forEach(e=>e.remove());
   try{toggleAIHist(false);}catch(e){}
@@ -3259,7 +3258,7 @@ function eduLiveTabs(){
       if(a.dataset&&a.dataset.mode==="admin")return "Settings";
       return (a.textContent||"").trim();
     }).filter(Boolean).join(", ");
-  }catch(e){return "Home, Exam Room, Library, Past Papers, Settings";}
+  }catch(e){return "Classroom, Exam Room, Library, Past Papers, Settings";}
 }
 function eduAppGuide(levelsText){
   var tabs=eduLiveTabs();
@@ -3719,8 +3718,9 @@ window.addEventListener("hashchange", render);
 </script>
 <script>
 /* ---------- Reading mode + Settings ---------- */
-const APP_VERSION="1.8.16";
+const APP_VERSION="1.8.17";
 const APP_CHANGES=[
+ "1.8.17: Classroom replaces Home in the bottom tabs (Classroom, Exam Room, Library, Past Papers, Settings); the test link in Settings is removed; Library is still the page after sign-in.",
  "1.8.16: hidden AI Classroom test screen (only for the test account, Settings); nothing else changed.",
  "1.8.11: chats are now kept separately for each signed-in student on a shared phone; Delete my chats always clears this phone; clearer sign-in, privacy and PIN wording; Past Papers named the same everywhere.",
  "1.8.10: on the Privacy and Terms page the email and WhatsApp number can be tapped to write an email or open WhatsApp.",
