@@ -1,7 +1,7 @@
-/* AI Classroom v3.0 - loaded on demand by index.html. Needs a signed-in student.
+/* AI Classroom v3.1 - loaded on demand by index.html. Needs a signed-in student.
    Same flow and same backend calls as v2.1:
    choose level -> no class / class open -> Join -> live class (lesson, AI teacher, hand raising, shared answers).
-   v3.0 = redesign only: sunset palette, light + dark, cards, status chips. No backend change.
+   v3.0 = redesign; v3.1 = three education cards (Primary / Secondary / Tertiary) on the level screen. No backend change: sunset palette, light + dark, cards, status chips. No backend change.
    WALLPAPER LATER: put   .ecr{--ecr-wallpaper:url(classroom-bg.jpg)}   in any local CSS. Nothing else changes. */
 (function(){
 var LEVELS=[["standard1","Standard 1"],["standard2","Standard 2"],["standard3","Standard 3"],["standard4","Standard 4"],["standard5","Standard 5"],["standard6","Standard 6"],["standard7","Standard 7"],["standard8","Standard 8"],["form1","Form 1"],["form2","Form 2"],["form3","Form 3"],["form4","Form 4"]];
@@ -61,6 +61,15 @@ var CSS=[
 ".ecr-who{display:block;margin-bottom:2px;font-size:13px;font-weight:700;color:var(--ink2)}",
 ".ecr-q .ecr-who{color:var(--speak)}.ecr-a .ecr-who{color:var(--acc)}",
 "body.light .ecr-q .ecr-who{color:#1D5FB0}",
+".ecr-cat{display:flex;align-items:flex-start;gap:14px;width:100%;margin:0 0 12px;padding:16px;text-align:left;color:var(--ink);background:var(--card);border:1px solid var(--line);border-radius:16px;box-shadow:0 2px 10px rgba(0,0,0,.18);font:16px/1.4 Roboto,'Noto Sans','Segoe UI',sans-serif;cursor:pointer;-webkit-tap-highlight-color:transparent}",
+".ecr-cat:active{transform:scale(.99);background:var(--card2)}.ecr-cat.mine{border:2px solid var(--acc)}",
+".ecr-cic{flex:0 0 52px;height:52px;border-radius:14px;background:var(--bg2);border:1px solid var(--line);color:var(--acc);display:flex;align-items:center;justify-content:center}.ecr-cic svg{width:28px;height:28px}",
+".ecr-ctx{flex:1;min-width:0;display:block}.ecr-ctx b{display:block;font-size:19px}.ecr-ctx small{display:block;margin-top:2px;font-size:14px;color:var(--ink2)}",
+".ecr-ctx .d{display:block;margin-top:8px;font-size:15px}.ecr-ctx .a{display:block;margin-top:10px;font-size:15px;font-weight:700;color:var(--acc)}",
+".ecr-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}",
+".ecr-lv{min-height:56px;padding:10px;border:1.5px solid var(--line);border-radius:12px;background:var(--bg2);color:var(--ink);font:600 16px/1.2 Roboto,'Noto Sans','Segoe UI',sans-serif;cursor:pointer}",
+".ecr-lv.on{border-color:var(--acc);background:var(--card2)}.ecr-lv:active{opacity:.85}",
+".ecr button.ecr-cat:focus-visible,.ecr button.ecr-lv:focus-visible{outline:3px solid var(--speak);outline-offset:2px}",
 ".ecr-spin{display:inline-block;width:16px;height:16px;margin-right:8px;border:2px solid currentColor;border-right-color:transparent;border-radius:50%;animation:ecrs .8s linear infinite}@keyframes ecrs{to{transform:rotate(360deg)}}",
 "@media (prefers-reduced-motion:reduce){.ecr-spin{animation:none}}"
 ].join("\n");
@@ -211,28 +220,74 @@ function showError(box,msg){
   var b=btn("Try again");b.onclick=function(){loadOpen(box);};
   c.appendChild(b);box.appendChild(c);
 }
+/* Level screen: three separate education categories, then the levels inside the chosen one.
+   Only the 12 level codes the backend already accepts are used. Tertiary has no backend codes yet,
+   so TERTIARY stays empty and the screen says so honestly (nothing is invented). */
+var PRIMARY=LEVELS.slice(0,8),SECONDARY=LEVELS.slice(8),TERTIARY=[];
+function catOf(code){for(var i=0;i<PRIMARY.length;i++)if(PRIMARY[i][0]===code)return "primary";for(var j=0;j<SECONDARY.length;j++)if(SECONDARY[j][0]===code)return "secondary";return "";}
+var ICON={
+ primary:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5.5C4 4.7 4.7 4 5.5 4H11v15H5.5C4.7 19 4 18.3 4 17.5z"/><path d="M20 5.5c0-.8-.7-1.5-1.5-1.5H13v15h5.5c.8 0 1.5-.7 1.5-1.5z"/></svg>',
+ secondary:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 9l10-5 10 5-10 5z"/><path d="M6 11.5V16c0 1.5 2.7 3 6 3s6-1.5 6-3v-4.5"/><path d="M22 9v6"/></svg>',
+ tertiary:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 10l9-6 9 6"/><path d="M5 10v8M9.5 10v8M14.5 10v8M19 10v8"/><path d="M3 20h18"/></svg>'
+};
+var CATS=[
+ {k:"primary",title:"Primary",sub:"Standards 1\u20138",desc:"Learn, practise and attend Primary classes.",act:"View Primary classes"},
+ {k:"secondary",title:"Secondary",sub:"Forms 1\u20134",desc:"Attend lessons and learn with your AI teacher.",act:"View Secondary classes"},
+ {k:"tertiary",title:"Tertiary / College",sub:"College and university",desc:"Access college-level learning and classroom sessions.",act:"View Tertiary / College classes"}
+];
 function levelPicker(box,current,canGoBack){
-  box.appendChild(pageHead("Welcome to your classroom","Choose your learning level so we can find the right classroom and lessons for you."));
-  var c=h("div","ecr-card");
-  var lab=h("label","ecr-lab","Learning level");lab.htmlFor="ecr-level";
-  var sel=h("select","ecr-field");sel.id="ecr-level";
-  if(!current){var o0=h("option","Choose your level");o0.value="";o0.selected=true;sel.appendChild(o0);}
-  LEVELS.forEach(function(l){var o=h("option",null,l[1]);o.value=l[0];if(l[0]===current)o.selected=true;sel.appendChild(o);});
-  var go=btn("Save Level");
-  var msg=h("div","ecr-msg");msg.setAttribute("role","status");
-  go.onclick=function(){
-    if(!sel.value){msg.className="ecr-msg err";msg.textContent="Please choose your level first.";return;}
-    msg.className="ecr-msg";msg.textContent="";go.disabled=true;go.textContent="Saving...";
-    post(plain("setlevel"),{level:sel.value}).then(function(d){
-      if(!inDoc(box))return;
-      go.disabled=false;go.textContent="Save Level";
-      if(d&&d.ok===true){msg.className="ecr-msg ok";msg.textContent="Level saved: "+levelName(sel.value)+".";setTimeout(function(){if(inDoc(box))loadOpen(box);},700);}
-      else{msg.className="ecr-msg err";msg.textContent=(d&&d.error)||"Could not save your level.";}
+  var cur=catOf(current);
+  function cats(){
+    box.innerHTML="";
+    box.appendChild(pageHead("Welcome to your classroom","Choose your education level so we can find the right classroom and lessons for you."));
+    if(current){var yl=h("div","ecr-card");yl.appendChild(h("p","ecr-kick","Your level"));yl.appendChild(h("h2",null,levelName(current)));
+      var keep=btn("Keep this level");keep.onclick=function(){loadOpen(box);};yl.appendChild(keep);box.appendChild(yl);}
+    CATS.forEach(function(c){
+      var b=h("button","ecr-cat"+(c.k===cur?" mine":""));b.type="button";
+      var ic=h("span","ecr-cic");ic.innerHTML=ICON[c.k];
+      var tx=h("span","ecr-ctx");tx.appendChild(h("b",null,c.title));tx.appendChild(h("small",null,c.sub));tx.appendChild(h("span","d",c.desc));
+      tx.appendChild(h("span","a",c.act+" \u2192"));
+      b.appendChild(ic);b.appendChild(tx);
+      b.onclick=function(){levels(c);};
+      box.appendChild(b);
     });
-  };
-  c.appendChild(lab);c.appendChild(sel);c.appendChild(go);c.appendChild(msg);
-  if(canGoBack){var bk=btn("Back","sec");bk.onclick=function(){loadOpen(box);};c.appendChild(bk);}
-  box.appendChild(c);
+    if(canGoBack){var bk=btn("Back","sec");bk.onclick=function(){loadOpen(box);};box.appendChild(bk);}
+  }
+  function levels(c){
+    box.innerHTML="";
+    box.appendChild(pageHead(c.title+" classes",c.k==="primary"?"Choose your standard.":c.k==="secondary"?"Choose your form.":"Choose your course or level."));
+    var list=c.k==="primary"?PRIMARY:c.k==="secondary"?SECONDARY:TERTIARY;
+    var card=h("div","ecr-card");
+    var msg=h("div","ecr-msg");msg.setAttribute("role","status");
+    if(!list.length){
+      card.appendChild(h("h2",null,"Not open for college yet"));
+      card.appendChild(h("p","ecr-sub","AI Classroom lessons are not available for Tertiary / College yet. You can still use the Library and Past Papers."));
+    }else{
+      var chosen=current&&list.some(function(l){return l[0]===current;})?current:"";
+      var grid=h("div","ecr-grid");grid.setAttribute("role","group");grid.setAttribute("aria-label",c.title+" levels");
+      var go=btn("Save Level");go.disabled=!chosen;
+      list.forEach(function(l){
+        var b=h("button","ecr-lv"+(l[0]===chosen?" on":""),(l[0]===chosen?"\u2713 ":"")+l[1]);b.type="button";b.setAttribute("aria-pressed",l[0]===chosen?"true":"false");
+        b.onclick=function(){chosen=l[0];msg.textContent="";go.disabled=false;
+          Array.prototype.forEach.call(grid.children,function(x){var on=x===b;x.className="ecr-lv"+(on?" on":"");x.setAttribute("aria-pressed",on?"true":"false");x.textContent=(on?"\u2713 ":"")+x.getAttribute("data-n");});};
+        b.setAttribute("data-n",l[1]);grid.appendChild(b);
+      });
+      card.appendChild(grid);card.appendChild(go);card.appendChild(msg);
+      go.onclick=function(){
+        if(!chosen){msg.className="ecr-msg err";msg.textContent="Please choose your level first.";return;}
+        msg.className="ecr-msg";msg.textContent="";go.disabled=true;go.textContent="Saving...";
+        post(plain("setlevel"),{level:chosen}).then(function(d){
+          if(!inDoc(box))return;
+          go.disabled=false;go.textContent="Save Level";
+          if(d&&d.ok===true){msg.className="ecr-msg ok";msg.textContent="Level saved: "+levelName(chosen)+".";setTimeout(function(){if(inDoc(box))loadOpen(box);},700);}
+          else{msg.className="ecr-msg err";msg.textContent=(d&&d.error)||"Could not save your level.";}
+        });
+      };
+    }
+    box.appendChild(card);
+    var bk=btn("Back","sec");bk.onclick=cats;box.appendChild(bk);
+  }
+  cats();
 }
 function noClass(box,level,checked){
   box.appendChild(pageHead("AI Classroom"));
