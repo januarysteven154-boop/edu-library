@@ -1,9 +1,10 @@
-/* AI Classroom v3.2 - loaded on demand by index.html. Needs a signed-in student.
+/* AI Classroom v3.3 - loaded on demand by index.html. Needs a signed-in student.
    Same flow and same backend calls as v2.1:
    choose level -> no class / class open -> Join -> live class (lesson, AI teacher, hand raising, shared answers).
    v3.0 = redesign; v3.1 = three education cards (Primary / Secondary / Tertiary) on the level screen.
    v3.2 = class timetable (month calendar) shown under "No class is open" and under "A class is open now".
           Uses ONLY the backend action  POST /book-link?classroom=calendar  {from,to}. Statuses and the countdown use the server time.
+   v3.3 = notifications list (backend actions notes / noteread). The red badge on the account icon lives in index.html.
    WALLPAPER LATER: put   .ecr{--ecr-wallpaper:url(classroom-bg.jpg)}   in any local CSS. Nothing else changes. */
 (function(){
 var LEVELS=[["standard1","Standard 1"],["standard2","Standard 2"],["standard3","Standard 3"],["standard4","Standard 4"],["standard5","Standard 5"],["standard6","Standard 6"],["standard7","Standard 7"],["standard8","Standard 8"],["form1","Form 1"],["form2","Form 2"],["form3","Form 3"],["form4","Form 4"]];
@@ -97,6 +98,10 @@ var CSS=[
 ".cal-it{margin-top:8px;padding:10px 12px;border:1px solid var(--c-line);border-radius:10px;background:var(--c-bg)}",
 ".cal-chip{display:inline-flex;align-items:center;gap:6px;margin-top:6px;padding:3px 10px;border:1px solid var(--c-line);border-radius:999px;font-size:13px;font-weight:700}",
 ".cal-err{margin:12px 0 0;font-size:14px;font-weight:600;color:var(--c-bad)}.cal-load{margin:12px 0 0;font-size:14px;color:var(--c-ink2)}",
+".ecr-note{display:block;width:100%;margin:0 0 10px;padding:14px;text-align:left;color:var(--ink);background:var(--card);border:1px solid var(--line);border-radius:14px;font:16px/1.45 Roboto,'Noto Sans','Segoe UI',sans-serif;cursor:pointer;-webkit-tap-highlight-color:transparent}",
+".ecr-note.new{border:2px solid var(--acc)}.ecr-note:active{background:var(--card2)}",
+".ecr-note b{display:block;font-size:17px}.ecr-note small{display:block;margin-top:2px;font-size:13px;color:var(--ink2)}.ecr-note small.nw{font-weight:700;color:var(--acc)}",
+".ecr-note span{display:block;margin-top:8px;font-size:15px;white-space:pre-wrap}",
 "@media (prefers-reduced-motion:reduce){.ecr-spin{animation:none}}"
 ].join("\n");
 function ensureStyle(){
@@ -215,7 +220,7 @@ var MON=["January","February","March","April","May","June","July","August","Sept
 var DOWS=["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
 var DOWL=["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"];
 var STAT={scheduled:["Scheduled","scheduled"],starting_soon:["Starting soon","starting_soon"],live:["Live now","live"],completed:["Completed","completed"],cancelled:["Cancelled","cancelled"],not_held:["Not held","not_held"]};
-var cal=null,calTick=null;
+var cal=null,calTick=null,pendingDay="";
 
 function p2(n){return n<10?"0"+n:""+n;}
 function ymd(y,m,d){return y+"-"+p2(m+1)+"-"+p2(d);}
@@ -292,7 +297,7 @@ function calFetch(c,from,to,quiet){
       var k=from.slice(0,7);if(mStart(k)<from)k=addMonth(k,1);
       while(mEnd(k)<=to){c.loaded[k]=true;k=addMonth(k,1);}
       c.ready=true;
-      if(!c.synced){c.synced=true;c.sel=calToday();c.vm=c.sel.slice(0,7);}
+      if(!c.synced){c.synced=true;c.sel=pendingDay||calToday();c.vm=c.sel.slice(0,7);pendingDay="";}
       calEnsure(c);
     }else if(!quiet){
       c.err=(d&&d.error)||"Could not load the timetable.";
@@ -453,7 +458,64 @@ function calendarCard(box,level){
   c.root.setAttribute("aria-label","Class timetable");
   box.appendChild(c.root);
   calStartTick(c);
-  if(c.ready)calPaint(c);else calWindow(c,false);
+  if(c.ready){if(pendingDay){var pd0=pendingDay;pendingDay="";calGo(c,pd0);}else calPaint(c);}else calWindow(c,false);
+}
+
+/* ---------- notifications (in-app only: list + badge; no closed-app phone alerts) ---------- */
+function stamp(iso){var t=Date.parse(iso);if(!isFinite(t))return "";var d=new Date(t+BT);return d.getUTCDate()+" "+MON[d.getUTCMonth()].slice(0,3)+", "+p2(d.getUTCHours())+":"+p2(d.getUTCMinutes());}
+function badgeSync(n){try{if(window.eduNotesRefresh){if(typeof n==="number")window.eduNotesRefresh(n);else window.eduNotesRefresh();}}catch(e){}}
+function notesButton(box){
+  var n=window.eduNotesCount||0;
+  var b=btn(n>0?"Notifications ("+n+" new)":"Notifications","sec");
+  b.style.marginTop="0";b.style.marginBottom="12px";
+  b.onclick=function(){notesView(box);};
+  box.appendChild(b);
+}
+function notesView(box){
+  box.innerHTML="";
+  box.appendChild(pageHead("Notifications","Class reminders and changes for your level."));
+  var holder=h("div");box.appendChild(holder);
+  holder.appendChild(loadingCard("Loading notifications..."));
+  var back=btn("Back to the classroom","sec");
+  back.onclick=function(){loadOpen(box);};
+  post(plain("notes"),{}).then(function(d){
+    if(!inDoc(box))return;
+    holder.innerHTML="";
+    if(!d||d.ok!==true){
+      var ec=h("div","ecr-card");ec.appendChild(h("h2",null,"Could not load notifications"));
+      var em=h("p","ecr-msg err",(d&&d.error)||"Please try again.");em.setAttribute("role","alert");ec.appendChild(em);
+      var rb=btn("Try again");rb.onclick=function(){notesView(box);};ec.appendChild(rb);
+      holder.appendChild(ec);box.appendChild(back);return;
+    }
+    var items=d.items||[],unread=typeof d.unread==="number"?d.unread:items.filter(function(i){return !i.read_at;}).length;
+    badgeSync(unread);
+    if(!items.length){
+      var c=h("div","ecr-card");c.appendChild(h("h2",null,"No notifications yet"));
+      c.appendChild(h("p","ecr-sub","Reminders about your classes will appear here."));
+      holder.appendChild(c);
+    }else{
+      if(unread>0){
+        var all=btn("Mark all as read");all.style.marginTop="0";all.style.marginBottom="12px";
+        all.onclick=function(){all.disabled=true;post(plain("noteread"),{all:true}).then(function(){badgeSync();if(inDoc(box))notesView(box);});};
+        holder.appendChild(all);
+      }
+      items.forEach(function(it){
+        var isNew=!it.read_at;
+        var b=h("button","ecr-note"+(isNew?" new":""));b.type="button";
+        b.appendChild(h("small",isNew?"nw":null,isNew?"New":"Read"));
+        b.appendChild(h("b",null,clean(it.title)||"Notification"));
+        b.appendChild(h("small",null,stamp(it.created_at)));
+        b.appendChild(h("span",null,clean(it.body)));
+        b.onclick=function(){
+          if(isNew)post(plain("noteread"),{ids:[it.id]}).then(function(){badgeSync();});
+          pendingDay=it.run_date?String(it.run_date).slice(0,10):"";
+          loadOpen(box);
+        };
+        holder.appendChild(b);
+      });
+    }
+    box.appendChild(back);
+  });
 }
 
 /* ---------- start: choose level / find open class / join ---------- */
@@ -469,6 +531,7 @@ function openScreen(app){
     c.appendChild(h("p","ecr-sub","Sign in with your student account first (tap the account icon at the top), then open the Classroom again."));
     box.appendChild(c);return;
   }
+  if(window.__eduOpenNotes){window.__eduOpenNotes=0;notesView(box);return;}
   loadOpen(box);
 }
 function loadingCard(text){
@@ -567,6 +630,7 @@ function levelPicker(box,current,canGoBack){
 }
 function noClass(box,level,checked){
   box.appendChild(pageHead("AI Classroom"));
+  notesButton(box);
   var c=h("div","ecr-card");
   var ch=h("span","ecr-chip");ch.appendChild(h("span","ecr-dot closed"));ch.appendChild(h("span",null,"No class open"));c.appendChild(ch);
   c.appendChild(h("h2",null,"No class is open right now")).style.marginTop="12px";
@@ -583,6 +647,7 @@ function noClass(box,level,checked){
 }
 function joinCard(box,d){
   box.appendChild(pageHead("AI Classroom"));
+  notesButton(box);
   var c=h("div","ecr-card");
   var ch=h("span","ecr-chip");ch.appendChild(h("span","ecr-dot live"));ch.appendChild(h("span",null,"A class is open now."));c.appendChild(ch);
   var t=teacherRow(clean(d.title||"")+" \u00b7 "+levelName(d.level));t.row.style.marginTop="14px";c.appendChild(t.row);
@@ -609,6 +674,7 @@ function joinCard(box,d){
   calendarCard(box,d.level);
 }
 function enter(box,d){
+  pendingDay="";
   box.innerHTML="";
   var cls=h("div");box.appendChild(cls);
   build(cls,d);
