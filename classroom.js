@@ -128,7 +128,7 @@ var CSS=[
 ".cal-mh{display:flex;align-items:center;gap:8px;margin-top:12px}.cal-mh b{flex:1;font-size:17px;text-align:center}.cal-mh .cal-btn{flex:0 0 auto;min-width:44px}",
 ".cal-wk,.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}.cal-wk{margin-top:10px}.cal-wk span{text-align:center;font-size:12px;font-weight:700;color:var(--c-ink2)}.cal-grid{margin-top:4px}",
 ".cal-day{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;min-height:50px;padding:2px;border:1.5px solid transparent;border-radius:10px;background:var(--c-card);color:var(--c-ink);font:600 15px/1 Roboto,'Noto Sans','Segoe UI',sans-serif;cursor:pointer;-webkit-tap-highlight-color:transparent}",
-".cal-day .n{padding:3px 7px;border-radius:10px}.cal-day.today .n{background:var(--gold);color:var(--onacc)}",
+".cal-day{min-width:0;overflow-wrap:normal;word-break:normal;font-size:14px}.cal-day .n{padding:3px 5px;border-radius:10px;white-space:nowrap;line-height:1.1}.cal-day.today .n{background:var(--gold);color:var(--onacc)}",
 ".cal-day.sel{border-color:var(--gold);background:var(--c-card2)}.cal-day.next{outline:2px dashed var(--gold);outline-offset:-4px}",
 ".cal-blank{min-height:50px}.cal-dots{display:flex;gap:3px;min-height:7px}",
 ".cal-dot{display:inline-block;flex:0 0 7px;width:7px;height:7px;border-radius:50%;background:var(--gold)}",
