@@ -138,6 +138,7 @@ var CSS=[
 ".cal-chip{display:inline-flex;align-items:center;gap:6px;margin-top:6px;padding:3px 10px;border:1px solid var(--c-line);border-radius:999px;font-size:13px;font-weight:700}",
 ".cal-err{margin:12px 0 0;font-size:14px;font-weight:600;color:var(--c-bad)}.cal-load{margin:12px 0 0;font-size:14px;color:var(--c-ink2)}",
 /* notifications */
+".ecr-nt{margin-top:8px;padding:10px 12px;border:1px solid var(--line);border-radius:12px;background:var(--bg2)}.ecr-nt.new{border:2px solid var(--gold)}.ecr-nt b{display:block;font-size:16px;line-height:1.35}.ecr-nt small{display:block;margin-top:2px;font-size:13px;color:var(--ink2)}.ecr-nt span{display:block;margin-top:6px;font-size:15px;white-space:pre-wrap}",
 ".ecr-note{display:block;width:100%;margin:0 0 10px;padding:14px;text-align:left;color:var(--ink);background:var(--card);border:1px solid var(--line);border-radius:14px;font:16px/1.45 Roboto,'Noto Sans','Segoe UI',sans-serif;cursor:pointer;-webkit-tap-highlight-color:transparent}",
 ".ecr-note.new{border:2px solid var(--gold)}.ecr-note:active{background:var(--card2)}",
 ".ecr-note b{display:block;font-size:17px}.ecr-note small{display:block;margin-top:2px;font-size:13px;color:var(--ink2)}.ecr-note small.nw{font-weight:700;color:var(--acc)}",
@@ -589,6 +590,7 @@ function openScreen(app){
     box.appendChild(c);return;
   }
   if(window.__eduOpenNotes){window.__eduOpenNotes=0;notesView(box);return;}
+  if(window.__eduOpenCal){window.__eduOpenCal=0;wantCal=true;}
   loadOpen(box);
 }
 function loadingCard(text){
@@ -603,7 +605,8 @@ function loadOpen(box){
 function route(box,d,checked){
   box.innerHTML="";
   if(!d||d.ok!==true){showError(box,(d&&d.error)||"Could not load the classroom.");return;}
-  if(!d.level){levelPicker(box,"",false);return;}
+  if(!d.level){wantCal=false;levelPicker(box,"",false);return;}
+  if(wantCal){wantCal=false;calView(box,d.level,function(){loadOpen(box);});return;}
   if(d.open!==true){noClass(box,d.level,checked);return;}
   sid=d.session;
   if(d.joined===true){enter(box,d);return;}
@@ -690,15 +693,46 @@ function topBar(box,level,openCal){
   var bar=h("div","ecr-bar");
   var l=h("div","ecr-bar-l");l.appendChild(h("p","ecr-kick","AI Classroom"));l.appendChild(h("b",null,levelName(level)));
   var r=h("div","ecr-bar-r");
-  r.appendChild(iconBtn("calendar","Class timetable",openCal));
-  r.appendChild(iconBtn("bell","Notifications",function(){notesView(box);},window.eduNotesCount||0));
+  r.appendChild(iconBtn("calendar","Class timetable and notifications",openCal,window.eduNotesCount||0));
   bar.appendChild(l);bar.appendChild(r);box.appendChild(bar);
 }
 /* the timetable opens on its own page, so the main screen stays clean */
 function calView(box,level,back){
   box.className="ecr";box.innerHTML="";
   var top=h("div","ecr-sh-top");var b=btnI("back","Back","out");b.onclick=back;top.appendChild(b);box.appendChild(top);
+  var holder=h("div");box.appendChild(holder);
   calendarCard(box,level);
+  notesTop(box,holder);
+}
+/* newest class notifications (unread first, at most 3) shown above the timetable.
+   The unread ones count as read as soon as they are on screen, so the red number goes away. */
+function notesTop(box,holder){
+  post(plain("notes"),{}).then(function(d){
+    if(!inDoc(holder)||!d||d.ok!==true)return;
+    var items=d.items||[];
+    if(!items.length)return;
+    var unread=items.filter(function(i){return !i.read_at;});
+    var read=items.filter(function(i){return !!i.read_at;});
+    var show=unread.concat(read).slice(0,3);
+    var c=h("section","ecr-card");c.setAttribute("aria-label","Class notifications");
+    c.appendChild(h("p","ecr-kick",unread.length?"Class notification":"Recent class notifications"));
+    show.forEach(function(it){
+      var isNew=!it.read_at;
+      var n=h("div","ecr-nt"+(isNew?" new":""));
+      n.appendChild(h("b",null,clean(it.title)||"Notification"));
+      n.appendChild(h("small",null,(isNew?"New \u00b7 ":"")+stamp(it.created_at)));
+      if(it.body)n.appendChild(h("span",null,clean(it.body)));
+      c.appendChild(n);
+    });
+    var all=btn("See all notifications","out");all.style.marginTop="10px";
+    all.onclick=function(){notesView(box);};
+    c.appendChild(all);
+    holder.appendChild(c);
+    if(unread.length){
+      var ids=unread.slice(0,50).map(function(i){return i.id;});
+      post(plain("noteread"),{ids:ids}).then(function(){badgeSync();});
+    }
+  });
 }
 function noClass(box,level,checked){
   var again=function(){box.className="ecr";box.innerHTML="";noClass(box,level,false);};
@@ -1168,5 +1202,5 @@ function start(){
     });
   })();
 }
-window.EduClassroom={open:openScreen,stop:stop};
+window.EduClassroom={open:openScreen,stop:stop,openCalendar:function(app){window.__eduOpenCal=1;openScreen(app);}};
 })();
