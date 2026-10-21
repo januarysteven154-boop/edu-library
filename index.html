@@ -1892,8 +1892,17 @@ function eduClassroomOpen(app){
   app.innerHTML='<div class="empty">Loading...</div>';
   const sc=document.createElement("script");
   sc.src="https://edu-library.edulibrary.workers.dev/classroom.js?v="+Date.now();
-  sc.onload=go;
-  sc.onerror=()=>{try{sc.remove();}catch(x){}app.innerHTML='<div class="empty">Could not open the Classroom. Check your internet and try again.</div>';};
+  sc.onload=()=>{ if(window.EduClassroom) go(); else loadLocalClassroom(); };
+  sc.onerror=loadLocalClassroom;
+  function loadLocalClassroom(){
+    try{sc.remove();}catch(x){}
+    if(window.EduClassroom){go();return;}
+    const local=document.createElement("script");
+    local.src="classroom.js?v=ui-1";
+    local.onload=()=>{ if(window.EduClassroom) go(); else app.innerHTML='<div class="empty">The Classroom interface could not start. Please refresh and try again.</div>'; };
+    local.onerror=()=>{app.innerHTML='<div class="empty">Could not open the Classroom. Check your internet and try again.</div>';};
+    document.head.appendChild(local);
+  }
   document.head.appendChild(sc);
 }
 function renderHome(app){
@@ -1950,6 +1959,7 @@ function renderLibrary(app){
     <button type="button" class="downloadHub" onclick="location.hash='#/downloads'"><span>${LS(BOOKP)}</span><div><b>My Downloads</b><small>Read your saved books offline</small></div><i>›</i></button>
     <div class="chooser"><h3>Choose Your Education Level</h3><p class="sub">Select your level to access classes and learning materials.</p>
     ${Object.entries(LEVELS).map(([k,l])=>`<a class="lv ${D[k][1]}" href="#/level/${k}"><div class="orb2">${LS(LVSVG[k]||BOOKP)}</div><div><b>${esc(l.label)}</b><em>${l.sub||(l.classes[0]+" – "+l.classes[l.classes.length-1])}</em><p>${D[k][0]}</p></div><i class="chev">›</i></a>`).join("")}</div>${recentRows()}`;
+  try{app.insertAdjacentHTML("afterbegin",window.eduCalRow?eduCalRow():"");if(window.eduNotesRefresh)eduNotesRefresh();}catch(e){}
 }
 
 const TAG={"Standard 1":"Start your learning journey","Standard 2":"Build your knowledge","Standard 3":"Learn and grow","Standard 4":"Explore new ideas","Standard 5":"Be curious, be great","Standard 6":"Stronger skills, bigger dreams","Standard 7":"Learn today, lead tomorrow","Standard 8":"Achieve your goals","Form 1":"Build your foundation for success.","Form 2":"Expand your knowledge and gain new skills.","Form 3":"Prepare for higher opportunities.","Form 4":"Step closer to your dreams.","Engineering":"Civil, mechanical, electrical, mining and more.","IT & Computing":"Computer science, software, networks and information systems.","Health Sciences":"Medicine, nursing, pharmacy, public health and lab sciences.","Education":"Teacher training, curriculum and education management.","Business & Management":"Accounting, finance, marketing, economics and HR.","Agriculture & Natural Resources":"Crops, animals, forestry, fisheries and environment.","Sciences":"Biology, chemistry, physics, maths and statistics.","Law":"Legal studies, human rights and justice.","Humanities & Social Sciences":"Languages, history, psychology, development and public administration.","Architecture & Construction":"Architecture, surveying, planning and building.","Tourism & Hospitality":"Tourism, hotel management, wildlife and heritage.","Media & Communication":"Journalism, media, public relations and communication.","Theology":"Theology, ministry and religious studies.","Other Courses":"Every other course, plus books added before the new categories."};
@@ -3051,27 +3061,27 @@ window.addEventListener("pagehide",e=>{if(!e.persisted&&document.visibilityState
 function profKey(){const u=convUser();return u?"edu_profile:"+u:null;}
 function getProfile(){try{const k=profKey();return k?(JSON.parse(localStorage.getItem(k)||"null")||{}):{};}catch(_){return {};}}
 function saveProfile(p){try{const k=profKey();if(k)localStorage.setItem(k,JSON.stringify(p));}catch(_){}}
+function aiName(){try{const u=(window.EduAcct&&EduAcct.user&&EduAcct.user())||"";return u?u.charAt(0).toUpperCase()+u.slice(1):"";}catch(e){return "";}}
 function aiHello(){const h=new Date().getHours();return h<12?"Good morning":(h<18?"Good afternoon":"Good evening");}
 function aiGreeting(){
-  const p=getProfile();
+  const p=getProfile(),nm=aiName();
   const base="I'm Edu AI, your study assistant for EDU LIBRARY MW. ";
   const tail="Ask me to explain a topic, make a quiz, summarize a lesson, or help you plan your studying.";
-  if(p.name)return esc(aiHello()+", "+p.name+"! ")+"✨ "+esc(base)+(p.cls?esc("Ready to work on "+p.cls+" today? "):"")+esc(tail);
-  return esc("Hi! "+base+tail+" What's your name, and which class are you in?");
+  const ask=p.cls?"":(p.level?" Which class are you in?":" Which education level are you in?");
+  return esc(aiHello()+(nm?", "+nm:"")+"! ")+"✨ "+esc(base)+(p.cls?esc("Ready to work on "+p.cls+" today? "):"")+esc(tail+ask);
 }
 function aiChipList(){
   const p=getProfile();
-  return ["Explain this topic",p.cls?"Quiz me for "+p.cls:"Create a quiz","Summarize this lesson",p.name?"Make me a study plan":"Help me study"];
+  return ["Explain this topic",p.cls?"Quiz me for "+p.cls:"Create a quiz","Summarize this lesson","Make me a study plan"];
 }
 function aiProfileText(){
   const p=getProfile();
-  if(!p.name&&!p.level)return "✨ Personalize Edu AI";
   const lvl=p.cls||(p.level&&LEVELS[p.level]?LEVELS[p.level].label:"");
-  return "✨ "+(p.name||"You")+(lvl?" · "+lvl:"")+"  ✏️";
+  return "✨ "+(aiName()||"You")+(lvl?" · "+lvl:" · Choose your level")+"  ✏️";
 }
 function aiRefreshProfileUI(){
   const c=document.getElementById("aiProfChip");if(c)c.textContent=aiProfileText();
-  const hv=document.getElementById("aiHav");if(hv){const pn=(getProfile().name||"").trim();hv.textContent=pn?pn.charAt(0).toUpperCase():"✨";}
+  const hv=document.getElementById("aiHav");if(hv){const pn=aiName();hv.textContent=pn?pn.charAt(0).toUpperCase():"✨";}
   const s=document.getElementById("aiChips");
   if(s)s.innerHTML=aiChipList().map(t=>`<button onclick="aiSend('${t.replace(/'/g,"")}')">${esc(t)}</button>`).join("");
   if(!chatTurns.length)renderAIMessages();
@@ -3082,7 +3092,7 @@ function aiProfileOpen(){
   o.innerHTML=`<div class="card aiprof" role="dialog" aria-label="About you">
     <h3>✨ About you</h3>
     <p class="hint">Edu AI uses this to greet you and to explain things at your level. It stays on this phone.</p>
-    <div class="field"><label>Your name</label><input id="pfName" maxlength="30" autocomplete="given-name"></div>
+    <p class="hint">Name: <b>${esc(aiName())}</b> (from your account)</p>
     <div class="row2">
       <div class="field"><label>Level</label><select id="pfLevel"><option value="">Choose…</option>${Object.keys(LEVELS).map(k=>`<option value="${k}">${esc(LEVELS[k].label)}</option>`).join("")}</select></div>
       <div class="field"><label id="pfClsLbl">Class</label><select id="pfCls"><option value="">—</option></select></div>
@@ -3091,19 +3101,18 @@ function aiProfileOpen(){
     <button type="button" class="lnk" id="pfClear">Clear my details</button>
   </div>`;
   document.body.appendChild(o);
-  const nm=o.querySelector("#pfName"),lv=o.querySelector("#pfLevel"),cl=o.querySelector("#pfCls");
-  nm.value=p.name||"";lv.value=p.level&&LEVELS[p.level]?p.level:"";
+  const lv=o.querySelector("#pfLevel"),cl=o.querySelector("#pfCls");
+  lv.value=p.level&&LEVELS[p.level]?p.level:"";
   const fill=()=>{const lb=o.querySelector("#pfClsLbl");if(lb)lb.textContent=lv.value==="Tertiary"?"Course area":"Class";const l=LEVELS[lv.value];cl.innerHTML='<option value="">—</option>'+(l?l.classes.map(c=>`<option>${esc(c)}</option>`).join(""):"");};
   fill();cl.value=p.cls||"";
   lv.onchange=()=>{fill();};
   const close=()=>o.remove();
   o.onclick=e=>{if(e.target===o)close();};
   o.querySelector("#pfSave").onclick=()=>{
-    saveProfile({name:nm.value.trim().slice(0,30),level:lv.value,cls:cl.value});
+    saveProfile({level:lv.value,cls:cl.value});
     close();aiRefreshProfileUI();
   };
   o.querySelector("#pfClear").onclick=()=>{saveProfile({});close();aiRefreshProfileUI();};
-  setTimeout(()=>{if(!nm.value)nm.focus();},50);
 }
 function renderAIMessages(streamingText){
   const box = document.getElementById("aiMsgs");
@@ -3284,7 +3293,7 @@ function buildAppContext(){
   else if(h[0]==="search")where="Search Books";
   else if(h[0]==="ai")where="the Edu AI chat";else if(h[0]==="room")where="the AI Examination Room";else if(h[0]==="exams")where="the Past Papers tab"+(h[1]?" ("+(((LEVELS[h[1]]&&LEVELS[h[1]].label)||h[1]))+(h[2]?", "+h[2]:"")+")":"");else if(h[0]==="settings")where="Settings";else if(h[0]==="downloads")where="My Downloads";
   const pr=getProfile();
-  const who=(pr.name||pr.level||pr.cls)?`ABOUT THE STUDENT: ${pr.name?"name is "+pr.name+"; ":""}${pr.level&&LEVELS[pr.level]?"studies at "+LEVELS[pr.level].label+"; ":""}${pr.cls?(pr.level==="Tertiary"?"course area ":"class ")+pr.cls+". ":""}Use their name now and then, and explain at a level that suits their class.`:"";
+  const who=(aiName()||pr.level||pr.cls)?`ABOUT THE STUDENT: ${aiName()?"name is "+aiName()+" (from their signed-in account, never ask for it); ":""}${pr.level&&LEVELS[pr.level]?"studies at "+LEVELS[pr.level].label+"; ":""}${pr.cls?(pr.level==="Tertiary"?"course area ":"class ")+pr.cls+". ":""}Use their name now and then, and explain at a level that suits their class.`:"";
   const ln=langName();
   const langLine=LANG==="en"
     ?`LANGUAGE: the student's app language is English. Reply in English unless the student explicitly asks you to answer in another language (an explicit request wins for that reply). Reading aloud is handled separately by the student's phone.`
@@ -3297,7 +3306,7 @@ function buildAppContext(){
     `ABOUT YOUR CREATOR (share ONLY when someone directly asks who made, built or owns you or the app, how it began, or about his background; never bring any of it up on your own, never in greetings or unrelated answers): EDU LIBRARY MW and you were created by ${APP_OWNER}, who built the whole app himself. Always call him "${APP_OWNER}". Only if someone asks for his government name, full name or real name, say it is ${APP_OWNER_LEGAL} (people know him as ${APP_OWNER}). The idea: he had this idea for many years but lacked the resources to make it real. A few months ago he started coding in Python. The first version was a desktop app; he then redesigned it as an HTML web app so it is mobile-friendly and works on students' phones. Personal details, to be shared only if asked: he was born in 2003 at Limbe Hospital in Blantyre, Malawi, so he is around ${ownerAge()} years old. Only the birth year is known: never state or guess an exact birthday, day, month or time of birth, and if asked for it say he prefers to keep that private. Education: for primary school he attended Zingwangwa Primary School and then Fishing Line Primary School. For secondary school he attended Zingwangwa Progressive Secondary School, then Beacon High School, then Mulomba CDSS, and then Madaliso High School. He wrote his MSCE at Madaliso High School in 2022, repeated it in 2024, and is writing MSCE again. Share these facts warmly and briefly, only the part that was asked, and never invent extra personal details. His story is a good example to encourage students who have had to repeat a class or change schools: persistence pays off.`,
     `YOUR OWN FEATURES (mention them only when relevant to what the student is doing or asks, never boast): the plus button on the left of the message bar lets a student add a photo, such as a textbook page, diagram or homework question, for you to explain; the microphone button lets students speak instead of typing, which helps students who struggle with spelling, and their words appear in the message box; the send button sends the message and turns into a stop button while you are answering; the play/pause button on each of your replies reads it aloud and can be paused and resumed, and the audio keeps playing if the student switches apps; the three-dot menu at the top right of the chat has Read aloud, which shows what voice the phone will use (there is no male, female or age voice choice: the student's phone picks its own voice for the language they chose, and if the phone has no voice for that language your written answer stays in that language and the phone reads it with its closest or default voice); you can answer in Chichewa whenever a student asks, and when you do, the app reads your answer aloud with a slower pace and pronunciation-friendly handling of Chichewa spelling; you learn each student's name and class from the chat and adapt to them automatically; the menu button at the top left opens their saved chats; the suggestion buttons above the message bar (Explain this topic, Create a quiz, Summarize this lesson, Help me study) give quick starts; and you can make simple pictures when a student asks for one.`,
     `WHICH AI MODELS POWER YOU (share ONLY when someone directly asks which AI or model you are or what powers you; never volunteer it): you run on Google Gemini as the main model, with Groq and Mistral models as automatic backups that take over if one is busy or reaches its limit; pictures are made by Gemini's image model. Say this honestly, and add that you cannot always tell which of them is answering at a given moment. Never claim to be any other product.`,
-    `PERSONALIZED EXPERIENCE: adapt to each student automatically. Use their name naturally, match your vocabulary, examples and depth to their class, use familiar Malawian everyday examples, remember what they told you earlier in this chat (their subjects, struggles and goals), and adjust if they say something is too hard or too easy. If you do not yet know their name or class, ask for it once, briefly and kindly, and then use it. Do not ask again once they have told you.`,
+    `PERSONALIZED EXPERIENCE: adapt to each student automatically. Use their name naturally, match your vocabulary, examples and depth to their class, use familiar Malawian everyday examples, remember what they told you earlier in this chat (their subjects, struggles and goals), and adjust if they say something is too hard or too easy. Their name comes from their signed-in account, so never ask for their name. If you do not yet know their education level or class, ask for it once, briefly and kindly, and then use it. Do not ask again once they have told you.`,
     `CHICHEWA: if a student asks you to speak, explain or answer in Chichewa, or writes to you in Chichewa, reply in clear, natural, correct Chichewa as spoken in Malawi, using standard Chichewa spelling and simple everyday words. Where there is no common Chichewa word for a school term (for example a science term), keep the English term and explain it in Chichewa. Keep to Chichewa until the student asks to go back to English. Write plainly so the text can be read aloud: no emojis, no symbols, and spell numbers as words when it helps. The app's language is currently set to ${langName()}.`,
     `The student is currently on ${where}.`,
     `Help with school topics, and when useful point students to the right place in the app (e.g. "open Library -> Form 2 -> Biology"). You do not have and must never reveal admin credentials or secret keys.`
@@ -3631,8 +3640,6 @@ function aiGenerate(q,original){
 function aiAutoLearn(text){
   try{
     const t=String(text||"");const pr=getProfile();let ch=false;
-    const nm=t.match(/\b(?:my name is|my name's|call me|i am called|i'm called)\s+([A-Za-z][A-Za-z'-]{1,20})/i);
-    if(nm&&nm[1]){const n=nm[1].charAt(0).toUpperCase()+nm[1].slice(1);if(n!==pr.name){pr.name=n;ch=true;}}
     let lv="",cl="";
     let m=t.match(/\b(?:form|f)\s*([1-4])\b/i);if(m){lv="Secondary";cl="Form "+m[1];}
     if(!cl){m=t.match(/\b(?:standard|std)\s*([1-8])\b/i);if(m){lv="Primary";cl="Standard "+m[1];}}
@@ -3718,8 +3725,9 @@ window.addEventListener("hashchange", render);
 </script>
 <script>
 /* ---------- Reading mode + Settings ---------- */
-const APP_VERSION="1.8.17";
+const APP_VERSION="1.8.18";
 const APP_CHANGES=[
+ "1.8.18: Library has a calendar icon with a red number for new class notifications; tapping it shows the class notification above the timetable. Edu AI uses the account name and only asks for the education level.",
  "1.8.17: Classroom replaces Home in the bottom tabs (Classroom, Exam Room, Library, Past Papers, Settings); the test link in Settings is removed; Library is still the page after sign-in.",
  "1.8.16: hidden AI Classroom test screen (only for the test account, Settings); nothing else changed.",
  "1.8.11: chats are now kept separately for each signed-in student on a shared phone; Delete my chats always clears this phone; clearer sign-in, privacy and PIN wording; Past Papers named the same everywhere.",
@@ -4021,6 +4029,53 @@ window.eduSetLanguage=function(k){
     accept:()=>{try{localStorage.setItem(agKey(),new Date().toISOString());}catch(e){}if(typeof window.eduAcctChanged==="function")window.eduAcctChanged();},
     signOut:()=>signOut()};
   try{if(typeof window.eduAcctChanged==="function")window.eduAcctChanged();}catch(e){}
+})();
+</script>
+
+<style>
+.calrow{display:flex;justify-content:flex-end;margin:2px 2px 10px}
+.calbtn{position:relative;display:flex;align-items:center;justify-content:center;width:46px;height:46px;padding:0;border:1.5px solid rgba(127,127,127,.35);border-radius:50%;background:rgba(127,127,127,.16);color:inherit;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.calbtn:active{opacity:.8}.calbtn svg{width:23px;height:23px}
+.calbadge{position:absolute;top:-4px;right:-4px;min-width:20px;height:20px;padding:0 5px;border-radius:10px;background:#E5262B;color:#fff;font:700 12px/20px Roboto,'Noto Sans',sans-serif;align-items:center;justify-content:center;box-sizing:border-box}
+</style>
+<script>
+/* Library calendar icon with the red number of unread class notifications.
+   The number comes only from the backend (classroom action "notes"); classroom.js updates it through eduNotesRefresh. */
+(function(){
+  window.eduNotesCount=0;
+  let busy=false,again=false;
+  function paint(){
+    const n=window.eduNotesCount||0;
+    document.querySelectorAll(".calbadge").forEach(b=>{b.textContent=n>9?"9+":String(n);b.style.display=n>0?"flex":"none";});
+    document.querySelectorAll(".calbtn").forEach(b=>b.setAttribute("aria-label","Class timetable and notifications"+(n>0?", "+n+" new":"")));
+  }
+  async function load(){
+    if(busy){again=true;return;}
+    if(!(window.EduAcct&&EduAcct.isIn&&EduAcct.isIn())){window.eduNotesCount=0;paint();return;}
+    busy=true;
+    try{
+      const tk=await EduAcct.token();
+      if(tk){
+        const hd=eduDeviceHeaders();hd.Authorization="Bearer "+tk;
+        const r=await fetch(aiBase()+"/book-link?classroom=notes",{method:"POST",headers:hd,body:"{}"});
+        const d=await r.json();
+        if(d&&d.ok===true){window.eduNotesCount=typeof d.unread==="number"?d.unread:(d.items||[]).filter(i=>!i.read_at).length;paint();}
+      }
+    }catch(e){}
+    busy=false;
+    if(again){again=false;load();}
+  }
+  window.eduNotesRefresh=function(n){
+    if(typeof n==="number"){window.eduNotesCount=Math.max(0,n);paint();return;}
+    paint();load();
+  };
+  window.eduCalRow=function(){
+    if(!(window.EduAcct&&EduAcct.isIn&&EduAcct.isIn()))return "";
+    return '<div class="calrow"><button type="button" class="calbtn" aria-label="Class timetable and notifications" title="Class timetable" onclick="eduOpenCalendar()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15" rx="2.5"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg><span class="calbadge" style="display:none"></span></button></div>';
+  };
+  window.eduOpenCalendar=function(){window.__eduOpenCal=1;location.hash="#/classroom";};
+  setInterval(function(){if(!document.hidden&&document.querySelector(".calbtn"))load();},60000);
+  document.addEventListener("visibilitychange",function(){if(!document.hidden&&document.querySelector(".calbtn"))load();});
 })();
 </script>
 
