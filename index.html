@@ -4963,10 +4963,26 @@ body.aipage .bottomnav{background:rgba(36,8,48,.74)!important;backdrop-filter:bl
   function putStamps(m){try{var k=Object.keys(m);if(k.length>500){k.sort(function(a,b){return m[a]-m[b];}).slice(0,k.length-400).forEach(function(x){delete m[x];});}var tk=tsKey();if(tk)localStorage.setItem(tk,JSON.stringify(m));}catch(e){}}
   function fmt(ts){try{return new Date(ts).toLocaleTimeString([],{hour:"numeric",minute:"2-digit"});}catch(e){return "";}}
   function norm(s){return String(s||"").toLowerCase().replace(/[^a-z0-9 ]+/g," ").replace(/\s+/g," ").trim();}
-  function booksIn(text){
-    var out=[];try{
-      var n=" "+norm(text)+" ";
-      (booksCache||[]).forEach(function(b){var t=norm(b.title);if(out.length>=3||t.length<5||!b.file_path)return;if(n.indexOf(" "+t+" ")>-1)out.push(b);});
+  function classesIn(s){var o=[],re=/\b(form|std|standard)\s*([0-9]{1,2})\b/gi,m;s=String(s||"");while((m=re.exec(s))){var c=(m[1].toLowerCase()==="form"?"form ":"standard ")+m[2];if(o.indexOf(c)<0)o.push(c);}return o;}
+  /* Cards must match what the student asked for: the class they named (else their saved class, else the class in the answer),
+     the subject, and books vs past papers. A one-word title such as "English" is only shown when the class is known and equal. */
+  function booksIn(text,userText){
+    var out=[];
+    try{
+      var n=" "+norm(text)+" ",u=" "+norm(userText)+" ",ut=String(userText||"");
+      var want=classesIn(ut);
+      if(!want.length){try{want=classesIn(getProfile().cls);}catch(e){}}
+      if(!want.length)want=classesIn(text);
+      var uw=/\b(paper|papers|exam|exams|mock|mocks)\b/i.test(ut),ub=/\b(book|books|textbook|textbooks)\b/i.test(ut);
+      var ask=/\b(book|books|textbook|textbooks|paper|papers|exam|exams|pdf|notes|find|looking|search|need|show|list|where|get|have|suggest|recommend)\b/i.test(ut);
+      var kindOk=function(b){var ex=false;try{ex=!!isExam(b);}catch(e){}if(uw&&!ub)return ex;if(ub&&!uw)return !ex;return true;};
+      var clsOk=function(b){return !want.length||want.indexOf(norm(clsOf(b)))>-1;};
+      var seen={};
+      var add=function(b){var k=bkey(b);if(seen[k]||out.length>=5)return;seen[k]=1;out.push(b);};
+      if(ask&&want.length&&ut){
+        (booksCache||[]).forEach(function(b){var s=norm(b.subject);if(!b.file_path||s.length<3||!clsOk(b)||!kindOk(b))return;if(u.indexOf(" "+s+" ")>-1)add(b);});
+      }
+      (booksCache||[]).forEach(function(b){var t=norm(b.title);if(out.length>=3||t.length<5||!b.file_path)return;if(n.indexOf(" "+t+" ")<0)return;if(!clsOk(b)||!kindOk(b))return;if(t.indexOf(" ")<0&&!want.length)return;add(b);});
     }catch(e){}
     return out;
   }
@@ -4982,7 +4998,7 @@ body.aipage .bottomnav{background:rgba(36,8,48,.74)!important;backdrop-filter:bl
   window.aiMsgHTML=function(t,i){
     var bub=oldMsg(t,i),pop=i>=seen,m=stamps(),ts=m[(typeof curConvId!=="undefined"?curConvId:"")+":"+i],time=ts?fmt(ts):"";
     if(t.role==="assistant"){
-      var bk=booksIn(t.content),cards=bk.map(card).join("");
+      var bk=booksIn(t.content,(typeof chatTurns!=="undefined"&&i>0&&chatTurns[i-1]&&chatTurns[i-1].role==="user")?chatTurns[i-1].content:""),cards=bk.map(card).join("");
       return aiRow(bub,{pop:pop,live:pop,cards:cards,time:time});
     }
     return '<div class="crow me'+(pop?" pop":"")+'"><div class="cav">'+HUM+'</div><div class="cmain">'+bub+(time?'<div class="ctime">'+time+'</div>':"")+'</div></div>';
