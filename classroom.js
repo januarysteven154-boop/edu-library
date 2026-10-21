@@ -15,22 +15,25 @@ var ROSTER_PREVIEW=12,FEED_PREVIEW=2,EXPL_CHARS=230,LESSON_CHARS=200,MSG_CHARS=1
    Tokens: --acc = gold used for TEXT, --gold = gold used for FILLS (buttons, rings), --onacc = text on a gold fill.
    Sunset (the app default) = plum + gold. Dark = navy + gold. Light = cream + dark gold. */
 var CSS=[
-".ecr{--bg:#2F102D;--bg2:#411440;--card:#521C4D;--card2:#652960;--ink:#FDF5E8;--ink2:#DCC6AA;--acc:#F9B81F;--gold:#F9B81F;--gold2:#FFD86B;--line:rgba(244,195,121,.30);--inp:#3A1336;--onacc:#2F102D;--live:#35C779;--rest:#FFAA45;--closed:#F05D64;--conn:#A6A6B2;--speak:#58A6FF;--err:#FF9A9F;--ok:#6FE0A0;--focus:#FFD86B;--shadow:0 2px 10px rgba(0,0,0,.22)}",
-"body:not(.sunset):not(.light) .ecr{--bg:#07112F;--bg2:#0B1B49;--card:#10215E;--card2:#182A70;--ink:#FFFFFF;--ink2:#B9C6E8;--acc:#F4C542;--gold:#F4C542;--gold2:#FFD86B;--line:rgba(185,198,232,.24);--inp:#0A1740;--onacc:#07112F;--err:#FF8DA0;--ok:#20D6A1;--focus:#FFD86B}",
-"body.light .ecr{--bg:#FFF7EE;--bg2:#FBEBD8;--card:#FFFFFF;--card2:#FFF1DC;--ink:#2B1A16;--ink2:#6B5448;--acc:#8A5A00;--gold:#F4B521;--gold2:#FFD86B;--line:#E2C9AA;--inp:#FFFFFF;--onacc:#2B1A00;--live:#1B7A45;--rest:#9A5800;--closed:#B3261E;--conn:#6B7280;--speak:#1D5FB0;--err:#B3261E;--ok:#1B7A45;--focus:#8A5A00;--shadow:0 2px 8px rgba(80,50,20,.12)}",
+".ecr{--bg:#2F102D;--bg2:#411440;--card:rgba(66,20,60,.84);--card2:#652960;--ink:#FDF5E8;--ink2:#DCC6AA;--acc:#F9B81F;--gold:#F9B81F;--gold2:#FFD86B;--line:rgba(244,195,121,.30);--inp:#3A1336;--onacc:#2F102D;--live:#35C779;--rest:#FFAA45;--closed:#F05D64;--conn:#A6A6B2;--speak:#58A6FF;--err:#FF9A9F;--ok:#6FE0A0;--focus:#FFD86B;--shadow:0 2px 10px rgba(0,0,0,.22)}",
+"body:not(.sunset):not(.light) .ecr{--bg:#07112F;--bg2:#0B1B49;--card:rgba(16,33,94,.86);--card2:#182A70;--ink:#FFFFFF;--ink2:#B9C6E8;--acc:#F4C542;--gold:#F4C542;--gold2:#FFD86B;--line:rgba(185,198,232,.24);--inp:#0A1740;--onacc:#07112F;--err:#FF8DA0;--ok:#20D6A1;--focus:#FFD86B}",
+"body.light .ecr{--bg:#FFF7EE;--bg2:#FBEBD8;--card:rgba(255,255,255,.90);--card2:#FFF1DC;--ink:#2B1A16;--ink2:#6B5448;--acc:#8A5A00;--gold:#F4B521;--gold2:#FFD86B;--line:#E2C9AA;--inp:#FFFFFF;--onacc:#2B1A00;--live:#1B7A45;--rest:#9A5800;--closed:#B3261E;--conn:#6B7280;--speak:#1D5FB0;--err:#B3261E;--ok:#1B7A45;--focus:#8A5A00;--shadow:0 2px 8px rgba(80,50,20,.12)}",
 ".ecr{box-sizing:border-box;max-width:560px;margin:0 auto;padding:14px 14px calc(100px + env(safe-area-inset-bottom,0px));color:var(--ink);font:16px/1.5 Roboto,'Noto Sans','Segoe UI',sans-serif;overflow-wrap:anywhere}",
 ".ecr::before{content:\"\";position:fixed;left:0;right:0;top:0;bottom:0;z-index:-1;pointer-events:none;background-color:#2F102D;background-image:linear-gradient(rgba(47,16,45,.25),rgba(47,16,45,.45)),var(--ecr-wallpaper,none);background-size:cover;background-position:center bottom}",
 "body.light .ecr::before{background-color:#FFF7EE;background-image:linear-gradient(rgba(255,247,238,.35),rgba(255,247,238,.15)),var(--ecr-wallpaper,none)}",
 ".ecr *{box-sizing:border-box}.ecr [hidden]{display:none!important}",
 ".ecr-head{margin:4px 2px 14px}.ecr-head h1{margin:0 0 4px;font-size:22px;line-height:1.25;font-weight:700}.ecr-head p{margin:0;font-size:15px;color:var(--ink2)}",
-".ecr-card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px;margin-bottom:12px;box-shadow:var(--shadow)}",
+".ecr-card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:16px;margin-bottom:12px;box-shadow:var(--shadow);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px)}",
+".ecr-bar{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:2px 2px 14px}.ecr-bar-l{min-width:0}.ecr-bar-l .ecr-kick{margin:0}.ecr-bar-l b{display:block;font-size:20px;line-height:1.25}.ecr-bar-r{display:flex;gap:10px;flex:0 0 auto}",
+".ecr-ib{position:relative;display:flex;align-items:center;justify-content:center;width:46px;height:46px;padding:0;border:1.5px solid var(--line);border-radius:50%;background:var(--card);color:var(--acc);cursor:pointer;-webkit-tap-highlight-color:transparent;-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px)}.ecr-ib:active{opacity:.8}.ecr-ib svg{width:23px;height:23px}",
+".ecr-badge{position:absolute;top:-4px;right:-4px;min-width:20px;height:20px;padding:0 5px;border-radius:10px;background:var(--gold);color:var(--onacc);font:700 12px/20px Roboto,'Noto Sans',sans-serif;text-align:center}",
 ".ecr-card h2{margin:0 0 4px;font-size:19px;line-height:1.3;font-weight:700}",
 ".ecr-sub{margin:0;font-size:14px;color:var(--ink2)}",
 ".ecr-kick{margin:0 0 4px;font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--acc)}",
 ".ecr-ic{display:inline-flex;flex:0 0 auto}.ecr-ic svg{width:18px;height:18px}",
 ".ecr-btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;min-height:48px;padding:10px 16px;margin-top:12px;border:1.5px solid var(--gold);border-radius:12px;background:var(--gold);color:var(--onacc);font:600 16px/1.2 Roboto,'Noto Sans','Segoe UI',sans-serif;cursor:pointer;-webkit-tap-highlight-color:transparent}",
-".ecr-btn.sec{background:transparent;color:var(--ink);border-color:var(--line)}",
-".ecr-btn.sm{width:auto;flex:1 1 0;min-width:0;min-height:44px;margin-top:0;padding:8px 8px;gap:6px;font-size:15px}.ecr-row .ecr-btn.sm{flex-basis:84px;white-space:nowrap}.ecr-row .ecr-btn.rd{flex-grow:1.5}",
+".ecr-btn.out{background:transparent;color:var(--ink);border-color:var(--line)}",
+".ecr-btn.sm{width:auto;flex:1 1 0;min-width:0;min-height:44px;margin-top:0;padding:8px 8px;gap:6px;font-size:15px}.ecr-row .ecr-btn.sm{flex-basis:84px;white-space:nowrap}.ecr-row .ecr-btn.ecr-rd{flex-grow:1.5}",
 ".ecr-btn:active{transform:scale(.98);opacity:.85}",
 ".ecr-btn:disabled{opacity:.55;cursor:default;transform:none}",
 ".ecr button:focus-visible,.ecr select:focus-visible,.ecr textarea:focus-visible,.ecr summary:focus-visible{outline:3px solid var(--focus);outline-offset:2px}",
@@ -185,6 +188,8 @@ var IC={
  people:'<circle cx="9" cy="8" r="3"/><path d="M3 19c0-3 2.7-5 6-5s6 2 6 5"/><circle cx="17" cy="9" r="2.4"/><path d="M16.5 14c3 0 4.5 1.7 4.5 4.5"/>',
  chat:'<path d="M4 5h16v11H9.5L4 20z"/>',
  list:'<path d="M9 6h11M9 12h11M9 18h11"/><path d="M4.5 6h.01M4.5 12h.01M4.5 18h.01"/>',
+ calendar:'<rect x="3.5" y="5" width="17" height="15" rx="2.5"/><path d="M3.5 10h17M8 3v4M16 3v4"/>',
+ bell:'<path d="M6 17v-6a6 6 0 0112 0v6l1.5 2h-15z"/><path d="M10 21h4"/>',
  spark:'<path d="M12 3l2.2 5.6L20 11l-5.8 2.4L12 19l-2.2-5.6L4 11l5.8-2.4z"/>'
 };
 function icon(name){var s=h("span","ecr-ic");s.setAttribute("aria-hidden","true");s.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">'+(IC[name]||"")+'</svg>';return s;}
@@ -193,6 +198,13 @@ function btnI(name,label,cls){
   var b=h("button","ecr-btn"+(cls?" "+cls:""));b.type="button";
   if(name)b.appendChild(icon(name));
   b.lab=h("span",null,label);b.appendChild(b.lab);return b;
+}
+/* round icon button (calendar, bell). Text for screen readers goes in aria-label. */
+function iconBtn(name,label,fn,count){
+  var b=h("button","ecr-ib");b.type="button";b.setAttribute("aria-label",label);b.title=label;
+  b.appendChild(icon(name));
+  if(count>0){var c=h("span","ecr-badge",count>9?"9+":String(count));c.setAttribute("aria-hidden","true");b.appendChild(c);b.setAttribute("aria-label",label+", "+count+" new");}
+  b.onclick=fn;return b;
 }
 function setLab(b,t){if(b.lab)b.lab.textContent=t;else b.textContent=t;}
 /* preview text: collapse white space, cut at a word, never touches the stored text */
@@ -213,7 +225,7 @@ function whenOf(v){
 function listenRow(getText,msgEl,extra){
   var row=h("div","ecr-row");
   if(extra)row.appendChild(extra);
-  var b1=btnI("play","Listen","sec sm"),b2=btnI("stop","Stop","sec sm");
+  var b1=btnI("play","Listen","out sm"),b2=btnI("stop","Stop","out sm");
   b1.onclick=function(){msgEl.className="ecr-msg err";msgEl.textContent="";var t=getText();if(!t){msgEl.textContent="Nothing to read yet.";return;}if(!say(t))msgEl.textContent="Voice is not available on this phone.";};
   b2.onclick=function(){hush();msgEl.textContent="";};
   row.appendChild(b1);row.appendChild(b2);return row;
@@ -264,7 +276,7 @@ var MON=["January","February","March","April","May","June","July","August","Sept
 var DOWS=["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
 var DOWL=["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"];
 var STAT={scheduled:["Scheduled","scheduled"],starting_soon:["Starting soon","starting_soon"],live:["Live now","live"],completed:["Completed","completed"],cancelled:["Cancelled","cancelled"],not_held:["Not held","not_held"]};
-var cal=null,calTick=null,pendingDay="";
+var cal=null,calTick=null,pendingDay="",wantCal=false;
 
 function p2(n){return n<10?"0"+n:""+n;}
 function ymd(y,m,d){return y+"-"+p2(m+1)+"-"+p2(d);}
@@ -510,7 +522,7 @@ function stamp(iso){var t=Date.parse(iso);if(!isFinite(t))return "";var d=new Da
 function badgeSync(n){try{if(window.eduNotesRefresh){if(typeof n==="number")window.eduNotesRefresh(n);else window.eduNotesRefresh();}}catch(e){}}
 function notesButton(box){
   var n=window.eduNotesCount||0;
-  var b=btn(n>0?"Notifications ("+n+" new)":"Notifications","sec");
+  var b=btn(n>0?"Notifications ("+n+" new)":"Notifications","out");
   b.style.marginTop="0";b.style.marginBottom="12px";
   b.onclick=function(){notesView(box);};
   box.appendChild(b);
@@ -520,7 +532,7 @@ function notesView(box){
   box.appendChild(pageHead("Notifications","Class reminders and changes for your level."));
   var holder=h("div");box.appendChild(holder);
   holder.appendChild(loadingCard("Loading notifications..."));
-  var back=btn("Back to the classroom","sec");
+  var back=btn("Back to the classroom","out");
   back.onclick=function(){loadOpen(box);};
   post(plain("notes"),{}).then(function(d){
     if(!inDoc(box))return;
@@ -553,6 +565,7 @@ function notesView(box){
         b.onclick=function(){
           if(isNew)post(plain("noteread"),{ids:[it.id]}).then(function(){badgeSync();});
           pendingDay=it.run_date?String(it.run_date).slice(0,10):"";
+          wantCal=!!pendingDay;
           loadOpen(box);
         };
         holder.appendChild(b);
@@ -564,7 +577,7 @@ function notesView(box){
 
 /* ---------- start: choose level / find open class / join ---------- */
 function openScreen(app){
-  stop();ui={};feedKey="";last=null;sid="";appRef=app;rosterOpen=false;busy=false;
+  stop();ui={};feedKey="";last=null;sid="";appRef=app;rosterOpen=false;busy=false;wantCal=false;
   ensureStyle();
   try{setActiveNav("classroom");}catch(e){}
   try{setHeader('<h2>AI Classroom</h2>');}catch(e){}
@@ -634,7 +647,7 @@ function levelPicker(box,current,canGoBack){
       b.onclick=function(){levels(c);};
       box.appendChild(b);
     });
-    if(canGoBack){var bk=btn("Back","sec");bk.onclick=function(){loadOpen(box);};box.appendChild(bk);}
+    if(canGoBack){var bk=btn("Back","out");bk.onclick=function(){loadOpen(box);};box.appendChild(bk);}
   }
   function levels(c){
     box.innerHTML="";
@@ -668,30 +681,45 @@ function levelPicker(box,current,canGoBack){
       };
     }
     box.appendChild(card);
-    var bk=btn("Back","sec");bk.onclick=cats;box.appendChild(bk);
+    var bk=btn("Back","out");bk.onclick=cats;box.appendChild(bk);
   }
   cats();
 }
+/* top bar of the no-class and join screens: level on the left, calendar and notifications icons on the right */
+function topBar(box,level,openCal){
+  var bar=h("div","ecr-bar");
+  var l=h("div","ecr-bar-l");l.appendChild(h("p","ecr-kick","AI Classroom"));l.appendChild(h("b",null,levelName(level)));
+  var r=h("div","ecr-bar-r");
+  r.appendChild(iconBtn("calendar","Class timetable",openCal));
+  r.appendChild(iconBtn("bell","Notifications",function(){notesView(box);},window.eduNotesCount||0));
+  bar.appendChild(l);bar.appendChild(r);box.appendChild(bar);
+}
+/* the timetable opens on its own page, so the main screen stays clean */
+function calView(box,level,back){
+  box.className="ecr";box.innerHTML="";
+  var top=h("div","ecr-sh-top");var b=btnI("back","Back","out");b.onclick=back;top.appendChild(b);box.appendChild(top);
+  calendarCard(box,level);
+}
 function noClass(box,level,checked){
-  box.appendChild(pageHead("AI Classroom"));
-  notesButton(box);
+  var again=function(){box.className="ecr";box.innerHTML="";noClass(box,level,false);};
+  topBar(box,level,function(){calView(box,level,again);});
   var c=h("div","ecr-card");
   var ch=h("span","ecr-chip");ch.appendChild(h("span","ecr-dot closed"));ch.appendChild(h("span",null,"No class open"));c.appendChild(ch);
   c.appendChild(h("h2",null,"No class is open right now")).style.marginTop="12px";
-  c.appendChild(h("p","ecr-sub","Your level: "+levelName(level)+". Check the timetable below for your next class."));
+  c.appendChild(h("p","ecr-sub","Your level: "+levelName(level)+". Tap the calendar icon at the top to see your next class."));
   var note=h("div","ecr-msg",checked?"Checked just now. Still no class is open for your level.":"");note.setAttribute("role","status");
-  var b1=btn("Check again"),b2=btn("Change level","sec");
+  var b1=btn("Check again"),b2=btn("Change level","out");
   b1.onclick=function(){
     b1.disabled=true;b2.disabled=true;b1.textContent="";b1.appendChild(h("span","ecr-spin"));b1.appendChild(document.createTextNode("Checking..."));
     post(plain("open"),{}).then(function(d){if(inDoc(box))route(box,d,true);});
   };
   b2.onclick=function(){box.innerHTML="";levelPicker(box,level,true);};
   c.appendChild(b1);c.appendChild(b2);c.appendChild(note);box.appendChild(c);
-  calendarCard(box,level);
+  if(wantCal){wantCal=false;calView(box,level,again);}
 }
 function joinCard(box,d){
-  box.appendChild(pageHead("AI Classroom"));
-  notesButton(box);
+  var again=function(){box.className="ecr";box.innerHTML="";joinCard(box,d);};
+  topBar(box,d.level,function(){calView(box,d.level,again);});
   var c=h("div","ecr-card");
   var ch=h("span","ecr-chip");ch.appendChild(h("span","ecr-dot live"));ch.appendChild(h("span",null,"A class is open now."));c.appendChild(ch);
   var t=teacherRow(clean(d.title||"")+" \u00b7 "+levelName(d.level));t.row.style.marginTop="14px";c.appendChild(t.row);
@@ -712,13 +740,13 @@ function joinCard(box,d){
       else{go.disabled=false;go.textContent="Try again";msg.className="ecr-msg err";msg.textContent=(j&&j.error)||"Could not join the class.";}
     });
   };
-  var b2=btn("Change level","sec");
+  var b2=btn("Change level","out");
   b2.onclick=function(){box.innerHTML="";levelPicker(box,d.level,true);};
   c.appendChild(go);c.appendChild(b2);c.appendChild(msg);box.appendChild(c);
-  calendarCard(box,d.level);
+  if(wantCal){wantCal=false;calView(box,d.level,again);}
 }
 function enter(box,d){
-  pendingDay="";
+  pendingDay="";wantCal=false;
   box.className="ecr live";box.innerHTML="";
   var cls=h("div");box.appendChild(cls);
   build(cls,d);
@@ -782,11 +810,11 @@ function fillPractice(L){return function(body){
 function openSheet(trig,title,kind,fill){
   ui.trig=trig;ui.sy=window.pageYOffset||0;ui.kind=kind;ui.refresh=null;
   ui.sheet.innerHTML="";
-  var top=h("div","ecr-sh-top");var b1=btnI("back","Back to classroom","sec");b1.onclick=closeSheet;top.appendChild(b1);ui.sheet.appendChild(top);
+  var top=h("div","ecr-sh-top");var b1=btnI("back","Back to classroom","out");b1.onclick=closeSheet;top.appendChild(b1);ui.sheet.appendChild(top);
   var hd=h("h2","ecr-sh-h",title);hd.tabIndex=-1;ui.sheet.appendChild(hd);
   var body=h("div");ui.sheet.appendChild(body);
   fill(body);
-  var b2=btnI("back","Back to classroom","sec");b2.onclick=closeSheet;ui.sheet.appendChild(b2);
+  var b2=btnI("back","Back to classroom","out");b2.onclick=closeSheet;ui.sheet.appendChild(b2);
   ui.main.hidden=true;ui.sheet.hidden=false;
   try{window.scrollTo(0,0);}catch(e){}
   try{hd.focus({preventScroll:true});}catch(e){}
@@ -914,7 +942,7 @@ function build(cls,d){
   c1.appendChild(h("p","ecr-kick","Latest explanation"));
   ui.by=h("p","ecr-by");c1.appendChild(ui.by);
   ui.latest=h("p","ecr-prev");c1.appendChild(ui.latest);
-  ui.readMore=btnI(null,"Read more","sm");ui.readMore.hidden=true;ui.readMore.className+=" rd";
+  ui.readMore=btnI(null,"Read more","sm");ui.readMore.hidden=true;ui.readMore.className+=" ecr-rd";
   ui.readMore.onclick=function(){openSheet(ui.readMore,"Latest explanation","explain",fillExplainSheet);};
   var lm=h("div","ecr-msg err");lm.setAttribute("role","status");
   c1.appendChild(listenRow(function(){return ui.latestText||"";},lm,ui.readMore));c1.appendChild(lm);
@@ -926,12 +954,12 @@ function build(cls,d){
   ui.mine=h("p","ecr-big");c2.appendChild(ui.mine);
   ui.hint=h("p","ecr-sub");c2.appendChild(ui.hint);
   ui.raise=btnI("hand","Raise Hand");
-  ui.lower=btnI("hand","Lower Hand","sec");ui.lower.style.display="none";
+  ui.lower=btnI("hand","Lower Hand","out");ui.lower.style.display="none";
   ui.askBox=h("div");ui.askBox.style.display="none";
   var ql=h("label","ecr-lab","Your question");ql.htmlFor="ecr-q";
   ui.q=h("textarea","ecr-field");ui.q.id="ecr-q";ui.q.maxLength=300;ui.q.rows=3;ui.q.placeholder="Ask your question about the lesson...";ui.q.autocomplete="off";
   ui.ask=btnI("spark","Ask the AI Teacher");ui.ask.disabled=true;
-  ui.done=btn("I Am Done","sec");
+  ui.done=btn("I Am Done","out");
   ui.askBox.appendChild(ql);ui.askBox.appendChild(ui.q);ui.askBox.appendChild(ui.ask);ui.askBox.appendChild(ui.done);
   ui.msg=h("div","ecr-msg");ui.msg.setAttribute("role","status");
   c2.appendChild(ui.raise);c2.appendChild(ui.lower);c2.appendChild(ui.askBox);c2.appendChild(ui.msg);
@@ -952,7 +980,7 @@ function build(cls,d){
     c3.appendChild(h("span","ecr-tag",L.label));
     var lp=prev(L.text,LESSON_CHARS);
     if(lp.t)c3.appendChild(h("p","ecr-prev",lp.t));
-    var rl=btnI(null,"Read lesson","sm");rl.hidden=!lp.cut;rl.className+=" rd";
+    var rl=btnI(null,"Read lesson","sm");rl.hidden=!lp.cut;rl.className+=" ecr-rd";
     rl.onclick=function(){openSheet(rl,L.title,"lesson",fillLessonSheet(L));};
     var lm2=h("div","ecr-msg err");lm2.setAttribute("role","status");
     c3.appendChild(listenRow(function(){return L.spoken.join(". ");},lm2,rl));c3.appendChild(lm2);
@@ -967,7 +995,7 @@ function build(cls,d){
   rh.appendChild(h("h2",null,"Classroom"));ui.rcount=h("span","ecr-sub");rh.appendChild(ui.rcount);c5.appendChild(rh);
   ui.speaker=h("p","ecr-sub");c5.appendChild(ui.speaker);
   ui.roster=h("ul","ecr-rg");ui.roster.setAttribute("aria-label","Students in this class");c5.appendChild(ui.roster);
-  ui.more=btnI("people","View all students","sec");ui.more.hidden=true;
+  ui.more=btnI("people","View all students","out");ui.more.hidden=true;
   ui.more.onclick=function(){openSheet(ui.more,"All students","roster",fillRosterSheet);};
   c5.appendChild(ui.more);
   B.appendChild(c5);
@@ -977,7 +1005,7 @@ function build(cls,d){
   c4.appendChild(h("h2",null,"Class Conversation"));
   c4.appendChild(h("p","ecr-sub","Questions and answers shared with everyone in the classroom."));
   ui.feed=h("div");c4.appendChild(ui.feed);
-  ui.feedMore=btnI("chat","View full conversation","sec");ui.feedMore.hidden=true;
+  ui.feedMore=btnI("chat","View full conversation","out");ui.feedMore.hidden=true;
   ui.feedMore.onclick=function(){openSheet(ui.feedMore,"Class Conversation","conv",fillConvSheet);};
   c4.appendChild(ui.feedMore);
   B.appendChild(c4);
