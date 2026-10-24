@@ -1,5 +1,5 @@
 /* Edu Library: AI Examination Room (student screen) v2.1
-   v2.1: new clean sunset wallpaper (no words, books and lamp only at the bottom corners) replaces the old purple sunset JPG; light dark layer over it; picture centred. The website address was changed to edu-library.edulibrary.workers.dev (the old address no longer exists, so the wallpaper could not load and the drawn pencils picture showed instead).
+   v2.1: Light theme fix. The room keeps its own wallpaper colours in the Light theme: the page behind it always gets the wallpaper base colour, and cards, answer boxes and typing boxes can no longer turn white (white words on a white box) when the app is in Light.
    v2.0: question text now shows __underlined words__ as real underlined text (no more double dashes), and the level/class/subject cards no longer let the text overlap the "papers / questions" badge.
    v1.9: fourth wallpaper "Edu AI" (the robot picture, room-bg-eduai.jpg) with a dark layer over it so the text stays easy to read.
    v1.8: round icons on the level cards (notebook, graduation cap, college) and on the class cards (like the Library), wallpaper is now taken from the website first, then the copy inside the app. Tertiary shows automatically once it has papers.
@@ -29,7 +29,7 @@ var S={screen:"setup",lv:"",cls:"",sub:"",paper:"",mix:"",rd:[],back:"paper",cat
 var dTimer=null;
 var SK="edu_room_set",DYK="edu_room_days";
 var WALLS={
-  sunset:{name:"Purple sunset",file:"room-bg-sunset.jpg",veil:"linear-gradient(180deg,rgba(24,6,34,.20),rgba(24,6,34,.42) 45%,rgba(24,6,34,.25))",top:"#2F102D",bot:"#A03A33",ink:"#FDF5E8",sub:"#E8CDA8",line:"rgba(244,195,121,.30)",bar:"rgba(32,6,44,.80)",card:"rgba(40,12,42,.58)",star:"#FFE2BE",moon:"#FFD6AA",book:["#78284A","#AA463C","#C86446"],pen:"#F7B65A"},
+  sunset:{name:"Purple sunset",file:"room-bg-sunset.jpg",top:"#2F102D",bot:"#A03A33",ink:"#FDF5E8",sub:"#E8CDA8",line:"rgba(244,195,121,.30)",bar:"rgba(32,6,44,.80)",card:"rgba(40,12,42,.58)",star:"#FFE2BE",moon:"#FFD6AA",book:["#78284A","#AA463C","#C86446"],pen:"#F7B65A"},
   night:{name:"Deep blue night",file:"room-bg-night.jpg",top:"#0B1030",bot:"#204280",ink:"#EEF3FF",sub:"#BFD0F2",line:"rgba(150,190,255,.30)",bar:"rgba(8,14,40,.82)",card:"rgba(10,18,52,.60)",star:"#D6E4FF",moon:"#E1EBFF",book:["#1E326E","#325096","#4664AA"],pen:"#96BEFF"},
   eduai:{name:"Edu AI",file:"room-bg-eduai.jpg",veil:"linear-gradient(180deg,rgba(24,6,34,.55),rgba(24,6,34,.76) 45%,rgba(24,6,34,.62))",top:"#2F102D",bot:"#A03A33",ink:"#FDF5E8",sub:"#E8CDA8",line:"rgba(244,195,121,.30)",bar:"rgba(32,6,44,.82)",card:"rgba(40,12,42,.60)",star:"#FFE2BE",moon:"#FFD6AA",book:["#78284A","#AA463C","#C86446"],pen:"#F7B65A"},
   green:{name:"Soft green",file:"room-bg-green.jpg",top:"#0F2E27",bot:"#2F7A5A",ink:"#F2FBF5",sub:"#C8E8D6",line:"rgba(170,235,200,.30)",bar:"rgba(8,36,28,.82)",card:"rgba(8,40,30,.58)",star:"#DCF5E6",moon:"#EBFADC",book:["#16503E","#286E50","#3E8C66"],pen:"#C8EB96"}
@@ -158,8 +158,8 @@ function applyTheme(){
     el.style.backgroundColor=t.top;
     el.style.backgroundImage="url(\""+sceneUri(t)+"\"),"+base;
     var tok=++wallTok;
-    tryWall(el,t,base,tok,[SITE+t.file+"?v=20",t.file]);
-    var v={"--ink":t.ink,"--sub":t.sub,"--line":t.line,"--rmBar":t.bar,"--rmCard":t.card,"--rmA1":a[1],"--rmA2":a[2],"--rmZ":String(SIZES[st.size][1])};
+    tryWall(el,t,base,tok,[SITE+t.file+"?v=18",t.file]);
+    var v={"--rmBase":t.top,"--ink":t.ink,"--sub":t.sub,"--line":t.line,"--rmBar":t.bar,"--rmCard":t.card,"--rmA1":a[1],"--rmA2":a[2],"--rmZ":String(SIZES[st.size][1])};
     for(var k in v)b.style.setProperty(k,v[k]);
     b.classList.add("rmwall");
     if(!hashOn){hashOn=true;window.addEventListener("hashchange",function(){if((location.hash||"").indexOf("#/room")!==0)leaveTheme();});}
@@ -169,7 +169,7 @@ function leaveTheme(){
   try{
     var b=document.body;if(!b)return;
     b.classList.remove("rmwall");
-    ["--ink","--sub","--line","--rmBar","--rmCard","--rmA1","--rmA2","--rmZ"].forEach(function(k){b.style.removeProperty(k);});
+    ["--rmBase","--ink","--sub","--line","--rmBar","--rmCard","--rmA1","--rmA2","--rmZ"].forEach(function(k){b.style.removeProperty(k);});
     var el=document.getElementById("rmWall");if(el)el.style.display="none";
     wallTok++;
   }catch(x){}
@@ -265,8 +265,12 @@ function css2(){
   if(document.getElementById("rmCss2"))return;
   var s=document.createElement("style");s.id="rmCss2";
   s.textContent=
-"#rmWall{position:fixed;top:0;left:0;right:0;bottom:0;z-index:-1;pointer-events:none;background-color:#2F102D;background-position:center center;background-size:cover;background-repeat:no-repeat}"+
-"body.rmwall:not(.gate){background:transparent!important;color:var(--ink)}"+
+"#rmWall{position:fixed;top:0;left:0;right:0;bottom:0;z-index:-1;pointer-events:none;background-color:#2F102D;background-position:center top;background-size:cover;background-repeat:no-repeat}"+
+"body.rmwall:not(.gate){background:var(--rmBase,#2F102D)!important;color:var(--ink)}"+
+"body.rmwall.light .rm .card,body.rmwall.light .rm .box,body.rmwall.light .rm .opt,body.rmwall.light .rm .ch,body.rmwall.light .rm .strk,body.rmwall.light .rm .swatchrow,body.rmwall.light .rm .pops button{background:var(--rmCard)!important;color:var(--ink)!important;border-color:var(--line)!important}"+
+"body.rmwall.light .rm input,body.rmwall.light .rm select,body.rmwall.light .rm textarea{background:var(--rmCard)!important;color:var(--ink)!important;border-color:var(--line)!important}"+
+"body.rmwall.light .rm .sub,body.rmwall.light .rm small,body.rmwall.light .rm .n,body.rmwall.light .rm .lbl{color:var(--sub)!important}"+
+"body.rmwall.light .rm h3,body.rmwall.light .rm .q,body.rmwall.light .rm .ex,body.rmwall.light .rm .rdo,body.rmwall.light .rm .hist{color:var(--ink)!important}"+
 "body.rmwall:not(.gate)::before{display:none!important}"+
 "body.rmwall:not(.gate) #topHeader{background:var(--rmBar)!important;border-bottom:1px solid var(--line)!important}"+
 "body.rmwall:not(.gate) .topbar h2,body.rmwall:not(.gate) .topbar .back{color:var(--ink)!important}"+
@@ -887,7 +891,7 @@ window.EduRoom={
   speak:function(i){if(S.exp[i]&&S.exp[i]!=="Thinking..."&&typeof window.speakText==="function")window.speakText(SPK+i,S.exp[i]);},
   report:report,
   zoom:zoom,
-  version:"2.1",
+  version:"2.0",
   _t:{band:band,shuffle:shuffle,fmt:fmt,qf:qf,S:S,streak:streakInfo,weak:weakList,getSet:getSet}
 };
 })();
