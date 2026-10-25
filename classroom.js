@@ -1,4 +1,4 @@
-/* AI Classroom v5.3 - loaded on demand by index.html. Needs a signed-in student.
+/* AI Classroom v5.7 - loaded on demand by index.html. Needs a signed-in student.
    Same flow and same backend calls as v4.0 (actions: open, setlevel, join, poll, raise, lower, ask, calendar, notes, noteread).
    v5.1 = LIVE class screen drawn exactly like the owner's sketch, nothing extra on the main page:
           1. teacher box: round teacher picture, subject title, explanation, Play / Pause button at the top right,
@@ -22,7 +22,7 @@ var CSS=[
 ".ecr{--bg:#2F102D;--bg2:#411440;--card:rgba(66,20,60,.84);--card2:#652960;--ink:#FDF5E8;--ink2:#DCC6AA;--acc:#F9B81F;--gold:#F9B81F;--gold2:#FFD86B;--line:rgba(244,195,121,.30);--inp:#3A1336;--onacc:#2F102D;--live:#35C779;--rest:#FFAA45;--closed:#F05D64;--conn:#A6A6B2;--speak:#58A6FF;--err:#FF9A9F;--ok:#6FE0A0;--focus:#FFD86B;--shadow:0 2px 10px rgba(0,0,0,.22)}",
 "body:not(.sunset):not(.light) .ecr{--bg:#07112F;--bg2:#0B1B49;--card:rgba(16,33,94,.86);--card2:#182A70;--ink:#FFFFFF;--ink2:#B9C6E8;--acc:#F4C542;--gold:#F4C542;--gold2:#FFD86B;--line:rgba(185,198,232,.24);--inp:#0A1740;--onacc:#07112F;--err:#FF8DA0;--ok:#20D6A1;--focus:#FFD86B}",
 "body.light .ecr{--bg:#FFF7EE;--bg2:#FBEBD8;--card:rgba(255,255,255,.90);--card2:#FFF1DC;--ink:#2B1A16;--ink2:#6B5448;--acc:#8A5A00;--gold:#F4B521;--gold2:#FFD86B;--line:#E2C9AA;--inp:#FFFFFF;--onacc:#2B1A00;--live:#1B7A45;--rest:#9A5800;--closed:#B3261E;--conn:#6B7280;--speak:#1D5FB0;--err:#B3261E;--ok:#1B7A45;--focus:#8A5A00;--shadow:0 2px 8px rgba(80,50,20,.12)}",
-".ecr{box-sizing:border-box;max-width:560px;margin:0 auto;padding:14px 14px calc(100px + env(safe-area-inset-bottom,0px));color:var(--ink);font:16px/1.5 Roboto,'Noto Sans','Segoe UI',sans-serif;overflow-wrap:anywhere}",
+".ecr{box-sizing:border-box;max-width:none;width:100vw;margin:0 calc(50% - 50vw);padding:12px 10px calc(100px + env(safe-area-inset-bottom,0px));color:var(--ink);font:16px/1.5 Roboto,'Noto Sans','Segoe UI',sans-serif;overflow-wrap:anywhere}",
 ".ecr::before{content:\"\";position:fixed;left:0;right:0;top:0;bottom:0;z-index:-1;pointer-events:none;background-color:#2F102D;background-image:linear-gradient(rgba(47,16,45,.25),rgba(47,16,45,.45)),var(--ecr-wallpaper,none);background-size:cover;background-position:center bottom}",
 "body.light .ecr::before{background-color:#FFF7EE;background-image:linear-gradient(rgba(255,247,238,.35),rgba(255,247,238,.15)),var(--ecr-wallpaper,none)}",
 ".ecr *{box-sizing:border-box}.ecr [hidden]{display:none!important}",
@@ -177,8 +177,8 @@ var CSS=[
 ".ecr-sbadge{position:absolute;top:-6px;right:-6px;display:flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;background:var(--rest);color:#2F102D}.ecr-sbadge svg{width:14px;height:14px}",
 ".ecr-snm{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px;line-height:1.2;font-weight:600;color:var(--ink2)}",
 ".ecr-pop{position:fixed;left:0;right:0;top:0;bottom:0;z-index:99999;display:flex;align-items:center;justify-content:center;padding:16px;background:rgba(0,0,0,.55)}",
-".ecr-popbox{width:100%;max-width:360px;max-height:100%;overflow:auto;padding:16px;border:1.5px solid var(--gold);border-radius:18px;background:var(--bg2);color:var(--ink);box-shadow:0 10px 30px rgba(0,0,0,.4)}",
-".ecr-pophd{display:flex;align-items:center;justify-content:space-between;gap:10px}.ecr-pophd h2{margin:0;font-size:19px}.ecr-pophd .ecr-ib{width:40px;height:40px}",
+".ecr-popbox{width:100%;max-width:300px;max-height:100%;overflow:auto;padding:14px;border:1px solid var(--line);border-radius:20px;background:var(--bg2);color:var(--ink);box-shadow:0 12px 34px rgba(0,0,0,.45)}",
+".ecr-pophd{display:flex;align-items:center;justify-content:space-between;gap:10px}.ecr-pophd h2{margin:0;font-size:16px;font-weight:700}.ecr-pophd .ecr-ib{width:36px;height:36px;border-width:1px}.ecr-pophd .ecr-ib svg{width:18px;height:18px}",
 "@media (max-width:329px){.ecr-sg{grid-template-columns:repeat(3,minmax(0,1fr))}}",
 "@media (prefers-reduced-motion:reduce){.ecr-tava.on{animation:none}.ecr-tprog i{transition:none}}",
 ".ecr-ttx h2{text-decoration:underline;text-underline-offset:4px;text-decoration-thickness:1.5px}",
@@ -189,9 +189,18 @@ var CSS=[
 ".ecr-qcard{padding:8px 12px}",
 ".ecr-tava{position:relative}",
 ".ecr-pdot{position:absolute;right:-1px;bottom:-1px;width:15px;height:15px;border-radius:50%;border:2.5px solid var(--bg2);background:var(--conn)}.ecr-pdot.live,.ecr-pdot.listening{background:var(--live)}.ecr-pdot.rest,.ecr-pdot.hand{background:var(--rest)}.ecr-pdot.closed{background:var(--closed)}.ecr-pdot.speaking{background:var(--speak)}.ecr-tava .ecr-pdot{right:2px;bottom:2px;width:17px;height:17px}",
-".ecr-popcnt{margin:6px 0 0;font-size:13px;color:var(--ink2)}",
-".ecr-pop{position:fixed;left:0;right:0;top:0;bottom:0;z-index:2147482000;background:rgba(0,0,0,.55);display:flex;align-items:flex-end;justify-content:center}",
-".ecr-popbox{width:100%;max-width:560px;max-height:88vh;overflow-y:auto;-webkit-overflow-scrolling:touch;background:var(--bg);border:1px solid var(--line);border-radius:22px 22px 0 0;margin:0;padding:14px 14px calc(18px + env(safe-area-inset-bottom,0px))}.ecr-popbox::before{display:none}",
+".ecr-popcnt{margin:12px 0 0;font-size:12px;text-align:center;color:var(--ink2)}",
+".ecr-popst{margin:6px 0 0;font-size:14px;font-weight:700;color:var(--acc)}.ecr-popst:empty{display:none}",
+".ecr-pophint{margin:4px 0 0;font-size:13px;line-height:1.4}.ecr-pophint:empty{display:none}",
+".ecr-popbox .ecr-rh{width:100%;min-height:50px;margin-top:12px;border-radius:14px}",
+".ecr-popbox .ecr-field{min-height:64px;margin-top:12px;padding:10px 12px;font-size:15px;border-radius:14px;resize:none}",
+".ecr-pact{display:flex;align-items:center;gap:8px;margin-top:10px}.ecr-pact .sp{flex:1}",
+".ecr-popbox .ecr-rb{flex:0 0 44px;width:44px;min-height:44px;height:44px;margin:0;padding:0;border-radius:50%}.ecr-popbox .ecr-rb svg{width:20px;height:20px}",
+".ecr-popbox .ecr-rb>span:not(.ecr-ic){position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}.ecr-popbox .ecr-rb{position:relative}",
+".ecr-popbox .ecr-rb.rec{background:var(--closed);border-color:var(--closed);color:#fff}",
+".ecr-popbox .ecr-lnk{width:auto;min-height:40px;margin:0;padding:0 6px;border:0;background:transparent;color:var(--ink2);font-size:14px;font-weight:600;text-decoration:underline}",
+".ecr-cpop{position:fixed;left:0;right:0;top:0;bottom:0;z-index:2147482000;background:rgba(0,0,0,.55);display:flex;align-items:flex-end;justify-content:center}",
+".ecr-cpopbox{width:100%;max-width:560px;max-height:88vh;overflow-y:auto;-webkit-overflow-scrolling:touch;background:var(--bg);border:1px solid var(--line);border-radius:22px 22px 0 0;margin:0;padding:14px 14px calc(18px + env(safe-area-inset-bottom,0px))}.ecr-cpopbox::before{display:none}",
 ".ecr-pop-top{display:flex;align-items:center;justify-content:space-between;margin:0 0 10px}.ecr-pop-top b{font-size:19px;color:var(--ink)}",
 ".ecr-pop-x{width:44px;height:44px;padding:0;border-radius:50%;border:1.5px solid var(--line);background:var(--card);color:var(--acc);font-size:26px;line-height:1;cursor:pointer}"
 ].join("\n");
@@ -218,6 +227,10 @@ function voiceScore(v){
   if(v.localService===false||/online|wavenet|network/i.test(n))sc-=6;else sc+=2;
   if(/google/i.test(n))sc+=2;
   if(/-x-.*-local|espeak|compact/i.test(n))sc-=4;
+  if(/\bfemale\b|woman|girl/i.test(n))sc-=12;
+  else if(/-x-(gbb|gbd|rjs|tpd|iol|iom)\b/i.test(n))sc+=12;
+  else if(/\bmale\b/i.test(n))sc+=12;
+  else if(/-x-(gba|gbc|fis|tpf|tpc|sfg|iog|iob)\b/i.test(n))sc-=12;
   if(/^en-(gb|za|us|au|ie)/.test(l))sc+=1;
   if(l.indexOf("en-gb")===0)sc+=1;
   return sc;
@@ -229,7 +242,7 @@ function pickVoice(){
 }
 function mkU(text,vc){
   var u=new SpeechSynthesisUtterance(text);
-  u.rate=0.96;u.pitch=1;u.volume=1;u.lang=vc&&vc.lang?vc.lang:"en-GB";
+  u.rate=0.96;u.pitch=0.95;u.volume=1;u.lang=vc&&vc.lang?vc.lang:"en-GB";
   if(vc)u.voice=vc;
   return u;
 }
@@ -365,12 +378,12 @@ function listenRow(getText,msgEl,extra){
 
 function micStop(){
   try{if(ui&&ui.rec){var r=ui.rec;ui.rec=null;r.onend=null;r.stop();}}catch(e){}
-  if(ui&&ui.mic&&inDoc(ui.mic))setLab(ui.mic,"Mic");
+  if(ui&&ui.mic&&inDoc(ui.mic)){setLab(ui.mic,"Mic");ui.mic.classList.remove("rec");}
 }
 function micToggle(){
   ui.msg.className="ecr-msg err";ui.msg.textContent="";
   if(ui.rec){micStop();return;}
-  if(ui.meS!=="speaking"){ui.msg.textContent="Raise your hand first. When it is your turn, tap Mic and speak your question.";return;}
+  if(ui.meS!=="speaking"&&ui.meS!=="hand"){ui.msg.textContent="Tap the hand first.";return;}
   var SR=window.SpeechRecognition||window.webkitSpeechRecognition;
   if(!SR){ui.msg.textContent="Voice typing is not available on this phone. Please type your question.";return;}
   hush();
@@ -383,7 +396,7 @@ function listenNow(SR,lang){
   r.lang=lang;r.interimResults=true;r.continuous=false;
   r.onresult=function(ev){
     var t="";for(var i=0;i<ev.results.length;i++)t+=ev.results[i][0].transcript;
-    ui.q.value=((base?base+" ":"")+t).slice(0,300);ui.ask.disabled=busy||!ui.q.value.trim();
+    ui.q.value=((base?base+" ":"")+t).slice(0,300);ui.ask.disabled=busy||ui.meS!=="speaking"||!ui.q.value.trim();
   };
   r.onerror=function(ev){
     var er=ev&&ev.error;
@@ -394,9 +407,9 @@ function listenNow(SR,lang){
   r.onend=function(){
     ui.rec=null;
     if(retry){listenNow(SR,"en-US");return;}
-    if(ui&&ui.mic&&inDoc(ui.mic)){setLab(ui.mic,"Mic");if(/^Listening/.test(ui.msg.textContent))ui.msg.textContent="";}
+    if(ui&&ui.mic&&inDoc(ui.mic)){setLab(ui.mic,"Mic");ui.mic.classList.remove("rec");if(/^Listening/.test(ui.msg.textContent))ui.msg.textContent="";}
   };
-  ui.rec=r;setLab(ui.mic,"Stop mic");ui.msg.className="ecr-msg ok";ui.msg.textContent="Listening... speak your question now.";
+  ui.rec=r;setLab(ui.mic,"Stop mic");ui.mic.classList.add("rec");ui.msg.className="ecr-msg ok";ui.msg.textContent="Listening... speak your question now.";
   try{r.start();}catch(e){ui.rec=null;setLab(ui.mic,"Mic");ui.msg.className="ecr-msg err";ui.msg.textContent="Voice typing could not start. Please type your question.";}
 }
 function stop(){gen++;hush();micStop();narReset();if(timer){clearTimeout(timer);timer=null;}if(tick){clearInterval(tick);tick=null;}if(calTick){clearInterval(calTick);calTick=null;}cal=null;}
@@ -754,9 +767,9 @@ function calPopup(){
   popClose();
   if(!(window.EduAcct&&window.EduAcct.isIn&&window.EduAcct.isIn()))return;
   ensureStyle();
-  var ov=h("div","ecr-pop");ov.id="ecrCalPop";
+  var ov=h("div","ecr-cpop");ov.id="ecrCalPop";
   ov.setAttribute("role","dialog");ov.setAttribute("aria-modal","true");ov.setAttribute("aria-label","Class timetable");
-  var sheet=h("div","ecr ecr-popbox");
+  var sheet=h("div","ecr ecr-cpopbox");
   var top=h("div","ecr-pop-top");top.appendChild(h("b",null,"Class timetable"));
   var x=h("button","ecr-pop-x","\u00d7");x.type="button";x.setAttribute("aria-label","Close");x.onclick=popClose;
   top.appendChild(x);sheet.appendChild(top);
@@ -1203,7 +1216,7 @@ function paintExpl(L){
 function openPop(){
   if(!ui.pop)return;
   ui.pop.hidden=false;
-  try{(ui.askBox.style.display!=="none"?ui.q:(ui.raise.style.display!=="none"?ui.raise:ui.lower)).focus({preventScroll:true});}catch(e){}
+  try{(ui.meS==="speaking"?ui.q:(ui.raise.style.display!=="none"?ui.raise:ui.mic)).focus({preventScroll:true});}catch(e){}
 }
 function closePop(){
   if(!ui.pop||ui.pop.hidden)return;
@@ -1291,29 +1304,32 @@ function build(cls,d){
 
   M.appendChild(A);M.appendChild(B);
 
-  /* 4. small box that opens from your own round head: Raise Hand, Mic, typing box */
-  ui.pop=h("div","ecr-pop");ui.pop.hidden=true;ui.pop.setAttribute("role","dialog");ui.pop.setAttribute("aria-modal","true");ui.pop.setAttribute("aria-label","Your turn");
+  /* 4. small box that opens from your own round head: first only the hand, after raising it the typing box and the Mic */
+  ui.pop=h("div","ecr-pop");ui.pop.hidden=true;ui.pop.setAttribute("role","dialog");ui.pop.setAttribute("aria-modal","true");ui.pop.setAttribute("aria-label","Ask a question");
   var pb=h("div","ecr-popbox");
   var ph=h("div","ecr-pophd");
-  ui.turnH=h("h2",null,"Your turn");
+  ui.turnH=h("h2",null,"Ask a question");
   var px=h("button","ecr-ib");px.type="button";px.setAttribute("aria-label","Close");px.title="Close";px.appendChild(icon("close"));px.onclick=closePop;
   ph.appendChild(ui.turnH);ph.appendChild(px);pb.appendChild(ph);
-  ui.mine=h("p","ecr-big");pb.appendChild(ui.mine);
-  ui.hint=h("p","ecr-sub");pb.appendChild(ui.hint);
-  ui.raise=btnI("hand","Raise Hand","sm");
-  ui.lower=btnI("hand","Lower Hand","out sm");ui.lower.style.display="none";
-  ui.mic=btnI("mic","Mic","out sm");ui.mic.onclick=micToggle;
-  var rw=h("div","ecr-row");rw.appendChild(ui.raise);rw.appendChild(ui.lower);rw.appendChild(ui.mic);pb.appendChild(rw);
+  ui.mine=h("p","ecr-popst");pb.appendChild(ui.mine);
+  ui.hint=h("p","ecr-sub ecr-pophint");pb.appendChild(ui.hint);
+  ui.raise=btnI("hand","Raise hand","ecr-rh");
+  pb.appendChild(ui.raise);
   ui.askBox=h("div");ui.askBox.style.display="none";
-  var ql=h("label","ecr-lab","Your question");ql.htmlFor="ecr-q";
-  ui.q=h("textarea","ecr-field");ui.q.id="ecr-q";ui.q.maxLength=300;ui.q.rows=3;ui.q.placeholder="Type your question about the lesson...";ui.q.autocomplete="off";
-  ui.ask=btnI("spark","Send to the AI Teacher");ui.ask.disabled=true;
-  ui.done=btn("I Am Done","out");
-  ui.askBox.appendChild(ql);ui.askBox.appendChild(ui.q);ui.askBox.appendChild(ui.ask);ui.askBox.appendChild(ui.done);
+  ui.q=h("textarea","ecr-field");ui.q.id="ecr-q";ui.q.maxLength=300;ui.q.rows=2;ui.q.placeholder="Type your question";ui.q.autocomplete="off";ui.q.setAttribute("aria-label","Your question");
+  ui.askBox.appendChild(ui.q);
+  var ar=h("div","ecr-pact");
+  ui.mic=btnI("mic","Mic","out ecr-rb");ui.mic.setAttribute("aria-label","Speak your question");ui.mic.onclick=micToggle;
+  ui.lower=btnI("","Lower hand","ecr-lnk");
+  ui.done=btnI("","I am done","ecr-lnk");
+  ui.ask=btnI("arrow","Send","ecr-rb");ui.ask.setAttribute("aria-label","Send to the AI Teacher");ui.ask.disabled=true;
+  var sp=h("span","sp");
+  ar.appendChild(ui.mic);ar.appendChild(sp);ar.appendChild(ui.lower);ar.appendChild(ui.done);ar.appendChild(ui.ask);
+  ui.askBox.appendChild(ar);
   pb.appendChild(ui.askBox);
   ui.msg=h("div","ecr-msg");ui.msg.setAttribute("role","status");pb.appendChild(ui.msg);
-  var cnt=h("p","ecr-popcnt");cnt.appendChild(document.createTextNode("Your questions: "));ui.mineq=h("span",null,"-");cnt.appendChild(ui.mineq);
-  cnt.appendChild(document.createTextNode(" \u00b7 Class answers: "));ui.used=h("span",null,"-");cnt.appendChild(ui.used);pb.appendChild(cnt);
+  var cnt=h("p","ecr-popcnt");cnt.appendChild(document.createTextNode("Questions "));ui.mineq=h("span",null,"-");cnt.appendChild(ui.mineq);
+  cnt.appendChild(document.createTextNode(" \u00b7 Class "));ui.used=h("span",null,"-");cnt.appendChild(ui.used);pb.appendChild(cnt);
   ui.pop.appendChild(pb);cls.appendChild(ui.pop);
   ui.pop.onclick=function(e){if(e.target===ui.pop)closePop();};
   ui.pop.onkeydown=function(e){if(e.key==="Escape")closePop();};
@@ -1321,7 +1337,7 @@ function build(cls,d){
   ui.lower.onclick=function(){act("lower");};
   ui.done.onclick=function(){act("lower");};
   ui.ask.onclick=askNow;
-  ui.q.oninput=function(){ui.ask.disabled=busy||!ui.q.value.trim();};
+  ui.q.oninput=function(){ui.ask.disabled=busy||ui.meS!=="speaking"||!ui.q.value.trim();};
   narPaint();
 }
 
@@ -1374,22 +1390,24 @@ function render(d){
   else if(d.used>=d.max)why="The class has used all its answers.";
   ui.raise.style.display=me.status==="listening"?"flex":"none";
   ui.raise.disabled=!!why||busy;
+  ui.askBox.style.display=(me.status==="hand"||me.status==="speaking")?"block":"none";
   ui.lower.style.display=me.status==="hand"?"flex":"none";
-  ui.askBox.style.display=me.status==="speaking"?"block":"none";
-    if(me.status!=="speaking")micStop();
+  ui.done.style.display=me.status==="speaking"?"flex":"none";
+  if(me.status!=="speaking"&&me.status!=="hand")micStop();
   if(me.status==="hand"){
-    ui.turnH.textContent="Your hand is raised";
-    ui.mine.textContent="You are number "+me.position+" in line";ui.mine.style.display="block";
-    ui.hint.textContent="Please wait. The AI Teacher will give you a turn.";
+    ui.turnH.textContent="Hand raised";
+    ui.mine.textContent="Number "+me.position+" in line";ui.mine.style.display="block";
+    ui.hint.textContent="You can write your question now. Send turns on when it is your turn.";
   }else if(me.status==="speaking"){
-    ui.turnH.textContent="It's your turn!";
-    ui.mine.style.display="block";
-    ui.hint.textContent="Type your question, or tap Mic and speak it.";
-  }else{
     ui.turnH.textContent="Your turn";
+    ui.mine.style.display="block";
+    ui.hint.textContent="Type or speak your question.";
+  }else{
+    ui.turnH.textContent="Ask a question";
     ui.mine.textContent="";ui.mine.style.display="none";
-    ui.hint.textContent=why||"Raise your hand to join the line. On your turn you can type your question or use the Mic.";
+    ui.hint.textContent=why||"Tap the hand to join the line.";
   }
+  ui.ask.disabled=busy||me.status!=="speaking"||!ui.q.value.trim();
   var was=ui.meS;ui.meS=me.status;
   if(me.status==="speaking"&&was!=="speaking")openPop();
   paintRoster(d);
@@ -1429,11 +1447,11 @@ function askNow(){
   if(busy)return;
   var t=ui.q.value.trim();ui.msg.className="ecr-msg err";ui.msg.textContent="";
   if(t.length<5){ui.msg.textContent="Write a longer question.";return;}
-  busy=true;ui.ask.disabled=true;setLab(ui.ask,"Sending...");
+  busy=true;ui.ask.disabled=true;setLab(ui.ask,"Sending...");ui.msg.className="ecr-msg";ui.msg.textContent="Sending...";
   post(url("ask"),{requestId:rid(),question:t}).then(function(d){
     busy=false;
     if(!alive())return;
-    setLab(ui.ask,"Send to the AI Teacher");ui.ask.disabled=!ui.q.value.trim();
+    setLab(ui.ask,"Send");ui.ask.disabled=!ui.q.value.trim();
     if(d&&d.ok){ui.q.value="";ui.ask.disabled=true;ui.msg.className="ecr-msg ok";ui.msg.textContent="Answer added.";}
     else{ui.msg.className="ecr-msg err";ui.msg.textContent=(d&&d.error)||"Something went wrong.";}
     pollNow(function(){if(d&&d.ok){closePop();ui.note.textContent="Your answer was added. It is shown above.";setTimeout(function(){if(alive())ui.note.textContent="";},10000);try{ui.c4.scrollIntoView({behavior:"smooth",block:"start"});}catch(e){}}});
