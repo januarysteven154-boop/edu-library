@@ -4103,7 +4103,7 @@ html,body{overflow-x:clip;max-width:100%}
         var r=await fetch(aiBase()+"/book-link?classroom=notes",{method:"POST",headers:hd,body:"{}"});
         var d=await r.json();
         var L=(d&&d.items)||[];
-        item=L.find(function(i){return !i.read_at;})||L[0]||null;}
+        var nw=Date.now()-45*60000;var fut=L.filter(function(i){var t=Date.parse(i.starts_at||"");return !isNaN(t)&&t>=nw&&i.kind!=="cancel";}).sort(function(a,b){return Date.parse(a.starts_at)-Date.parse(b.starts_at);});item=fut[0]||null;}
     }catch(e){}
     if(!item){cpShow(head+'<div class="cpl">No upcoming class right now.</div>'+go);return;}
     var st=cpPick(item,["starts_at","start_at","start_time","starts","start","opens_at"]);
