@@ -4080,15 +4080,47 @@ html,body{overflow-x:clip;max-width:100%}
   };
   window.eduCalPlace=function(){try{const h=document.getElementById("topHeader"),r=document.querySelector(".calrow");if(r&&h)r.style.top=Math.round(h.getBoundingClientRect().bottom+8)+"px";}catch(e){}};
   window.addEventListener("resize",function(){window.eduCalPlace();});
-  window.eduOpenCalendar=function(){
-    var go=function(){try{window.EduClassroom.calendarPopup();}catch(e){}};
-    if(window.EduClassroom&&window.EduClassroom.calendarPopup)return go();
-    function local(){var l=document.createElement("script");l.src="classroom.js?v=ui-1";l.onload=go;document.head.appendChild(l);}
-    var sc=document.createElement("script");
-    sc.src="https://edu-library.edulibrary.workers.dev/classroom.js?v="+Date.now();
-    sc.onload=function(){if(window.EduClassroom&&window.EduClassroom.calendarPopup)go();else local();};
-    sc.onerror=local;
-    document.head.appendChild(sc);
+  /* Small class pop-up (summary only). The full timetable stays inside AI Classroom. */
+  (function(){var st=document.createElement("style");st.textContent="#eduCalPop{position:fixed;inset:0;z-index:2147482000;display:flex;align-items:flex-start;justify-content:flex-end;padding:112px 14px 0;background:rgba(0,0,0,.35)}#eduCalPop .cpb{width:min(300px,88vw);border-radius:18px;padding:16px 16px 14px;background:rgba(30,12,45,.97);color:#fff;border:1px solid rgba(255,255,255,.16);box-shadow:0 12px 34px rgba(0,0,0,.5);font-family:Roboto,'Noto Sans',sans-serif}#eduCalPop .cph{display:flex;align-items:center;justify-content:space-between;font-size:11.5px;color:#f9b81f;font-weight:700;letter-spacing:.3px;text-transform:uppercase}#eduCalPop .cpx{border:0;background:rgba(255,255,255,.14);color:#fff;width:26px;height:26px;border-radius:13px;font-size:15px;line-height:26px;padding:0}#eduCalPop .cpd{font-size:13px;color:#dbcbbd;margin-top:8px}#eduCalPop .cps{font-size:17px;font-weight:700;margin-top:4px}#eduCalPop .cpl{font-size:13.5px;margin-top:6px;line-height:1.4}#eduCalPop .cpg{width:100%;margin-top:14px;border:0;border-radius:11px;padding:10px;background:#f25e1e;color:#fff;font-weight:700;font-size:13px}";document.head.appendChild(st);})();
+  function cpClose(){var e=document.getElementById("eduCalPop");if(e)e.remove();}
+  function cpEsc(t){return String(t==null?"":t).replace(/[&<>"]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c];});}
+  function cpPick(o,keys){var src=[o,o&&o.payload,o&&o.data,o&&o.meta,o&&o.slot,o&&o.session];for(var i=0;i<src.length;i++){var x=src[i];if(!x||typeof x!=="object")continue;for(var k=0;k<keys.length;k++){var v=x[keys[k]];if(v!=null&&v!=="")return v;}}return "";}
+  function cpTime(v){if(!v)return "";if(/^\d{1,2}:\d{2}/.test(String(v)))return String(v).slice(0,5);var d=new Date(v);if(isNaN(d))return String(v);try{return d.toLocaleTimeString("en-GB",{hour:"2-digit",minute:"2-digit",timeZone:"Africa/Blantyre"});}catch(e){return d.toTimeString().slice(0,5);}}
+  function cpDate(v){if(!v)return "";var d=new Date(v);if(isNaN(d))return String(v);try{return d.toLocaleDateString("en-GB",{day:"numeric",month:"long",timeZone:"Africa/Blantyre"});}catch(e){return d.toDateString();}}
+  function cpShow(html){cpClose();var w=document.createElement("div");w.id="eduCalPop";w.innerHTML='<div class="cpb">'+html+'</div>';w.addEventListener("click",function(ev){if(ev.target===w)cpClose();});document.body.appendChild(w);}
+  window.eduCalPopClose=cpClose;
+  window.eduCalPopGo=function(){cpClose();location.hash="#/classroom";};
+  window.eduOpenCalendar=async function(){
+    var head='<div class="cph"><span>Upcoming class</span><button class="cpx" type="button" onclick="eduCalPopClose()" aria-label="Close">\u00d7</button></div>';
+    var go='<button class="cpg" type="button" onclick="eduCalPopGo()">Open AI Classroom</button>';
+    cpShow(head+'<div class="cpl">Loading...</div>'+go);
+    var item=null;
+    try{
+      var tk=await EduAcct.token();
+      if(tk){var hd=eduDeviceHeaders();hd.Authorization="Bearer "+tk;
+        var r=await fetch(aiBase()+"/book-link?classroom=notes",{method:"POST",headers:hd,body:"{}"});
+        var d=await r.json();
+        var L=(d&&d.items)||[];
+        item=L.find(function(i){return !i.read_at;})||L[0]||null;}
+    }catch(e){}
+    if(!item){cpShow(head+'<div class="cpl">No upcoming class right now.</div>'+go);return;}
+    var st=cpPick(item,["starts_at","start_at","start_time","starts","start","opens_at"]);
+    var en=cpPick(item,["ends_at","end_at","end_time","ends","end","closes_at"]);
+    var lv=cpPick(item,["level_name","level","class_name","grade"]);
+    var sj=cpPick(item,["subject","subject_name","book_title","book","course"]);
+    var tp=cpPick(item,["topic","lesson_title","lesson","chapter"]);
+    var dt=cpPick(item,["date","class_date","day"])||cpDate(st);
+    var out='';
+    if(sj||lv||st){
+      if(dt)out+='<div class="cpd">'+cpEsc(dt)+'</div>';
+      out+='<div class="cps">'+cpEsc([lv,sj].filter(Boolean).join(" \u00b7 "))+'</div>';
+      if(st)out+='<div class="cpl">'+cpEsc(cpTime(st))+(en?' \u2013 '+cpEsc(cpTime(en)):'')+'</div>';
+      if(tp)out+='<div class="cpl">Topic: '+cpEsc(tp)+'</div>';
+    }else{
+      var ti=cpPick(item,["title","heading"]),bd=cpPick(item,["body","message","text","content"]);
+      out+='<div class="cps">'+cpEsc(ti||"Class notification")+'</div>'+(bd?'<div class="cpl">'+cpEsc(bd)+'</div>':'');
+    }
+    cpShow(head+out+go);
   };
   function ensure(){try{
     if(location.hash!=="#/library")return;
