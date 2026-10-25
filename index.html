@@ -2835,7 +2835,7 @@ function symSpeak(t){
     .replace(/[₀-₉]/g,c=>String(c.charCodeAt(0)-0x2080));
 }
 function plainAI(text){
-  return symSpeak(mathClean(text,true)).replace(/```/g,"").replace(/^#{1,6}\s*/gm,"").replace(/^\s*[-*•+]\s+/gm,"").replace(/[*_`#~@\\|]/g," ").replace(/[\u{1F000}-\u{1FAFF}\u{2190}-\u{21FF}\u{2300}-\u{23FF}\u{2460}-\u{27BF}\u{2900}-\u{2BFF}\u{FE00}-\u{FE0F}\u{200D}\u{20E3}\u{E0020}-\u{E007F}]/gu," ").replace(/\s{2,}/g," ").trim();
+  return symSpeak(mathClean(text,true)).replace(/```/g,"").replace(/^#{1,6}\s*/gm,"").replace(/^\s*[-*•+]\s+/gm,"").replace(/([^\s.!?:;,])[ \t]*\n+/g,"$1. ").replace(/[*_`#~@\\|]/g," ").replace(/[\u{1F000}-\u{1FAFF}\u{2190}-\u{21FF}\u{2300}-\u{23FF}\u{2460}-\u{27BF}\u{2900}-\u{2BFF}\u{FE00}-\u{FE0F}\u{200D}\u{20E3}\u{E0020}-\u{E007F}]/gu," ").replace(/\s{2,}/g," ").trim();
 }
 function aiMsgHTML(t, i){
   const canSpeak = "speechSynthesis" in window;
@@ -3018,7 +3018,8 @@ function ttsNext(){
     const my=++TTS.tok;
     EduVoice.play(TTS.chunks[TTS.pos],TTS.chunks[TTS.pos+1],
       ()=>{if(TTS.tok!==my||TTS.state!=="playing")return;TTS.pos++;ttsNext();},
-      ()=>{if(TTS.tok!==my||TTS.state!=="playing")return;ttsNextPhone();});
+      ()=>{if(TTS.tok!==my||TTS.state!=="playing")return;ttsNextPhone();},
+      TTS.chunks.slice(TTS.pos+2,TTS.pos+4));
     return;
   }
   ttsNextPhone();
@@ -4063,7 +4064,7 @@ html,body{overflow-x:clip;max-width:100%}
   window.eduNotesCount=0;
   /* natural English voice (voice.js), loaded once; if it cannot load, the phone voice is used as before */
   (function(){function ld(src,bad){var x=document.createElement("script");x.src=src;x.onerror=bad;document.head.appendChild(x);}
-    setTimeout(function(){if(window.EduVoice)return;ld("https://edu-library.edulibrary.workers.dev/voice.js?v=1.0",function(){if(!window.EduVoice)ld("voice.js?v=1.0",function(){});});},1500);})();
+    setTimeout(function(){if(window.EduVoice)return;ld("https://edu-library.edulibrary.workers.dev/voice.js?v=1.2",function(){if(!window.EduVoice)ld("voice.js?v=1.2",function(){});});},1500);})();
   let busy=false,again=false;
   function paint(){
     const n=window.eduNotesCount||0;
