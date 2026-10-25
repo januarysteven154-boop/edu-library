@@ -4122,11 +4122,19 @@ html,body{overflow-x:clip;max-width:100%}
         if(mm&&/^date$/i.test(mm[1]))continue;
         if(mm&&/^time$/i.test(mm[1])){tm=mm[2].replace(/\b0(\d:)/g,"$1").replace(/\s*[-\u2013]\s*/," \u2013 ");continue;}
         rest.push(mm?[mm[1],mm[2]]:["",bl[q]]);}
+      var subj="",topic="",extra=[];
+      rest.forEach(function(r){var lb=r[0].toLowerCase(),v=r[1];
+        if(/^tap to/i.test(v)||lb==="class")return;
+        if(lb==="lesson"||lb==="subject"||lb==="book"){subj=v;return;}
+        if(lb==="topic"){topic=v;return;}
+        extra.push(r);});
+      if(lvl&&subj){var esc=lvl.replace(/[.*+?^${}()|[\]\\]/g,"\\$&");subj=subj.replace(new RegExp("^"+esc+"\\s*[-:\\u00b7]?\\s*","i"),"");}
       var d2=cpDate(st)||cpEsc(dt);
       if(d2)out+='<div class="cpd">'+cpEsc(d2)+'</div>';
       if(tm)out+='<div class="cps">'+cpEsc(tm)+'</div>';
-      if(lvl)out+='<div class="cpl" style="font-weight:700">'+cpEsc(lvl)+'</div>';
-      rest.forEach(function(r){out+='<div class="cpl">'+(r[0]&&!/^lesson$/i.test(r[0])?'<span style="color:#f9b81f">'+cpEsc(r[0])+':</span> ':'')+cpEsc(r[1])+'</div>';});
+      if(lvl||subj)out+='<div class="cpl" style="font-weight:700">'+cpEsc([lvl,subj].filter(Boolean).join(" \u00b7 "))+'</div>';
+      if(topic)out+='<div class="cpl"><span style="color:#f9b81f">Topic:</span> '+cpEsc(topic)+'</div>';
+      extra.forEach(function(r){out+='<div class="cpl">'+(r[0]?'<span style="color:#f9b81f">'+cpEsc(r[0])+':</span> ':'')+cpEsc(r[1])+'</div>';});
     }else if(sj||lv||st){
       if(dt)out+='<div class="cpd">'+cpEsc(dt)+'</div>';
       out+='<div class="cps">'+cpEsc([lv,sj].filter(Boolean).join(" \u00b7 "))+'</div>';
