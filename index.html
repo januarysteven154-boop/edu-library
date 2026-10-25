@@ -4080,7 +4080,16 @@ html,body{overflow-x:clip;max-width:100%}
   };
   window.eduCalPlace=function(){try{const h=document.getElementById("topHeader"),r=document.querySelector(".calrow");if(r&&h)r.style.top=Math.round(h.getBoundingClientRect().bottom+8)+"px";}catch(e){}};
   window.addEventListener("resize",function(){window.eduCalPlace();});
-  window.eduOpenCalendar=function(){window.__eduOpenCal=1;location.hash="#/classroom";};
+  window.eduOpenCalendar=function(){
+    var go=function(){try{window.EduClassroom.calendarPopup();}catch(e){}};
+    if(window.EduClassroom&&window.EduClassroom.calendarPopup)return go();
+    function local(){var l=document.createElement("script");l.src="classroom.js?v=ui-1";l.onload=go;document.head.appendChild(l);}
+    var sc=document.createElement("script");
+    sc.src="https://edu-library.edulibrary.workers.dev/classroom.js?v="+Date.now();
+    sc.onload=function(){if(window.EduClassroom&&window.EduClassroom.calendarPopup)go();else local();};
+    sc.onerror=local;
+    document.head.appendChild(sc);
+  };
   function ensure(){try{
     if(location.hash!=="#/library")return;
     const a=document.getElementById("app");
