@@ -1,4 +1,4 @@
-/* AI Classroom v5.7 - loaded on demand by index.html. Needs a signed-in student.
+/* AI Classroom v5.8 - loaded on demand by index.html. Needs a signed-in student.
    Same flow and same backend calls as v4.0 (actions: open, setlevel, join, poll, raise, lower, ask, calendar, notes, noteread).
    v5.1 = LIVE class screen drawn exactly like the owner's sketch, nothing extra on the main page:
           1. teacher box: round teacher picture, subject title, explanation, Play / Pause button at the top right,
@@ -189,6 +189,9 @@ var CSS=[
 ".ecr-qcard{padding:8px 12px}",
 ".ecr-tava{position:relative}",
 ".ecr-pdot{position:absolute;right:-1px;bottom:-1px;width:15px;height:15px;border-radius:50%;border:2.5px solid var(--bg2);background:var(--conn)}.ecr-pdot.live,.ecr-pdot.listening{background:var(--live)}.ecr-pdot.rest,.ecr-pdot.hand{background:var(--rest)}.ecr-pdot.closed{background:var(--closed)}.ecr-pdot.speaking{background:var(--speak)}.ecr-tava .ecr-pdot{right:2px;bottom:2px;width:17px;height:17px}",
+".ecr-sc{position:relative}",
+".ecr-hbub{position:absolute;left:50%;top:-52px;transform:translateX(-50%);z-index:6;width:46px;height:46px;padding:0;border:1.5px solid var(--gold);border-radius:50%;background:var(--bg2);font:24px/1 'Noto Color Emoji','Apple Color Emoji',sans-serif;cursor:pointer;box-shadow:0 6px 16px rgba(0,0,0,.4);-webkit-tap-highlight-color:transparent}.ecr-hbub:active{opacity:.85}",
+".ecr-hbub::after{content:\"\";position:absolute;left:50%;bottom:-6px;width:10px;height:10px;margin-left:-5px;background:var(--bg2);border-right:1.5px solid var(--gold);border-bottom:1.5px solid var(--gold);transform:rotate(45deg)}",
 ".ecr-popcnt{margin:12px 0 0;font-size:12px;text-align:center;color:var(--ink2)}",
 ".ecr-popst{margin:6px 0 0;font-size:14px;font-weight:700;color:var(--acc)}.ecr-popst:empty{display:none}",
 ".ecr-pophint{margin:4px 0 0;font-size:13px;line-height:1.4}.ecr-pophint:empty{display:none}",
@@ -383,7 +386,7 @@ function micStop(){
 function micToggle(){
   ui.msg.className="ecr-msg err";ui.msg.textContent="";
   if(ui.rec){micStop();return;}
-  if(ui.meS!=="speaking"&&ui.meS!=="hand"){ui.msg.textContent="Tap the hand first.";return;}
+  if(ui.meS!=="speaking"&&ui.meS!=="hand"){ui.msg.textContent="Tap your round head, then the hand, first.";return;}
   var SR=window.SpeechRecognition||window.webkitSpeechRecognition;
   if(!SR){ui.msg.textContent="Voice typing is not available on this phone. Please type your question.";return;}
   hush();
@@ -1218,6 +1221,16 @@ function openPop(){
   ui.pop.hidden=false;
   try{(ui.meS==="speaking"?ui.q:(ui.raise.style.display!=="none"?ui.raise:ui.mic)).focus({preventScroll:true});}catch(e){}
 }
+/* the small hand above your round head: raises your hand (if you can) and opens the question box */
+function handTap(){
+  ui.hbOpen=false;if(ui.hb)ui.hb.hidden=true;
+  if((ui.meS==="listening"||!ui.meS)&&!ui.why&&!busy){
+    ui.raising=true;
+    ui.askBox.style.display="block";ui.turnH.textContent="Hand raised";ui.mine.textContent="Raising your hand...";ui.mine.style.display="block";ui.hint.textContent="";
+    act("raise");
+  }
+  openPop();
+}
 function closePop(){
   if(!ui.pop||ui.pop.hidden)return;
   micStop();ui.pop.hidden=true;
@@ -1230,8 +1243,13 @@ function studentEl(r){
   var dot=r.me?h("button","ecr-sdot"):h("span","ecr-sdot");
   if(r.me){
     dot.type="button";
-    dot.setAttribute("aria-label","Your round head, "+LABEL[s]+". Tap to raise your hand or ask a question.");
-    dot.onclick=openPop;ui.meBtn=dot;
+    dot.setAttribute("aria-label","Your round head, "+LABEL[s]+". Tap to show the hand.");
+    dot.onclick=function(e){if(e&&e.stopPropagation)e.stopPropagation();ui.hbOpen=!ui.hbOpen;if(ui.hb)ui.hb.hidden=!ui.hbOpen;if(ui.hbT){clearTimeout(ui.hbT);ui.hbT=null;}if(ui.hbOpen)ui.hbT=setTimeout(function(){ui.hbOpen=false;if(ui.hb&&inDoc(ui.hb))ui.hb.hidden=true;},7000);};
+    ui.meBtn=dot;
+    var hb=h("button","ecr-hbub","\u270B");hb.type="button";hb.hidden=!ui.hbOpen;
+    hb.setAttribute("aria-label",s==="listening"?"Raise your hand":"Open your question box");
+    hb.onclick=function(e){if(e&&e.stopPropagation)e.stopPropagation();handTap();};
+    ui.hb=hb;li.appendChild(hb);
   }else{li.setAttribute("aria-label",nm+", "+LABEL[s]);}
   dot.appendChild(document.createTextNode(nm.charAt(0).toUpperCase()));
   var gd=h("span","ecr-pdot "+s);gd.setAttribute("aria-hidden","true");dot.appendChild(gd);
@@ -1245,7 +1263,7 @@ function qrow(label,fn){
 }
 function build(cls,d){
   cls.innerHTML="";
-  var L=lessonData(d.lesson);ui.L=L;ui.latestText="";ui.byText="";ui.refresh=null;ui.kind="";ui.expanded=false;ui.meS="";ui.rkey="";ui.meBtn=null;ui.rec=null;
+  var L=lessonData(d.lesson);ui.L=L;ui.latestText="";ui.byText="";ui.refresh=null;ui.kind="";ui.expanded=false;ui.meS="";ui.rkey="";ui.meBtn=null;ui.rec=null;ui.hb=null;ui.hbOpen=false;ui.raising=false;ui.why="";
   narReset();pickVoice();
   ui.main=h("div","ecr-live");
   ui.sheet=h("div","ecr-sheet");ui.sheet.hidden=true;
@@ -1314,7 +1332,6 @@ function build(cls,d){
   ui.mine=h("p","ecr-popst");pb.appendChild(ui.mine);
   ui.hint=h("p","ecr-sub ecr-pophint");pb.appendChild(ui.hint);
   ui.raise=btnI("hand","Raise hand","ecr-rh");
-  pb.appendChild(ui.raise);
   ui.askBox=h("div");ui.askBox.style.display="none";
   ui.q=h("textarea","ecr-field");ui.q.id="ecr-q";ui.q.maxLength=300;ui.q.rows=2;ui.q.placeholder="Type your question";ui.q.autocomplete="off";ui.q.setAttribute("aria-label","Your question");
   ui.askBox.appendChild(ui.q);
@@ -1389,8 +1406,8 @@ function render(d){
   else if(d.mine>=d.mineMax)why="You have used all your questions.";
   else if(d.used>=d.max)why="The class has used all its answers.";
   ui.raise.style.display=me.status==="listening"?"flex":"none";
-  ui.raise.disabled=!!why||busy;
-  ui.askBox.style.display=(me.status==="hand"||me.status==="speaking")?"block":"none";
+  ui.why=why;ui.raise.disabled=!!why||busy;
+  ui.askBox.style.display=(me.status==="hand"||me.status==="speaking"||(ui.raising&&me.status==="listening"))?"block":"none";
   ui.lower.style.display=me.status==="hand"?"flex":"none";
   ui.done.style.display=me.status==="speaking"?"flex":"none";
   if(me.status!=="speaking"&&me.status!=="hand")micStop();
@@ -1402,10 +1419,12 @@ function render(d){
     ui.turnH.textContent="Your turn";
     ui.mine.style.display="block";
     ui.hint.textContent="Type or speak your question.";
+  }else if(ui.raising){
+    ui.turnH.textContent="Hand raised";ui.mine.textContent="Raising your hand...";ui.mine.style.display="block";ui.hint.textContent="";
   }else{
     ui.turnH.textContent="Ask a question";
     ui.mine.textContent="";ui.mine.style.display="none";
-    ui.hint.textContent=why||"Tap the hand to join the line.";
+    ui.hint.textContent=why||"Tap your round head, then the hand.";
   }
   ui.ask.disabled=busy||me.status!=="speaking"||!ui.q.value.trim();
   var was=ui.meS;ui.meS=me.status;
@@ -1436,7 +1455,7 @@ function act(name){
   ui.raise.disabled=true;ui.lower.disabled=true;ui.done.disabled=true;
   post(url(name),{}).then(function(d){
     if(!alive())return;
-    setLab(b,old);
+    setLab(b,old);ui.raising=false;
     ui.raise.disabled=false;ui.lower.disabled=false;ui.done.disabled=false;
     if(d&&d.ok===true){if(name==="lower")ui.q.value="";}
     else{ui.msg.className="ecr-msg err";ui.msg.textContent=(d&&d.error)||"Something went wrong.";}
