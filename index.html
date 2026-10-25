@@ -4113,12 +4113,25 @@ html,body{overflow-x:clip;max-width:100%}
     var tp=cpPick(item,["topic","topic_title","lesson_title","lesson_topic","lesson","chapter","unit"]);
     var dt=cpPick(item,["date","class_date","day"])||cpDate(st);
     var out='';
-    if(sj||lv||st){
+    var bd0=String(cpPick(item,["body","message","text","content"])||"");
+    var bl=bd0.split(/\n+/).map(function(x){return x.trim();}).filter(Boolean);
+    if(bl.length>1){
+      var m=/^Your\s+(.+?)\s+class\b/i.exec(bl[0]);var lvl=m?m[1]:"";
+      var tm="",rest=[];
+      for(var q=1;q<bl.length;q++){var mm=/^([A-Za-z ]+?):\s*(.+)$/.exec(bl[q]);
+        if(mm&&/^date$/i.test(mm[1]))continue;
+        if(mm&&/^time$/i.test(mm[1])){tm=mm[2].replace(/\b0(\d:)/g,"$1").replace(/\s*[-\u2013]\s*/," \u2013 ");continue;}
+        rest.push(mm?[mm[1],mm[2]]:["",bl[q]]);}
+      var d2=cpDate(st)||cpEsc(dt);
+      if(d2)out+='<div class="cpd">'+cpEsc(d2)+'</div>';
+      if(tm)out+='<div class="cps">'+cpEsc(tm)+'</div>';
+      if(lvl)out+='<div class="cpl" style="font-weight:700">'+cpEsc(lvl)+'</div>';
+      rest.forEach(function(r){out+='<div class="cpl">'+(r[0]&&!/^lesson$/i.test(r[0])?'<span style="color:#f9b81f">'+cpEsc(r[0])+':</span> ':'')+cpEsc(r[1])+'</div>';});
+    }else if(sj||lv||st){
       if(dt)out+='<div class="cpd">'+cpEsc(dt)+'</div>';
       out+='<div class="cps">'+cpEsc([lv,sj].filter(Boolean).join(" \u00b7 "))+'</div>';
       if(st)out+='<div class="cpl">'+cpEsc(cpTime(st))+(en?' \u2013 '+cpEsc(cpTime(en)):'')+'</div>';
       if(tp)out+='<div class="cpl">Topic: '+cpEsc(tp)+'</div>';
-      if(!sj&&!tp)out+='<div class="cpl" style="font-size:10px;color:#dbcbbd;word-break:break-all;margin-top:8px">DATA: '+cpEsc(cpDump(item))+'</div>';
     }else{
       var ti=cpPick(item,["title","heading"]),bd=cpPick(item,["body","message","text","content"]);
       out+='<div class="cps">'+cpEsc(ti||"Class notification")+'</div>'+(bd?'<div class="cpl">'+cpEsc(bd)+'</div>':'');
