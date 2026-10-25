@@ -1,4 +1,4 @@
-/* AI Classroom v5.1 - loaded on demand by index.html. Needs a signed-in student.
+/* AI Classroom v5.2 - loaded on demand by index.html. Needs a signed-in student.
    Same flow and same backend calls as v4.0 (actions: open, setlevel, join, poll, raise, lower, ask, calendar, notes, noteread).
    v5.1 = LIVE class screen drawn exactly like the owner's sketch, nothing extra on the main page:
           1. teacher box: round teacher picture, subject title, explanation, Play / Pause button at the top right,
@@ -7,6 +7,7 @@
           3. Students: round heads with the first letter of each active student's name; tap YOUR round head to open a small box
              with Raise Hand and Mic; on your turn the typing box opens and you send your question to the teacher
           Class status shows only when the class is not live (closed, resting, connection problem).
+   v5.2 = green "live" dots (teacher, and each active student), Mic always answers when tapped, clearer teacher voice (best English voice, the voice chosen in Edu AI if saved, easier text for the voice).
    WALLPAPER: small sunset picture embedded in this file, behind every classroom screen. */
 (function(){
 var LEVELS=[["standard1","Standard 1"],["standard2","Standard 2"],["standard3","Standard 3"],["standard4","Standard 4"],["standard5","Standard 5"],["standard6","Standard 6"],["standard7","Standard 7"],["standard8","Standard 8"],["form1","Form 1"],["form2","Form 2"],["form3","Form 3"],["form4","Form 4"]];
@@ -185,6 +186,8 @@ var CSS=[
 ".ecr-expl .ecr-foldb{padding:0;border:0}",
 ".ecr-qrow{display:flex;align-items:center;gap:12px;width:100%;min-height:52px;margin:0;padding:10px 4px;border:0;border-top:1px solid var(--line);background:transparent;color:var(--ink);text-align:left;font:600 17px/1.3 Roboto,'Noto Sans','Segoe UI',sans-serif;cursor:pointer;-webkit-tap-highlight-color:transparent}.ecr-qrow:first-child{border-top:0}.ecr-qrow:active{opacity:.75}.ecr-qrow .ecr-ic svg{width:22px;height:22px;color:var(--acc)}",
 ".ecr-qcard{padding:8px 12px}",
+".ecr-tava{position:relative}",
+".ecr-pdot{position:absolute;right:-1px;bottom:-1px;width:15px;height:15px;border-radius:50%;border:2.5px solid var(--bg2);background:var(--conn)}.ecr-pdot.live,.ecr-pdot.listening{background:var(--live)}.ecr-pdot.rest,.ecr-pdot.hand{background:var(--rest)}.ecr-pdot.closed{background:var(--closed)}.ecr-pdot.speaking{background:var(--speak)}.ecr-tava .ecr-pdot{right:2px;bottom:2px;width:17px;height:17px}",
 ".ecr-popcnt{margin:6px 0 0;font-size:13px;color:var(--ink2)}"
 ].join("\n");
 /* wallpaper: a small copy of the sunset picture is stored inside this file */
@@ -204,14 +207,57 @@ function levelName(code){for(var i=0;i<LEVELS.length;i++)if(LEVELS[i][0]===code)
 function clean(s){return String(s||"").replace(/\\[dt]?frac\{([^}]*)\}\{([^}]*)\}/g,function(m,a,b){function w(x){x=x.trim();return /^[0-9A-Za-z.]+$/.test(x)?x:"("+x+")";}return w(a)+"/"+w(b);}).replace(/\\text\{([^}]*)\}/g,"$1").replace(/\\times/g,"\u00d7").replace(/\\div/g,"\u00f7").replace(/\\cdot/g,"\u00b7").replace(/\\left|\\right/g,"").replace(/\\\(|\\\)|\\\[|\\\]/g,"").replace(/\\,/g," ").replace(/\*\*/g,"");}
 function rid(){var a="abcdefghijklmnopqrstuvwxyz0123456789",s="r";for(var i=0;i<20;i++)s+=a[Math.floor(Math.random()*a.length)];return s+Date.now();}
 function hush(){try{if(window.speechSynthesis)speechSynthesis.cancel();}catch(e){}if(nar.st==="play"){nar.g++;nar.st="pause";narPaint();}}
+function pickVoice(){
+  var vs=[];try{vs=(window.speechSynthesis&&speechSynthesis.getVoices())||[];}catch(e){}
+  if(!vs.length)return null;
+  try{
+    for(var i=0;i<localStorage.length;i++){
+      var k=localStorage.key(i);if(!/voice/i.test(k))continue;
+      var v=String(localStorage.getItem(k)||"");if(!v)continue;
+      for(var j=0;j<vs.length;j++){
+        var x=vs[j];
+        if(v===x.voiceURI||v===x.name||v.indexOf('"'+x.name+'"')>=0||v.indexOf('"'+x.voiceURI+'"')>=0)return x;
+      }
+    }
+  }catch(e){}
+  var best=null,bs=-1;
+  vs.forEach(function(x){
+    var l=String(x.lang||"").replace("_","-").toLowerCase();
+    if(l.indexOf("en")!==0)return;
+    var s=(l==="en-gb"||l==="en-za"||l==="en-us")?3:1;
+    if(x.localService===false)s+=4;
+    if(/natural|neural|wavenet|network|google/i.test(x.name||""))s+=3;
+    if(s>bs){bs=s;best=x;}
+  });
+  return best;
+}
+function mkU(text,vc){
+  var u=new SpeechSynthesisUtterance(text);
+  u.rate=0.92;u.pitch=1;u.lang=vc&&vc.lang?vc.lang:"en-GB";
+  if(vc)u.voice=vc;
+  return u;
+}
+function chunkLong(p){
+  if(p.length<=180)return [p];
+  var out=[],cur="";
+  p.split(/(?<=[,;:])\s+/).forEach(function(w){
+    if(cur&&(cur+" "+w).length>160){out.push(cur);cur=w;}else cur=cur?cur+" "+w:w;
+  });
+  if(cur)out.push(cur);
+  return out;
+}
 function speechParts(t){
   var s=String(t||"").replace(/(\d+(?:\.\d+)?)\s*\/\s*(\d+(?:\.\d+)?)/g,"$1 over $2").replace(/\u00d7/g," times ").replace(/\u00f7/g," divided by ").replace(/=>/g,". ").replace(/=/g," equals ").replace(/\+/g," plus ").replace(/ - /g," minus ").replace(/[()*]/g," ").replace(/-----/g," ");
-  return (s.match(/[^.!?\n]+[.!?]?/g)||[]).map(function(p){return p.trim();}).filter(Boolean);
+  s=s.replace(/\be\.g\./gi,"for example").replace(/\bi\.e\./gi,"that is").replace(/%/g," percent").replace(/[#_`~|]/g," ").replace(/[\u2022\u2013\u2014]/g,", ").replace(/\s+/g," ");
+  var out=[];
+  (s.match(/[^.!?\n]+[.!?]?/g)||[]).forEach(function(p){p=p.trim();if(p)chunkLong(p).forEach(function(c){out.push(c);});});
+  return out;
 }
 function say(t){
   if(!window.speechSynthesis||typeof SpeechSynthesisUtterance==="undefined")return false;
   hush();
-  speechParts(t).forEach(function(p){var u=new SpeechSynthesisUtterance(p);u.rate=0.9;u.lang="en";speechSynthesis.speak(u);});
+  var vc=pickVoice();
+  speechParts(t).forEach(function(p){speechSynthesis.speak(mkU(p,vc));});
   return true;
 }
 /* Teacher narrator: Play / Pause for the lesson. Pause remembers the sentence, Play continues from it.
@@ -239,9 +285,10 @@ function narPlay(){
   var parts=nar.parts,n=parts.length;
   if(!n){ui.tst.textContent="Nothing to read yet.";ui.tst.hidden=false;return;}
   hush();
+  var vc=pickVoice();
   var g=++nar.g;nar.st="play";
   for(var i=nar.idx;i<n;i++){(function(i){
-    var u=new SpeechSynthesisUtterance(parts[i]);u.rate=0.9;u.lang="en";
+    var u=mkU(parts[i],vc);
     u.onstart=function(){if(g!==nar.g)return;nar.idx=i;narPaint();};
     u.onend=function(){if(g!==nar.g)return;if(i===n-1){nar.st="idle";nar.idx=0;nar.parts=[];narPaint();}};
     u.onerror=function(ev){if(g!==nar.g)return;var er=ev&&ev.error;if(er==="canceled"||er==="interrupted")return;nar.g++;nar.st="pause";ui.tst.textContent="The voice stopped. Tap play to try again.";narPaint();};
@@ -316,6 +363,7 @@ function micStop(){
 function micToggle(){
   ui.msg.className="ecr-msg err";ui.msg.textContent="";
   if(ui.rec){micStop();return;}
+  if(ui.meS!=="speaking"){ui.msg.textContent="Raise your hand first. When it is your turn, tap Mic and speak your question.";return;}
   var SR=window.SpeechRecognition||window.webkitSpeechRecognition;
   if(!SR){ui.msg.textContent="Voice typing is not available on this phone. Please type your question.";return;}
   hush();
@@ -330,8 +378,8 @@ function micToggle(){
     var er=ev&&ev.error;ui.msg.className="ecr-msg err";
     ui.msg.textContent=(er==="not-allowed"||er==="service-not-allowed")?"The microphone is not allowed. Please type your question.":(er==="no-speech"?"I did not hear anything. Tap Mic and try again.":"Voice typing stopped. Please try again or type.");
   };
-  r.onend=function(){ui.rec=null;if(ui&&ui.mic&&inDoc(ui.mic))setLab(ui.mic,"Mic");};
-  ui.rec=r;setLab(ui.mic,"Stop mic");
+  r.onend=function(){ui.rec=null;if(ui&&ui.mic&&inDoc(ui.mic)){setLab(ui.mic,"Mic");if(/^Listening/.test(ui.msg.textContent))ui.msg.textContent="";}};
+  ui.rec=r;setLab(ui.mic,"Stop mic");ui.msg.className="ecr-msg ok";ui.msg.textContent="Listening... speak your question now.";
   try{r.start();}catch(e){ui.rec=null;setLab(ui.mic,"Mic");ui.msg.textContent="Voice typing could not start. Please type your question.";}
 }
 function stop(){gen++;hush();micStop();narReset();if(timer){clearTimeout(timer);timer=null;}if(tick){clearInterval(tick);tick=null;}if(calTick){clearInterval(calTick);calTick=null;}cal=null;}
@@ -1114,6 +1162,7 @@ function studentEl(r){
     dot.onclick=openPop;ui.meBtn=dot;
   }else{li.setAttribute("aria-label",nm+", "+LABEL[s]);}
   dot.appendChild(document.createTextNode(nm.charAt(0).toUpperCase()));
+  var gd=h("span","ecr-pdot "+s);gd.setAttribute("aria-hidden","true");dot.appendChild(gd);
   if(s==="hand"){var bd=h("span","ecr-sbadge");bd.setAttribute("aria-hidden","true");bd.appendChild(icon("hand"));dot.appendChild(bd);}
   li.appendChild(dot);
   return li;
@@ -1125,7 +1174,7 @@ function qrow(label,fn){
 function build(cls,d){
   cls.innerHTML="";
   var L=lessonData(d.lesson);ui.L=L;ui.latestText="";ui.byText="";ui.refresh=null;ui.kind="";ui.expanded=false;ui.meS="";ui.rkey="";ui.meBtn=null;ui.rec=null;
-  narReset();
+  narReset();pickVoice();
   ui.main=h("div","ecr-live");
   ui.sheet=h("div","ecr-sheet");ui.sheet.hidden=true;
   cls.appendChild(ui.main);cls.appendChild(ui.sheet);
@@ -1153,6 +1202,7 @@ function build(cls,d){
     var tc=ord(h("section","ecr-card ecr-tc"),1);tc.setAttribute("aria-label","Live teacher");ui.tc=tc;
     var tt=h("div","ecr-tctop");
     ui.tava=h("div","ecr-tava");ui.tava.innerHTML=capSvg();
+    ui.tdot=h("span","ecr-pdot conn");ui.tdot.setAttribute("aria-hidden","true");ui.tava.appendChild(ui.tdot);
     var ttx=h("div","ecr-ttx");
     ttx.appendChild(h("h2",null,L.title));
     ui.tst=h("p","ecr-tst");ui.tst.setAttribute("role","status");ui.tst.hidden=true;ttx.appendChild(ui.tst);
@@ -1193,7 +1243,7 @@ function build(cls,d){
   ui.hint=h("p","ecr-sub");pb.appendChild(ui.hint);
   ui.raise=btnI("hand","Raise Hand","sm");
   ui.lower=btnI("hand","Lower Hand","out sm");ui.lower.style.display="none";
-  ui.mic=btnI("mic","Mic","out sm");ui.mic.disabled=true;ui.mic.onclick=micToggle;
+  ui.mic=btnI("mic","Mic","out sm");ui.mic.onclick=micToggle;
   var rw=h("div","ecr-row");rw.appendChild(ui.raise);rw.appendChild(ui.lower);rw.appendChild(ui.mic);pb.appendChild(rw);
   ui.askBox=h("div");ui.askBox.style.display="none";
   var ql=h("label","ecr-lab","Your question");ql.htmlFor="ecr-q";
@@ -1244,6 +1294,7 @@ function render(d){
   if(!alive())return;
   var isOpen=d.open===true,paused=d.paused===true;
   ui.dot.className="ecr-dot "+(!isOpen?"closed":(paused?"rest":"live"));
+  if(ui.tdot)ui.tdot.className="ecr-pdot "+(!isOpen?"closed":(paused?"rest":"live"));
   ui.status.textContent=!isOpen?"Class is closed":(paused?"AI teacher is resting":"Live");
   ui.again.style.display=isOpen?"none":"flex";
   ui.statRow.hidden=isOpen&&!paused&&!d.preparing;
@@ -1266,8 +1317,7 @@ function render(d){
   ui.raise.disabled=!!why||busy;
   ui.lower.style.display=me.status==="hand"?"flex":"none";
   ui.askBox.style.display=me.status==="speaking"?"block":"none";
-  ui.mic.disabled=me.status!=="speaking";
-  if(me.status!=="speaking")micStop();
+    if(me.status!=="speaking")micStop();
   if(me.status==="hand"){
     ui.turnH.textContent="Your hand is raised";
     ui.mine.textContent="You are number "+me.position+" in line";ui.mine.style.display="block";
