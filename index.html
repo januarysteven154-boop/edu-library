@@ -2969,6 +2969,7 @@ function ttsKeep(on){
     if(TTS.state!=="playing"){return;}
     try{
       if(TTS_AUD&&TTS_AUD.paused){const p=TTS_AUD.play();if(p&&p.catch)p.catch(()=>{});}
+      if(window.EduVoice&&EduVoice.busy())return;
       if(speechSynthesis.speaking){speechSynthesis.resume();}
       else if(!speechSynthesis.pending){ttsNext();}
     }catch(_){}
@@ -2979,7 +2980,7 @@ document.addEventListener("visibilitychange",()=>{
   if(!document.hidden)ttsWake(true);
   try{
     if(TTS_AUD&&TTS_AUD.paused){const p=TTS_AUD.play();if(p&&p.catch)p.catch(()=>{});}
-    if(!speechSynthesis.speaking){try{speechSynthesis.cancel();}catch(_){}ttsNext();}
+    if(!(window.EduVoice&&EduVoice.busy())&&!speechSynthesis.speaking){try{speechSynthesis.cancel();}catch(_){}ttsNext();}
   }catch(_){}
 });
 function ttsBg(on){
@@ -3013,6 +3014,18 @@ function ttsUI(){
 function ttsNext(){
   if(TTS.state!=="playing")return;
   if(TTS.pos>=TTS.chunks.length){ttsEnd();return;}
+  if(TTS.kind==="en"&&window.EduVoice&&EduVoice.ok()){
+    const my=++TTS.tok;
+    EduVoice.play(TTS.chunks[TTS.pos],TTS.chunks[TTS.pos+1],
+      ()=>{if(TTS.tok!==my||TTS.state!=="playing")return;TTS.pos++;ttsNext();},
+      ()=>{if(TTS.tok!==my||TTS.state!=="playing")return;ttsNextPhone();});
+    return;
+  }
+  ttsNextPhone();
+}
+function ttsNextPhone(){
+  if(TTS.state!=="playing")return;
+  if(TTS.pos>=TTS.chunks.length){ttsEnd();return;}
   const my=++TTS.tok;
   const loc=TTS.kind==="local";
   let u;
@@ -3027,13 +3040,13 @@ function ttsNext(){
 }
 function ttsEnd(){TTS.state="idle";TTS.i=-1;TTS.chunks=[];TTS.pos=0;ttsBg(false);ttsUI();}
 function ttsStop(silent){
-  TTS.tok++;
+  TTS.tok++;try{if(window.EduVoice)EduVoice.stop();}catch(_){}
   try{if("speechSynthesis" in window&&(speechSynthesis.speaking||speechSynthesis.pending))speechSynthesis.cancel();}catch(_){}
   TTS.state="idle";TTS.i=-1;TTS.chunks=[];TTS.pos=0;
   ttsBg(false);
   if(!silent)ttsUI();
 }
-function ttsPause(){TTS.state="paused";TTS.tok++;try{speechSynthesis.cancel();}catch(_){}ttsUI();}
+function ttsPause(){TTS.state="paused";TTS.tok++;try{if(window.EduVoice)EduVoice.stop();}catch(_){}try{speechSynthesis.cancel();}catch(_){}ttsUI();}
 function ttsResume(){TTS.state="playing";ttsUI();ttsNext();}
 function speakMsg(i){
   if(!("speechSynthesis" in window)||!chatTurns[i])return;
@@ -4048,6 +4061,9 @@ html,body{overflow-x:clip;max-width:100%}
    The number comes only from the backend (classroom action "notes"); classroom.js updates it through eduNotesRefresh. */
 (function(){
   window.eduNotesCount=0;
+  /* natural English voice (voice.js), loaded once; if it cannot load, the phone voice is used as before */
+  (function(){function ld(src,bad){var x=document.createElement("script");x.src=src;x.onerror=bad;document.head.appendChild(x);}
+    setTimeout(function(){if(window.EduVoice)return;ld("https://edu-library.edulibrary.workers.dev/voice.js?v=1.0",function(){if(!window.EduVoice)ld("voice.js?v=1.0",function(){});});},1500);})();
   let busy=false,again=false;
   function paint(){
     const n=window.eduNotesCount||0;
