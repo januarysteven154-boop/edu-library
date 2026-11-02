@@ -1,4 +1,4 @@
-/* AI Classroom v5.8 - loaded on demand by index.html. Needs a signed-in student.
+/* AI Classroom v5.9 (gold loader as the AI Teacher picture, from Uiverse by andrew-manzyk; gold colours only) - loaded on demand by index.html. Needs a signed-in student.
    Same flow and same backend calls as v4.0 (actions: open, setlevel, join, poll, raise, lower, ask, calendar, notes, noteread).
    v5.1 = LIVE class screen drawn exactly like the owner's sketch, nothing extra on the main page:
           1. teacher box: round teacher picture, subject title, explanation, Play / Pause button at the top right,
@@ -188,6 +188,25 @@ var CSS=[
 ".ecr-qrow{display:flex;align-items:center;gap:12px;width:100%;min-height:52px;margin:0;padding:10px 4px;border:0;border-top:1px solid var(--line);background:transparent;color:var(--ink);text-align:left;font:600 17px/1.3 Roboto,'Noto Sans','Segoe UI',sans-serif;cursor:pointer;-webkit-tap-highlight-color:transparent}.ecr-qrow:first-child{border-top:0}.ecr-qrow:active{opacity:.75}.ecr-qrow .ecr-ic svg{width:22px;height:22px;color:var(--acc)}",
 ".ecr-qcard{padding:8px 12px}",
 ".ecr-tava{position:relative}",
+".ecr-tava.ld,.ecr-ava.ld{border:0;background:none;position:relative;overflow:visible}",
+".ecr-ld{--s:.64;--t:2s;--c1:#ffbf48;--c2:#be4a1d;--c3:#ffbf4780;--c4:#bf4a1d80;--c5:#ffbf4740;position:absolute;left:50%;top:50%;width:100px;height:100px;margin:-50px 0 0 -50px;border-radius:50%;transform:scale(var(--s));pointer-events:none;box-shadow:0 0 25px 0 var(--c3),0 20px 50px 0 var(--c4);animation:ecrHue calc(var(--t)*3) ease-in-out infinite}",
+".ecr-ava .ecr-ld{--s:.56}",
+".ecr-ld::before{content:'';position:absolute;top:0;left:0;width:100px;height:100px;border-radius:50%;border-top:solid 1px var(--c1);border-bottom:solid 1px var(--c2);background:linear-gradient(180deg,var(--c5),var(--c4));box-shadow:inset 0 10px 10px 0 var(--c3),inset 0 -10px 10px 0 var(--c4)}",
+".ecr-ld .box{width:100px;height:100px;background:linear-gradient(180deg,var(--c1) 30%,var(--c2) 70%)}",
+".ecr-tava .ecr-ld svg,.ecr-ava .ecr-ld svg{position:absolute;width:100px;height:100px}",
+".ecr-ld mask{filter:contrast(15);animation:ecrRound calc(var(--t)/2) linear infinite}",
+".ecr-ld mask polygon{filter:blur(7px)}",
+".ecr-ld mask polygon:nth-child(1){transform-origin:75% 25%;transform:rotate(90deg)}",
+".ecr-ld mask polygon:nth-child(2){transform-origin:50% 50%;animation:ecrRot var(--t) linear infinite reverse}",
+".ecr-ld mask polygon:nth-child(3){transform-origin:50% 60%;animation:ecrRot var(--t) linear infinite;animation-delay:calc(var(--t)/-3)}",
+".ecr-ld mask polygon:nth-child(4){transform-origin:40% 40%;animation:ecrRot var(--t) linear infinite reverse}",
+".ecr-ld mask polygon:nth-child(5){transform-origin:40% 40%;animation:ecrRot var(--t) linear infinite reverse;animation-delay:calc(var(--t)/-2)}",
+".ecr-ld mask polygon:nth-child(6){transform-origin:60% 40%;animation:ecrRot var(--t) linear infinite}",
+".ecr-ld mask polygon:nth-child(7){transform-origin:60% 40%;animation:ecrRot var(--t) linear infinite;animation-delay:calc(var(--t)/-1.5)}",
+"@keyframes ecrRot{0%{transform:rotate(0deg)}100%{transform:rotate(360deg)}}",
+"@keyframes ecrRound{0%{filter:contrast(15)}20%{filter:contrast(3)}40%{filter:contrast(3)}60%{filter:contrast(15)}100%{filter:contrast(15)}}",
+"@keyframes ecrHue{0%{filter:hue-rotate(0deg)}20%{filter:hue-rotate(-12deg)}40%{filter:hue-rotate(-16deg)}60%{filter:hue-rotate(-6deg)}80%{filter:hue-rotate(8deg)}100%{filter:hue-rotate(0deg)}}",
+"@media (prefers-reduced-motion:reduce){.ecr-ld,.ecr-ld mask,.ecr-ld mask polygon{animation:none}}",
 ".ecr-pdot{position:absolute;right:-1px;bottom:-1px;width:15px;height:15px;border-radius:50%;border:2.5px solid var(--bg2);background:var(--conn)}.ecr-pdot.live,.ecr-pdot.listening{background:var(--live)}.ecr-pdot.rest,.ecr-pdot.hand{background:var(--rest)}.ecr-pdot.closed{background:var(--closed)}.ecr-pdot.speaking{background:var(--speak)}.ecr-tava .ecr-pdot{right:2px;bottom:2px;width:17px;height:17px}",
 ".ecr-sc{position:relative}",
 ".ecr-hbub{position:absolute;left:50%;top:-52px;transform:translateX(-50%);z-index:6;width:46px;height:46px;padding:0;border:1.5px solid var(--gold);border-radius:50%;background:var(--bg2);font:24px/1 'Noto Color Emoji','Apple Color Emoji',sans-serif;cursor:pointer;box-shadow:0 6px 16px rgba(0,0,0,.4);-webkit-tap-highlight-color:transparent}.ecr-hbub:active{opacity:.85}",
@@ -288,7 +307,7 @@ function narPaint(){
   ui.pp.innerHTML="";ui.pp.appendChild(icon(playing?"pause":"play"));
   var lab=playing?"Pause the lesson":(nar.st==="pause"?"Continue the lesson":"Play the lesson");
   ui.pp.setAttribute("aria-label",lab);ui.pp.title=lab;
-  ui.tava.className="ecr-tava"+(playing?" on":"");
+  ui.tava.className="ecr-tava"+(LDOK?" ld":"")+(playing?" on":"");
   if(playing)ui.tst.textContent="";
   ui.tst.hidden=!ui.tst.textContent;
 }
@@ -429,10 +448,19 @@ function url(act){return "/book-link?classroom="+act+"&session="+encodeURICompon
 function alive(){return ui.status&&document.body.contains(ui.status);}
 function inDoc(n){return n&&document.body.contains(n);}
 function pageHead(title,support){var d=h("div","ecr-head");d.appendChild(h("h1",null,title));if(support)d.appendChild(h("p",null,support));return d;}
+var LDN=0;
+function ldOk(){try{return !!(window.CSS&&CSS.supports&&(CSS.supports("mask","url(#a)")||CSS.supports("-webkit-mask","url(#a)")));}catch(e){return false;}}
+var LDOK=ldOk();
+/* gold loader (Uiverse, andrew-manzyk) used as the AI Teacher picture; each copy gets its own mask id */
+function loaderSvg(){
+  var id="ecrmask"+(++LDN),m="url(#"+id+")";
+  return '<div class="ecr-ld" aria-hidden="true"><svg viewBox="0 0 100 100"><defs><mask id="'+id+'"><polygon points="0,0 100,0 100,100 0,100" fill="black"></polygon><polygon points="25,25 75,25 50,75" fill="white"></polygon><polygon points="50,25 75,75 25,75" fill="white"></polygon><polygon points="35,35 65,35 50,65" fill="white"></polygon><polygon points="35,35 65,35 50,65" fill="white"></polygon><polygon points="35,35 65,35 50,65" fill="white"></polygon><polygon points="35,35 65,35 50,65" fill="white"></polygon></mask></defs></svg><div class="box" style="mask:'+m+';-webkit-mask:'+m+'"></div></div>';
+}
+function teacherPic(){return LDOK?loaderSvg():capSvg();}
 function capSvg(){return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="color:var(--acc)"><path d="M2 9l10-5 10 5-10 5z"/><path d="M6 11.5V16c0 1.5 2.7 3 6 3s6-1.5 6-3v-4.5"/><path d="M22 9v6"/></svg>';}
 function teacherRow(subtitle){
   var top=h("div","ecr-teach");
-  var pic=h("div","ecr-ava");pic.innerHTML=capSvg();
+  var pic=h("div","ecr-ava"+(LDOK?" ld":""));pic.innerHTML=teacherPic();
   var tx=h("div");tx.appendChild(h("b",null,"AI Teacher"));tx.appendChild(h("div","ecr-sub",subtitle));
   top.appendChild(pic);top.appendChild(tx);
   return {row:top,text:tx};
@@ -1291,7 +1319,7 @@ function build(cls,d){
   }else{
     var tc=ord(h("section","ecr-card ecr-tc"),1);tc.setAttribute("aria-label","Live teacher");ui.tc=tc;
     var tt=h("div","ecr-tctop");
-    ui.tava=h("div","ecr-tava");ui.tava.innerHTML=capSvg();
+    ui.tava=h("div","ecr-tava"+(LDOK?" ld":""));ui.tava.innerHTML=teacherPic();
     ui.tdot=h("span","ecr-pdot conn");ui.tdot.setAttribute("aria-hidden","true");ui.tava.appendChild(ui.tdot);
     var ttx=h("div","ecr-ttx");
     ttx.appendChild(h("h2",null,L.title));
