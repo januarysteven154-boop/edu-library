@@ -5170,7 +5170,7 @@ body.aipage .bottomnav{background:rgba(36,8,48,.74)!important;backdrop-filter:bl
     var html="";
     if(chatTurns.length)html=chatTurns.map(function(t,i){return window.aiMsgHTML(t,i);}).join("");
     else html=aiRow('<div class="bubble assistant">'+aiGreeting()+'</div>')+aiRow('<div class="bubble assistant"><b>Looking for a book? \uD83D\uDCDA</b><br>I\'m here to help you find the right books, study materials or resources for your class.</div>');
-    if(streamingText!==undefined)html+=aiRow('<div class="bubble assistant">'+(streamingText?fmtAI(streamingText):'<span class="typing" aria-label="Thinking"><i></i><i></i><i></i></span>')+'</div>');
+    if(streamingText!==undefined)html+=aiRow('<div class="bubble assistant">'+(streamingText?fmtAI(streamingText):eduFlipHTML(["THINKING","READING","WORKING"]))+'</div>');
     box.innerHTML=html;seen=chatTurns.length;
     var sc=document.getElementById("aiScroll");if(sc)sc.scrollTop=sc.scrollHeight;
     idbMarks();
@@ -5823,6 +5823,95 @@ function scan(){
 var q=0;function sched(){if(q)return;q=requestAnimationFrame(function(){q=0;try{scan()}catch(e){}})}
 new MutationObserver(sched).observe(document.documentElement,{childList:true,subtree:true,characterData:true});
 setInterval(function(){try{scan()}catch(e){}},300);
+sched();
+})();
+</script>
+<style id="eduAnim2CSS">
+/* ===== SHINE BUTTON (Get Started) ===== */
+.go2{position:relative;overflow:hidden}
+.go2::before,.go2::after{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;background-size:220% 100%;background-position:100% 0;animation:eduShine 2.6s linear infinite}
+.go2::before{background-image:linear-gradient(-75deg,transparent 30%,rgba(255,255,255,.38) 50%,transparent 70%)}
+.go2::after{padding:1.5px;background-image:linear-gradient(-75deg,transparent 30%,rgba(255,255,255,.95) 50%,transparent 70%);-webkit-mask:linear-gradient(#fff 0 0) content-box,linear-gradient(#fff 0 0);-webkit-mask-composite:xor;mask:linear-gradient(#fff 0 0) content-box,linear-gradient(#fff 0 0);mask-composite:exclude}
+@keyframes eduShine{0%{background-position:100% 0}60%,100%{background-position:-120% 0}}
+
+/* ===== FLIP-FADE WORDS (Edu AI is thinking) ===== */
+.eduFlip{display:inline-grid;perspective:600px;font-weight:800;font-size:12.5px;letter-spacing:.14em;vertical-align:middle;min-height:20px;align-items:center}
+.eduFlip .w{grid-area:1/1;display:flex;white-space:nowrap}
+.eduFlip .c{display:inline-block;opacity:0;transform-style:preserve-3d;animation:eduFlipL 6s ease-in-out infinite both;animation-delay:calc(var(--w)*2s + var(--i)*.05s)}
+@keyframes eduFlipL{0%{opacity:0;transform:rotateX(90deg) translateY(10px);filter:blur(5px)}6%,28%{opacity:1;transform:none;filter:blur(0)}34%,100%{opacity:0;transform:rotateX(-90deg) translateY(-10px);filter:blur(5px)}}
+
+/* ===== MORPH (motto quote on Get Started) ===== */
+.eduMorph{display:inline-block;animation:eduMorphIn .9s ease-out both}
+@keyframes eduMorphIn{0%{opacity:0;filter:url(#eduGoo) blur(14px);transform:scale(.85)}35%{opacity:.85;filter:url(#eduGoo) blur(7px)}100%{opacity:1;filter:url(#eduGoo) blur(0);transform:none}}
+
+/* ===== CORNER BUTTON (Create account) ===== */
+.eduCorner{--ds:6px;--lw:1px;--sp:.35s;position:relative;display:block;padding:7px 8px;margin:-7px -8px}
+.eduCorner .cd{position:absolute;width:var(--ds);aspect-ratio:1;border-radius:50%;background:#ffc457;opacity:0;pointer-events:none}
+.eduCorner .cl{position:absolute;pointer-events:none}
+.eduCorner .cl.h{height:var(--lw);width:100%;background-image:repeating-linear-gradient(90deg,transparent 0 2px,rgba(255,255,255,.8) 2px 4px)}
+.eduCorner .cl.v{width:var(--lw);height:100%;background-image:repeating-linear-gradient(0deg,transparent 0 2px,rgba(255,255,255,.8) 2px 4px)}
+.eduCorner .cl.t{top:0;transform-origin:top left;transform:rotate(5deg) scaleX(0)}
+.eduCorner .cl.b{bottom:0;transform-origin:bottom right;transform:rotate(5deg) scaleX(0)}
+.eduCorner .cl.l{left:0;transform-origin:bottom left;transform:scaleY(0)}
+.eduCorner .cl.r{right:0;transform-origin:top right;transform:rotate(5deg) scaleY(0)}
+.eduCorner>button{transition:transform .2s ease,border-radius .3s ease}
+.eduCorner:is(:hover,:active,:focus-within)>button{transform:scale(1.03)}
+.eduCorner:is(:hover,:active,:focus-within){animation:eduCBg calc(var(--sp)*4) ease-in-out forwards}
+@keyframes eduCBg{80%{background-color:transparent}100%{background-color:rgba(255,196,87,.14)}}
+.eduCorner:is(:hover,:active,:focus-within) .cd.tl{top:50%;left:20%;animation:eduCtl var(--sp) ease-in-out forwards}
+.eduCorner:is(:hover,:active,:focus-within) .cd.tr{top:50%;right:20%;animation:eduCtr var(--sp) ease-in-out calc(var(--sp)*.6) forwards}
+.eduCorner:is(:hover,:active,:focus-within) .cd.br{bottom:50%;right:20%;animation:eduCbr var(--sp) ease-in-out calc(var(--sp)*1.2) forwards}
+.eduCorner:is(:hover,:active,:focus-within) .cd.bl{bottom:50%;left:20%;animation:eduCbl var(--sp) ease-in-out calc(var(--sp)*1.8) forwards}
+@keyframes eduCtl{80%{opacity:.6}100%{top:-3px;left:-3px;opacity:1}}
+@keyframes eduCtr{80%{opacity:.6}100%{top:-3px;right:-3px;opacity:1}}
+@keyframes eduCbr{80%{opacity:.6}100%{bottom:-3px;right:-3px;opacity:1}}
+@keyframes eduCbl{80%{opacity:.6}100%{bottom:-3px;left:-3px;opacity:1}}
+.eduCorner:is(:hover,:active,:focus-within) .cl.t{animation:eduClh var(--sp) ease-in-out calc(var(--sp)*.8) forwards}
+.eduCorner:is(:hover,:active,:focus-within) .cl.r{animation:eduClv var(--sp) ease-in-out calc(var(--sp)*1.4) forwards}
+.eduCorner:is(:hover,:active,:focus-within) .cl.b{animation:eduClh var(--sp) ease-in-out calc(var(--sp)*2) forwards}
+.eduCorner:is(:hover,:active,:focus-within) .cl.l{animation:eduClv2 var(--sp) ease-in-out calc(var(--sp)*2.4) forwards}
+@keyframes eduClh{100%{transform:rotate(0) scaleX(1)}}
+@keyframes eduClv{100%{transform:rotate(0) scaleY(1)}}
+@keyframes eduClv2{100%{transform:scaleY(1)}}
+@media (prefers-reduced-motion:reduce){.go2::before,.go2::after{animation:none}.eduFlip .c{animation:none;opacity:1}.eduFlip .w:not(:first-child){display:none}.eduMorph{animation:none}.eduCorner *{animation:none!important}}
+</style>
+<script id="eduAnim2JS">
+(function(){
+var RM=window.matchMedia&&matchMedia("(prefers-reduced-motion: reduce)").matches;
+/* flip-fade words: returns HTML, used by the Edu AI waiting bubble */
+window.eduFlipHTML=function(words,label){
+  var h='<span class="eduFlip" role="img" aria-label="'+(label||"Thinking")+'">';
+  for(var j=0;j<words.length;j++){
+    h+='<span class="w" aria-hidden="true" style="--w:'+j+'">';
+    var w=String(words[j]);
+    for(var i=0;i<w.length;i++)h+='<span class="c" style="--i:'+i+'">'+(w[i]===" "?"&nbsp;":w[i])+'</span>';
+    h+='</span>';
+  }
+  return h+'</span>';
+};
+/* gooey filter used by the morph effect */
+if(!document.getElementById("eduGooSvg")){
+  var d=document.createElement("div");d.id="eduGooSvg";d.setAttribute("aria-hidden","true");d.style.cssText="position:absolute;width:0;height:0;overflow:hidden;pointer-events:none";
+  d.innerHTML='<svg width="0" height="0"><filter id="eduGoo"><feColorMatrix in="SourceGraphic" type="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 25 -9" result="g"/><feComposite in="SourceGraphic" in2="g" operator="atop"/></filter></svg>';
+  document.body.appendChild(d);
+}
+var lastMot="";
+function checkMot(){
+  var s=document.querySelector("#mot span");
+  if(!s){lastMot="";return}
+  var t=s.textContent;
+  if(t!==lastMot&&!RM){s.classList.remove("eduMorph");void s.offsetWidth;s.classList.add("eduMorph");clearTimeout(s._mt);s._mt=setTimeout(function(){s.classList.remove("eduMorph")},1000)}
+  lastMot=t;
+}
+function cornerize(b){
+  if(!b||b.dataset.eduCorner||!b.parentNode)return;b.dataset.eduCorner="1";
+  var w=document.createElement("div");w.className="eduCorner";
+  w.innerHTML='<span class="cl h t"></span><span class="cl v r"></span><span class="cl h b"></span><span class="cl v l"></span><span class="cd tl"></span><span class="cd tr"></span><span class="cd br"></span><span class="cd bl"></span>';
+  b.parentNode.insertBefore(w,b);w.appendChild(b);
+}
+function scan(){checkMot();cornerize(document.getElementById("lgNew"))}
+var q=0;function sched(){if(q)return;q=requestAnimationFrame(function(){q=0;try{scan()}catch(e){}})}
+new MutationObserver(sched).observe(document.body,{childList:true,subtree:true,characterData:true});
 sched();
 })();
 </script>
