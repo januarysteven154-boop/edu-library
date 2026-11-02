@@ -3912,8 +3912,9 @@ window.addEventListener("hashchange", render);
 </script>
 <script>
 /* ---------- Reading mode + Settings ---------- */
-const APP_VERSION="1.8.25";
+const APP_VERSION="1.8.26";
 const APP_CHANGES=[
+"1.8.26: Swiping on the Featured Books shelf now only moves the books and no longer switches between Library and Past Papers.",
  "1.8.25: Soft animated golden rays move behind every page. They switch off for people who use reduced motion.",
  "1.8.24: The Library page has a 3D Featured Books shelf. Swipe to browse, tap the book in front to open it.",
  "1.8.23: The Get Started page shows the app's features orbiting the Edu Library logo. Drag to spin them and tap one to bring it to the front.",
@@ -5482,6 +5483,7 @@ body.clsbg:not(.light) .ecr-chip,body.clsbg:not(.light) .ecr-lv{-webkit-backdrop
   var ORDER=["library","exams"],sx=0,sy=0,st=0,ok=false,dir=0;
   function sec(){var h=(location.hash||"#/").slice(2).split("/")[0];return ORDER.indexOf(h)>-1?h:"";}
   function blocked(el){
+    if(el&&el.closest&&el.closest("#shelf,.shelf"))return true; /* 1.8.26: book shelf swipes only move the books */
     if(document.body.classList.contains("gate")||document.body.classList.contains("kbopen"))return true;
     if(document.querySelector(".pv,.aimodal,#acctModal,#acctTopModal,.aisheet,.modal,.overlay"))return true;
     for(var n=el;n&&n!==document.body;n=n.parentElement){
