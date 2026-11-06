@@ -1231,13 +1231,13 @@ const BADGE_COLORS = ["#E85D8A","#F2994A","#E0B32B","#2FA36B","#3B8FD4","#8A54C4
    These links live only in this file, they cannot be changed from the Admin screen. */
 const SERVERS=[
   {id:"A",name:"Server A",url:"https://uozxdopexjbxjpatodpl.supabase.co",key:"sb_publishable_7WBlnIk-CDi-nSiUT9JDBg_7iRT8j-V"},
-  {id:"B",name:"Server B",type:"appwrite",endpoint:"https://fra.cloud.appwrite.io/v1",project:"6abc042e003c999d9977",db:"6abc081a001aa74f7a4c",table:"6abc0877003260119342",bucket:"6abc129c000afccadc97"},
+  {id:"B",name:"Server B",type:"b2e"},
   /* Examination servers (exam PDFs only). Fill in endpoint / project / db / table / bucket of each new Appwrite project to switch it on. */
   {id:"C",name:"Server C",exam:true,type:"filebase"},
   {id:"D",name:"Server D",type:"b2"}
 ];
 SERVERS.forEach(x=>{
-  if(x.type==="filebase"||x.type==="b2"){x.ok=true;}
+  if(x.type==="filebase"||x.type==="b2"||x.type==="b2e"){x.ok=true;}
   else if(x.type==="appwrite"){
     x.ok=false;
     try{
@@ -1390,7 +1390,7 @@ function previewBook(id){
   const b=findBook(id);if(!b)return;closePreview();
   try{const r=JSON.parse(localStorage.getItem("edu_recent")||"[]").filter(x=>x!=id);r.unshift(id);localStorage.setItem("edu_recent",JSON.stringify(r.slice(0,8)));}catch(e){}
   const m=document.createElement("div");m.className="pv";
-  m.innerHTML=`<div class="pvbar"><button onclick="closePreview()">✕</button><b>${esc(b.title)}</b><button type="button" aria-label="Search in book" title="Search in book" onclick="pvSearchOpen()"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="display:block"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg></button><button type="button" aria-label="Zoom out" onclick="pvStep(-1)">\u2212</button><button type="button" aria-label="Zoom in" onclick="pvStep(1)">+</button><button id="rmBtn" title="Reading mode" onclick="toggleReading()">📖</button><a class="open" aria-label="Save" title="Save" href="${esc(dlUrl(b))}"${isFb(b)?` onclick="return fbDl('${bkey(b)}')"`:""}>${IC_DL}</a></div><div class="pvbody" id="pvbody"><div class="empty">Loading preview…</div></div><div class="pvtint"></div>`;
+  m.innerHTML=`<div class="pvbar"><button onclick="closePreview()">✕</button><b>${esc(b.title)}</b><button type="button" aria-label="Search in book" title="Search in book" onclick="pvSearchOpen()"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="display:block"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg></button><button type="button" aria-label="Zoom out" onclick="pvStep(-1)">\u2212</button><button type="button" aria-label="Zoom in" onclick="pvStep(1)">+</button><button id="rmBtn" title="Reading mode" onclick="toggleReading()">📖</button><a class="open" aria-label="Save" title="Save" href="${esc(dlUrl(b))}"${isFb(b)?` onclick="return fbDl('${bkey(b)}')"`:""}>${IC_DL}</a></div><div class="pvbody" id="pvbody">${window.eduLoadOrbit?eduLoadOrbit("Loading file…"):'<div class="empty">Loading preview…</div>'}</div><div class="pvtint"></div>`;
   document.body.appendChild(m);applyReading();
   (async()=>{
     let u=b.file_path;
@@ -1568,7 +1568,9 @@ async function eduKind(u){
 function eduPvFail(body){body.innerHTML='<div class="empty">Preview unavailable. Use Save.'+(window.__eduWordWhy?'<div style="font-size:11px;opacity:.6;margin-top:8px">('+String(window.__eduWordWhy).replace(/[<>&]/g,"")+')</div>':'')+'</div>';}
 async function renderPages(url){
   const body=document.getElementById("pvbody");
-  if(await eduKind(url)==="word"){if(await eduTryWord(url,body))return;if(body.isConnected)eduPvFail(body);return;}
+  const __kind=await eduKind(url);
+  {const __t=document.getElementById("eduOrbitTx");if(__t)__t.textContent=__kind==="word"?"Loading Word file…":"Loading PDF…";}
+  if(__kind==="word"){if(await eduTryWord(url,body))return;if(body.isConnected)eduPvFail(body);return;}
   try{
     const pdf=await pdfjsLib.getDocument(eduPdfOpt(url)).promise;
     if(!body.isConnected){try{pdf.destroy();}catch(_){}return;}
@@ -1845,7 +1847,7 @@ async function loadAppwriteBooks(x){
 }
 /* ---- Server C (Filebase): private files, signed links made by the backend ---- */
 const FB_API="https://edu-ai-backend-three.vercel.app";
-function isFb(b){const p=String((b&&b.file_path)||"");return p.indexOf("fb:")===0||p.indexOf("b2:")===0;}
+function isFb(b){const p=String((b&&b.file_path)||"");return p.indexOf("fb:")===0||p.indexOf("b2:")===0||p.indexOf("b2e:")===0;}
 async function fbPost(path,extra,body){
   const h=Object.assign({"Content-Type":"application/json"},extra||{});
   const r=await fetch(FB_API+path,{method:"POST",headers:h,body:JSON.stringify(body||{})});
@@ -1855,7 +1857,8 @@ async function fbPost(path,extra,body){
 }
 async function fbUrl(filePath){
   const fp=String(filePath);
-  const j=await fbPost("/api/book-link"+(fp.indexOf("b2:")===0?"?s=d&key=":"?key=")+encodeURIComponent(fp.slice(3)));
+  const isE=fp.indexOf("b2e:")===0;
+  const j=await fbPost("/api/book-link"+(isE?"?s=e&key=":(fp.indexOf("b2:")===0?"?s=d&key=":"?key="))+encodeURIComponent(fp.slice(isE?4:3)));
   if(!j.url)throw new Error("No link");
   return j.url;
 }
@@ -1872,16 +1875,18 @@ async function loadFilebaseBooks(){
     return {data,error:null};
   }catch(e){return {data:null,error:e};}
 }
-async function loadB2Books(){
+async function loadB2Books(which){
+  const E=which==="e";
   try{
-    const j=await fbPost("/api/book-list");
+    const j=await fbPost("/api/book-list"+(E?"?s=e":""));
     const data=(j.items||[]).map(it=>({id:it.key,title:it.title||"",subject:it.subject||"",author:it.author||"",level:it.level||"",
-      class:(it.cls0||"")+(it.tier?TIER_SEP+it.tier:""),description:"",file_path:"b2:"+it.key,added:it.added||""}));
+      class:(it.cls0||"")+(it.tier?TIER_SEP+it.tier:""),description:"",file_path:(E?"b2e:":"b2:")+it.key,added:it.added||""}));
     return {data,error:null};
   }catch(e){return {data:null,error:e};}
 }
 function loadServerBooks(x){
   if(x.type==="b2")return loadB2Books();
+  if(x.type==="b2e")return loadB2Books("e");
   if(x.type==="filebase")return loadFilebaseBooks();
   if(x.type==="appwrite")return loadAppwriteBooks(x);
   return x.sb.from("books").select("*").order("added",{ascending:false});
@@ -2702,11 +2707,11 @@ async function admReload(quiet){
 }
 async function admDeleteOne(b){
   const S=srv(b._s||"A");
-  if(S.type==="b2"||S.type==="filebase"){
+  if(S.type==="b2"||S.type==="b2e"||S.type==="filebase"){
     const ss=sb?(await sb.auth.getSession()).data.session:null;
     if(!ss)throw new Error("Please sign in as admin again.");
     const fp=String(b.file_path||"");
-    const j=await fbPost("/api/book-link?del=1&s="+(S.type==="b2"?"d":"c"),{Authorization:"Bearer "+ss.access_token},{key:fp.slice(3)});
+    const j=await fbPost("/api/book-link?del=1&s="+(S.type==="b2"?"d":(S.type==="b2e"?"e":"c")),{Authorization:"Bearer "+ss.access_token},{key:fp.slice(S.type==="b2e"?4:3)});
     if(!j||j.deleted!==true)throw new Error("Deleting from "+S.name+" needs the backend update first.");
   }else if(S.type==="appwrite"){
     const m=String(b.file_path||"").match(/\/files\/([^\/]+)\/(?:view|download)/);
@@ -2736,7 +2741,7 @@ async function admDel(k){
 
 /* ---------- ADMIN: how much space is used / left on each server ---------- */
 /* Plan size of each server in GB (free plans). Change a number here if you upgrade a server. */
-const SERVER_CAP={A:1,B:2,C:5,D:10};
+const SERVER_CAP={A:1,B:10,C:5,D:10};
 function admBytes(n){
   n=Math.max(0,Number(n)||0);
   if(n<1024*1024)return Math.round(n/1024)+" KB";
@@ -2744,10 +2749,10 @@ function admBytes(n){
   return (n/1073741824).toFixed(2)+" GB";
 }
 async function admUsage(x){
-  if(x.type==="b2"||x.type==="filebase"){
+  if(x.type==="b2"||x.type==="b2e"||x.type==="filebase"){
     const ss=sb?(await sb.auth.getSession()).data.session:null;
     if(!ss)throw new Error("Please sign in as admin again.");
-    const j=await fbPost("/api/book-link?usage=1&s="+(x.type==="b2"?"d":"c"),{Authorization:"Bearer "+ss.access_token},{});
+    const j=await fbPost("/api/book-link?usage=1&s="+(x.type==="b2"?"d":(x.type==="b2e"?"e":"c")),{Authorization:"Bearer "+ss.access_token},{});
     if(!j||typeof j.bytes!=="number")throw new Error("The backend needs the update for "+x.name+" space.");
     return j.bytes;
   }
@@ -2813,11 +2818,11 @@ async function saveBook(){
   msg.textContent = "Uploading PDF...";
   const __pg=eduProg.start({title:"Uploading "+file.name});
   try{
-    if(S.type==="b2"){
+    if(S.type==="b2"||S.type==="b2e"){
       if(isEx)throw new Error("Exam papers go to Server C. Use the Examinations form.");
       const ss=sb?(await sb.auth.getSession()).data.session:null;
       if(!ss)throw new Error("Please sign in as admin again.");
-      const j=await fbPost("/api/book-upload",{Authorization:"Bearer "+ss.access_token},{level,cls0,tier,subject,title,author});
+      const j=await fbPost("/api/book-upload"+(S.type==="b2e"?"?s=e":""),{Authorization:"Bearer "+ss.access_token},{level,cls0,tier,subject,title,author});
       if(!j.url)throw new Error("No upload link");
       await eduPut(j.url,file,__pg);
     }else if(S.type==="appwrite"){
@@ -3655,10 +3660,21 @@ async function aiPost(path,body,ms){
         why=raw.replace(/<[^>]+>/g," ").replace(/\s+/g," ").trim();
       }
       if(why.length>300)why=why.slice(0,300)+"…";
-      throw new Error("Server "+res.status+(why?": "+why:" (no details returned)"));
+      const er=new Error("Server "+res.status+(why?": "+why:" (no details returned)"));
+      er.status=res.status;
+      if(d&&typeof(d.error||d.message)==="string")er.friendly=String(d.error||d.message).slice(0,200);
+      throw er;
     }
     return d||{};
   }finally{clearTimeout(to);}
+}
+function aiFriendlyErr(e){
+  const m=String((e&&e.message)||"");
+  const fr=e&&e.friendly?String(e.friendly):"";
+  if(fr&&fr.length>=8&&fr.charAt(0)!=="{"&&((e.status||0)<500||fr.indexOf("Edu AI")===0))return fr;
+  if(/^Please /.test(m))return m;
+  if(/picture|image/i.test(m)&&!/^Server /.test(m))return "The picture maker is busy. Please try again in a moment.";
+  return "Edu AI is busy right now. Please try again in a moment.";
 }
 async function aiRun(userTurn,task){
   chatTurns.push(userTurn);saveChatTurns();
@@ -3673,7 +3689,7 @@ async function aiRun(userTurn,task){
     if(run.aborted){turns.push({role:"assistant",content:"Stopped."});}
     else{
       console.error("Edu AI error:",e);
-      turns.push({role:"assistant",content:navigator.onLine?((e&&e.name==="AbortError")?"That took too long. Please try again.":"Sorry, that didn't work ("+((e&&e.message)||"error")+"). Please try again."):"No internet connection. Please try again."});
+      turns.push({role:"assistant",content:navigator.onLine?((e&&e.name==="AbortError")?"That took too long. Please try again.":aiFriendlyErr(e)):"No internet connection. Please try again."});
     }
   }
   finishAI(turns,cid);
@@ -3954,8 +3970,11 @@ window.addEventListener("hashchange", render);
 </script>
 <script>
 /* ---------- Reading mode + Settings ---------- */
-const APP_VERSION="1.8.31";
+const APP_VERSION="1.8.34";
 const APP_CHANGES=[
+ "1.8.34: Server B now runs on a second Backblaze account (10 GB) in place of the old server that switched itself off.",
+ "1.8.33: Downloading now happens inside the Download button itself (percent, speed, time left, then a tick). Opening a PDF or Word file shows an orbit loader with Loading text. Featured Books show real book thumbnails.",
+ "1.8.32: pressing and holding a button or card no longer shows its web address.",
 "1.8.31: Books, Word files and papers open faster, and the Classroom and Settings wallpapers are lighter. The Classroom picture now shows only in the dark and sunset themes; the Settings picture stays the same in every theme and adapts to it.",
 "1.8.30: New animated gold icons: Camera and Photos in the Add to chat sheet, and Search in the top bar.",
 "1.8.29: When there is no internet, a gold bouncing-ball animation now shows with the words No internet access.",
@@ -4559,24 +4578,42 @@ if("serviceWorker" in navigator){window.addEventListener("load",function(){navig
     while(true){const x=await reader.read();if(x.done)break;parts.push(x.value);received+=x.value.length;if(onProgress&&total)onProgress(Math.min(99,Math.round(received/total*100)),received,total);}
     const out=new Blob(parts,{type:res.headers.get("content-type")||"application/pdf"});if(onProgress)onProgress(100);return out;
   }
-  function setDownloadUI(k,state,pct){
+  function dlSp(b){return b>=1048576?(b/1048576).toFixed(1)+" MB/s":Math.max(1,Math.round(b/1024))+" KB/s";}
+  function dlEt(s){s=Math.max(1,Math.round(s));return s<60?s+"s":Math.floor(s/60)+"m "+(s%60)+"s";}
+  const DL_TICK='<svg class="dltick" viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5" pathLength="1"/></svg>';
+  function setDownloadUI(k,state,pct,info){
     document.querySelectorAll('[data-download-key]').forEach(el=>{if(el.getAttribute("data-download-key")!==k)return;
-      if(state==="downloading"){el.disabled=true;el.classList.add("downloading");el.innerHTML='↓ '+(pct>0?('Downloading '+pct+'%'):"Downloading…");}
-      else if(state==="done"){el.disabled=false;el.classList.remove("downloading");el.classList.add("downloaded");el.innerHTML='✓ Downloaded';}
-      else if(state==="error"){el.disabled=false;el.classList.remove("downloading");el.innerHTML='↻ Retry Download';}
-      else{el.disabled=false;el.classList.remove("downloading");el.classList.toggle("downloaded",state==="downloaded");el.innerHTML=state==="downloaded"?'✓ Downloaded':'⬇ Download';}
+      if(state==="downloading"){
+        el.disabled=false;el.classList.add("downloading");el.classList.remove("downloaded","dlpop");
+        const p=Math.max(0,Math.min(100,pct||0)),f=el.querySelector(".dlfill");
+        if(f){f.style.width=p+"%";el.classList.toggle("dlind",!(p>0));const b=el.querySelector(".dltx b"),sm=el.querySelector(".dltx small");if(b)b.textContent=p>0?p+"%":"…";if(sm)sm.textContent=info||"Starting";}
+        else{el.classList.toggle("dlind",!(p>0));el.setAttribute("aria-label","Downloading. Tap to cancel.");el.innerHTML='<span class="dlfill" style="width:'+p+'%"></span><span class="dltx"><b>'+(p>0?p+"%":"…")+'</b><small>'+(info||"Starting")+'</small></span>';}
+      }
+      else if(state==="done"){el.disabled=false;el.classList.remove("downloading","dlind");el.classList.add("downloaded","dlpop");el.setAttribute("aria-label","Downloaded");el.innerHTML=DL_TICK+'<span class="dlword">Downloaded</span>';}
+      else if(state==="error"){el.disabled=false;el.classList.remove("downloading","dlind","dlpop");el.setAttribute("aria-label","Retry download");el.innerHTML='↻ Retry Download';}
+      else{el.disabled=false;el.classList.remove("downloading","dlind","dlpop");el.classList.toggle("downloaded",state==="downloaded");el.setAttribute("aria-label","Download");el.innerHTML=state==="downloaded"?'✓ Downloaded':'⬇ Download';}
     });
   }
-  const DLBUSY=new Set();
+  const DLBUSY=new Set(),DLCANCEL=new Map();
   async function downloadBook(k){
     const b=findBook(k);if(!b)return false;
-    if(DLBUSY.has(k))return false;
+    if(DLBUSY.has(k)){
+      const c=DLCANCEL.get(k);
+      if(c)eduDialog("Cancel download?","The book is still downloading.",[["Cancel download",()=>{try{c();}catch(e){}}],["Keep downloading"]]);
+      return false;
+    }
     const existing=await localBook(b);if(existing){localDownloadedKeys.add(k);setDownloadUI(k,"downloaded");return true;}
     if(!online()){const up=await netProbe();if(!up){eduDialog("No internet connection","Please reconnect to download this book. Your downloaded books can still be read offline.",[["OK"]]);return false;}}
     DLBUSY.add(k);setDownloadUI(k,"downloading",0);
-    const __pg=eduProg.start({title:"Downloading "+(b.title||"book")}),__ctl=new AbortController();__pg.cancelable(()=>__ctl.abort());
+    const __ctl=new AbortController();DLCANCEL.set(k,()=>__ctl.abort());
+    let __lt=Date.now(),__ll=0,__ema=0;
     try{
-      const blob=await fetchBookBlob(b,(p,r,t)=>{setDownloadUI(k,"downloading",p);__pg.set(p,r,t)},__ctl.signal);
+      const blob=await fetchBookBlob(b,(p,r,t)=>{
+        const now=Date.now();
+        if(typeof r==="number"&&r>0&&now-__lt>=300){const inst=(r-__ll)/((now-__lt)/1000);if(inst>=0&&isFinite(inst))__ema=__ema?__ema*.7+inst*.3:inst;__lt=now;__ll=r;}
+        let info="";if(__ema>0){info=dlSp(__ema);if(typeof t==="number"&&t>r)info+=" · "+dlEt((t-r)/__ema);}
+        setDownloadUI(k,"downloading",p,info);
+      },__ctl.signal);
       if(!blob||blob.size<10)throw new Error("The downloaded file is empty.");
       const head=new Uint8Array(await blob.slice(0,1024).arrayBuffer());let txt="";for(let i=0;i<head.length;i++)txt+=String.fromCharCode(head[i]);
       const isZipFile=txt.charCodeAt(0)===80&&txt.charCodeAt(1)===75;
@@ -4584,14 +4621,13 @@ if("serviceWorker" in navigator){window.addEventListener("load",function(){navig
       await idbPut(BOOK_STORE,{key:localKey(b),book:{...b},blob,size:blob.size,downloadedAt:new Date().toISOString()});
       localDownloadedKeys.add(k);LOCALMETA.set(String(k),{...b});DLBUSY.delete(k);
       if(isZipFile&&window.eduPrefetchWord)eduPrefetchWord();
-      __pg.done("Saved for offline reading");
+      DLCANCEL.delete(k);
       setDownloadUI(k,"done");
       showToast("\u2713 Book downloaded successfully \u2014 available offline.");
       return true;
     }catch(e){
-      DLBUSY.delete(k);
-      if(e&&e.name==="AbortError"){__pg.fail("Download cancelled");setDownloadUI(k,"idle");return false;}
-      __pg.fail("Download failed");
+      DLBUSY.delete(k);DLCANCEL.delete(k);
+      if(e&&e.name==="AbortError"){setDownloadUI(k,"idle");return false;}
       console.error("Edu Library download:",e);setDownloadUI(k,"error");
       if(e&&(e.name==="QuotaExceededError"||/quota|storage/i.test(String(e.message)))){eduDialog("Not enough space","There is not enough storage on this phone. Free some space and try again.",[["Retry Download",()=>downloadBook(k)],["Close"]]);return false;}
       const up=await netProbe();
@@ -4674,7 +4710,7 @@ if("serviceWorker" in navigator){window.addEventListener("load",function(){navig
     const b=findBook(id);if(!b)return;closePreview();
     try{const r=JSON.parse(localStorage.getItem("edu_recent")||"[]").filter(x=>x!=id);r.unshift(id);localStorage.setItem("edu_recent",JSON.stringify(r.slice(0,8)));}catch(e){}
     const m=document.createElement("div");m.className="pv";
-    m.innerHTML=`<div class="pvbar"><button onclick="closePreview()">✕</button><b>${esc(b.title)}</b><button type="button" aria-label="Search in book" title="Search in book" onclick="pvSearchOpen()"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="display:block"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg></button><button type="button" aria-label="Zoom out" onclick="pvStep(-1)">−</button><button type="button" aria-label="Zoom in" onclick="pvStep(1)">+</button><button id="rmBtn" title="Reading mode" onclick="toggleReading()">📖</button><button class="open dl ib pvdl" type="button" data-download-key="${esc(bkey(b))}" onclick="downloadBook('${esc(bkey(b))}')">⬇</button></div><div class="pvbody" id="pvbody"><div class="empty">Loading preview…</div></div><div class="pvtint"></div>`;
+    m.innerHTML=`<div class="pvbar"><button onclick="closePreview()">✕</button><b>${esc(b.title)}</b><button type="button" aria-label="Search in book" title="Search in book" onclick="pvSearchOpen()"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="display:block"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg></button><button type="button" aria-label="Zoom out" onclick="pvStep(-1)">−</button><button type="button" aria-label="Zoom in" onclick="pvStep(1)">+</button><button id="rmBtn" title="Reading mode" onclick="toggleReading()">📖</button><button class="open dl ib pvdl" type="button" data-download-key="${esc(bkey(b))}" onclick="downloadBook('${esc(bkey(b))}')">⬇</button></div><div class="pvbody" id="pvbody">${window.eduLoadOrbit?eduLoadOrbit("Loading file…"):'<div class="empty">Loading preview…</div>'}</div><div class="pvtint"></div>`;
     document.body.appendChild(m);applyReading();
     let objectUrl=null;
     try{
@@ -4763,8 +4799,8 @@ if("serviceWorker" in navigator){window.addEventListener("load",function(){navig
   (function(){
     const PFX="edu_th3_",Q=[];let run=0;
     const io=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){io.unobserve(e.target);Q.push(e.target);pump();}}),{rootMargin:"300px"});
-    function keyOf(t){const o=t.getAttribute("onclick")||(t.parentElement&&t.parentElement.getAttribute("onclick"))||"";const m=o.match(/previewBook\('([^']*)'\)/);return m?m[1]:null;}
-    function show(t,d){t.innerHTML='<img alt="" src="'+d+'">';t.dataset.done="1";}
+    function keyOf(t){const o=t.getAttribute("onclick")||(t.parentElement&&t.parentElement.getAttribute("onclick"))||"";const m=o.match(/previewBook\('([^']*)'\)/);if(m)return m[1];const h=t.closest&&t.closest(".b3[data-k]");return h?h.getAttribute("data-k"):null;}
+    function show(t,d){t.innerHTML='<img alt="" src="'+d+'">';t.dataset.done="1";const sp=t.parentElement&&t.parentElement.classList.contains("b3f")?t.parentElement.querySelector("span"):null;if(sp)sp.style.display="none";}
     function scan(){document.querySelectorAll(".thumb:not([data-th])").forEach(t=>{const k=keyOf(t);if(!k)return;t.dataset.th=k;let d=null;try{d=localStorage.getItem(PFX+k);}catch(e){}if(d){show(t,d);return;}io.observe(t);});}
     async function make(t){
       const k=t.dataset.th;if(t.dataset.done||!t.isConnected)return;
@@ -6156,6 +6192,52 @@ sched();
 /* ANIMATED RAYS (1.8.25): one fixed layer, added last so it sits above the wallpaper layers */
 (function(){function add(){if(document.getElementById("eduRays")||!document.body)return;var d=document.createElement("div");d.id="eduRays";d.setAttribute("aria-hidden","true");d.innerHTML='<i class="r1"></i><i class="r2"></i>';document.body.appendChild(d)}
 if(document.body)add();else document.addEventListener("DOMContentLoaded",add)})();
+</script>
+<style id="eduDlOrbitCSS">
+/* download button: progress, speed and tick live inside the button */
+.dlbtn{position:relative;overflow:hidden}
+.dlbtn.downloading{opacity:1!important;pointer-events:auto!important}
+.dlbtn .dlfill{position:absolute;left:0;top:0;bottom:0;width:0;background:rgba(255,255,255,.34);transition:width .25s linear;pointer-events:none}
+.dlbtn.dlind .dlfill{width:38%!important;animation:eduDlSlide 1s ease-in-out infinite}
+@keyframes eduDlSlide{0%{transform:translateX(-100%)}100%{transform:translateX(265%)}}
+.dlbtn .dltx{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1.1;gap:1px}
+.dlbtn .dltx b{font-size:12px;font-weight:800}
+.dlbtn .dltx small{font-size:9px;font-weight:700;opacity:.92;white-space:nowrap}
+.pvdl .dltx small{display:none}
+.dlbtn .dltick{width:16px;height:16px;margin-right:5px;fill:none;stroke:currentColor;stroke-width:3;stroke-linecap:round;stroke-linejoin:round;flex:none}
+.dlbtn.dlpop .dltick path{stroke-dasharray:1;stroke-dashoffset:1;animation:eduDlTick .45s ease-out .05s forwards}
+.dlbtn.dlpop{animation:eduDlPop .5s cubic-bezier(.34,1.56,.64,1)}
+@keyframes eduDlTick{to{stroke-dashoffset:0}}
+@keyframes eduDlPop{0%{transform:scale(.9)}60%{transform:scale(1.07)}100%{transform:scale(1)}}
+.dlbtn.dlpop{display:inline-flex;align-items:center;justify-content:center}
+.pvdl.dlpop .dlword{display:none}.pvdl.dlpop .dltick{margin:0}
+/* orbit loader while a PDF or Word file opens */
+.eduOrbitWrap{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:26px;min-height:62vh;text-align:center}
+.eduOrbitWrap p{margin:0;font-weight:700;font-size:14px;color:var(--sub,#cfc3e6)}
+.eduOrbit,.eduOrbit *{box-sizing:border-box}
+.eduOrbit{position:relative;height:55px;width:55px;border-radius:50%;perspective:800px}
+.eduOrbit .o{position:absolute;box-sizing:border-box;width:100%;height:100%;border-radius:50%}
+.eduOrbit .o:nth-child(1){left:0;top:0;animation:eduOrb1 1200ms linear infinite;border-bottom:3px solid #ff1d5e}
+.eduOrbit .o:nth-child(2){right:0;top:0;animation:eduOrb2 1200ms linear infinite;border-right:3px solid #ff1d5e}
+.eduOrbit .o:nth-child(3){right:0;bottom:0;animation:eduOrb3 1200ms linear infinite;border-top:3px solid #ff1d5e}
+@keyframes eduOrb1{0%{transform:rotateX(35deg) rotateY(-45deg) rotateZ(0deg)}100%{transform:rotateX(35deg) rotateY(-45deg) rotateZ(360deg)}}
+@keyframes eduOrb2{0%{transform:rotateX(50deg) rotateY(10deg) rotateZ(0deg)}100%{transform:rotateX(50deg) rotateY(10deg) rotateZ(360deg)}}
+@keyframes eduOrb3{0%{transform:rotateX(35deg) rotateY(55deg) rotateZ(0deg)}100%{transform:rotateX(35deg) rotateY(55deg) rotateZ(360deg)}}
+@media (prefers-reduced-motion:reduce){.dlbtn.dlind .dlfill{animation:none}}
+</style>
+<script id="eduOrbitJS">
+window.eduLoadOrbit=function(t){return '<div class="eduOrbitWrap" role="status"><div class="eduOrbit"><div class="o"></div><div class="o"></div><div class="o"></div></div><p id="eduOrbitTx">'+(t||"Loading…")+'</p></div>';};
+</script>
+<script>
+/* hide the web-address preview that shows when a link is pressed and held */
+(function(){
+  function isLink(t){return t&&t.closest&&t.closest("a[href]");}
+  document.addEventListener("contextmenu",function(e){if(isLink(e.target))e.preventDefault();},true);
+  document.addEventListener("dragstart",function(e){if(isLink(e.target))e.preventDefault();},true);
+  var st=document.createElement("style");
+  st.textContent="a,a *{-webkit-touch-callout:none;-webkit-user-drag:none}.bottomnav a,a.lv,a.ct,a.setitem{-webkit-user-select:none;user-select:none}";
+  document.head.appendChild(st);
+})();
 </script>
 </body>
 </html>
