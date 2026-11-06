@@ -1,6 +1,7 @@
-/* Edu Library - AI Examination Room, Admin side: Exam Builder v3.1 (saves papers to server C, with a space meter; fills Class, Subject, Title and Year from the file by itself). Builds checked multiple-choice questions (two AIs must agree) AND written questions (the AI finds them and drafts the model answers) from the text of an exam paper (PDF with text, SCANNED PDF read by AI, Word .docx, or .txt) and saves them to server C through the backend. Includes an accuracy test with maths questions whose answers are known.
+/* Edu Library - AI Examination Room, Admin side: Exam Builder v3.2 (saves papers to server C, with a space meter; fills Class, Subject, Title and Year from the file by itself). Builds checked multiple-choice questions (two AIs must agree) AND written questions (the AI finds them and drafts the model answers) from the text of an exam paper (PDF with text, SCANNED PDF read by AI, Word .docx, or .txt) and saves them to server C through the backend. Includes an accuracy test with maths questions whose answers are known.
+   v3.2: the builder page now shows ONLY Server C (the examination server). The Server D bar was removed from the screen and from the space check. Nothing else changed.
    v3.1: old Word .doc files can now be opened (text is read straight from the file, no library); .docx, PDF and .txt work as before.
-   v3.0: NEW LOOK (gold and blue, scoped under the .eb class so the Library Manager is not touched): own title, collapsible how-it-works card, Server C / Server D usage bars, numbered cards 1 Accuracy check and 2 Build from a paper, big file box with the chosen file name, Build exam and Clear buttons. All the building, saving, review and delete logic is unchanged.
+   v3.0: NEW LOOK (gold and blue, scoped under the .eb class so the Library Manager is not touched): own title, collapsible how-it-works card, Server C usage bar, numbered cards 1 Accuracy check and 2 Build from a paper, big file box with the chosen file name, Build exam and Clear buttons. All the building, saving, review and delete logic is unchanged.
    v2.8: the list of saved papers moved to its own screen. A button "Uploaded exams" at the top of the builder opens it (Review questions and Delete for each paper) and "Back to builder" returns. The builder screen is shorter and cleaner.
    v2.7: in section 3, each saved paper has a "Review questions" button that opens all its questions (multiple choice with the marked answer, written questions with the model answer) so you can check a paper before or instead of deleting it. Uses the backend room=paper call (no backend change).
    v2.6: section 3 lists the papers saved in the Examination Room (newest first) with a Delete button (tap twice), so wrong uploads can be removed and students are not confused. Uses the backend room=index and room=del calls (no backend change).
@@ -716,7 +717,7 @@ function drawResults(){
   var ws=box.querySelectorAll?box.querySelectorAll(".wDrop"):[];
   for(var wi=0;wi<ws.length;wi++)ws[wi].onclick=(function(el){return function(){dropWritten(parseInt(el.getAttribute("data-i"),10));};})(ws[wi]);
 }
-/* ---------- Examination Room storage (server C, with server D as back-up space) ---------- */
+/* ---------- Examination Room storage (server C) ---------- */
 var URL_ROOM="https://edu-ai-backend-three.vercel.app/api/book-link?room=";
 var URL_USAGE="https://edu-ai-backend-three.vercel.app/api/book-link?usage=1";
 async function roomCall(action,payload,extra){
@@ -727,9 +728,10 @@ async function roomCall(action,payload,extra){
   return j;
 }
 function fmtBytes(n){return n>=1073741824?(n/1073741824).toFixed(2)+" GB":(n/1048576).toFixed(1)+" MB";}
+/* v3.2: only Server C (the examination server) is checked and shown */
 async function showSpace(){
   var tok;try{tok=await token();}catch(e){return;}
-  var list=[["","ebSrvC",5],["&s=d","ebSrvD",10]];
+  var list=[["","ebSrvC",5]];
   for(var i=0;i<list.length;i++){
     var t=$(list[i][1]+"t"),bar=$(list[i][1]+"b");
     try{
@@ -1004,7 +1006,7 @@ var EB_CSS=[
 ".eb-info svg{color:#D9AD4F;flex:none}",
 ".eb-info ul{margin:10px 0 0;padding-left:18px;color:#B9C8E5;font-size:13px}",
 ".eb-info li{margin:0 0 4px}",
-".eb-store{display:grid;grid-template-columns:1fr 1fr;gap:14px}",
+".eb-store{display:grid;grid-template-columns:1fr;gap:14px}",
 ".eb-srv b{display:block;font-size:13px;color:#fff}",
 ".eb-srv span{display:block;font-size:12px;color:#B9C8E5;margin:2px 0 6px}",
 ".eb-bar{height:7px;border-radius:6px;background:rgba(255,255,255,.12);overflow:hidden}",
@@ -1075,7 +1077,6 @@ function render(body){
    +"<li>Nothing is saved until you tap Save.</li></ul></details>"
    +"<div class='eb-card'><div class='eb-store'>"
    +"<div class='eb-srv'><b>Server C</b><span id='ebSrvCt'>Checking…</span><div class='eb-bar'><i id='ebSrvCb'></i></div></div>"
-   +"<div class='eb-srv'><b>Server D</b><span id='ebSrvDt'>Checking…</span><div class='eb-bar'><i id='ebSrvDb'></i></div></div>"
    +"</div></div>"
    +"<div class='eb-card'><div class='eb-h'><span class='eb-n'>1</span><span>Accuracy check</span></div>"
    +"<div class='eb-d'>Check the maths-answer accuracy of the examination AI before building a paper.</div>"
@@ -1126,5 +1127,5 @@ function showPapers(body){
   loadPapers();
 }
 
-window.EduExamBuilder={render:render,version:"3.1",_readFileText:readFileText,_counts:reportCounts,_guess:guessFrom,_report:reportLines,_looksScanned:looksScanned};
+window.EduExamBuilder={render:render,version:"3.2",_readFileText:readFileText,_counts:reportCounts,_guess:guessFrom,_report:reportLines,_looksScanned:looksScanned};
 })();
