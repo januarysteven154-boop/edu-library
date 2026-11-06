@@ -242,7 +242,7 @@ function btn(label,cls){var b=h("button","ecr-btn"+(cls?" "+cls:""),label);b.typ
 function levelName(code){for(var i=0;i<LEVELS.length;i++)if(LEVELS[i][0]===code)return LEVELS[i][1];return code||"";}
 function clean(s){return String(s||"").replace(/\\[dt]?frac\{([^}]*)\}\{([^}]*)\}/g,function(m,a,b){function w(x){x=x.trim();return /^[0-9A-Za-z.]+$/.test(x)?x:"("+x+")";}return w(a)+"/"+w(b);}).replace(/\\text\{([^}]*)\}/g,"$1").replace(/\\times/g,"\u00d7").replace(/\\div/g,"\u00f7").replace(/\\cdot/g,"\u00b7").replace(/\\left|\\right/g,"").replace(/\\\(|\\\)|\\\[|\\\]/g,"").replace(/\\,/g," ").replace(/\*\*/g,"");}
 function rid(){var a="abcdefghijklmnopqrstuvwxyz0123456789",s="r";for(var i=0;i<20;i++)s+=a[Math.floor(Math.random()*a.length)];return s+Date.now();}
-function hush(){try{sayG++;}catch(e){}try{if(window.speechSynthesis)speechSynthesis.cancel();}catch(e){}if(nar.st==="play"){nar.g++;nar.st="pause";narPaint();}}
+function hush(){try{narAudioStop();}catch(e){}try{sayG++;}catch(e){}try{if(window.speechSynthesis)speechSynthesis.cancel();}catch(e){}if(nar.st==="play"){nar.g++;nar.st="pause";narPaint();}}
 function voiceScore(v){
   var n=(v.name||"")+" "+(v.voiceURI||""),l=String(v.lang||"").toLowerCase().replace("_","-"),sc=0;
   if(/natural|neural|studio|premium|enhanced|siri/i.test(n))sc+=6;
@@ -311,13 +311,34 @@ function narPaint(){
   if(playing)ui.tst.textContent="";
   ui.tst.hidden=!ui.tst.textContent;
 }
-function narReset(){nar.g++;nar.st="idle";nar.idx=0;nar.parts=[];narPaint();}
-function narPause(){
+var narAud=null;
+function audioUrl(l){var u=l&&l.audio;return(typeof u==="string"&&/^https:\/\/[^\s"'<>]+\.mp3$/i.test(u))?u:"";}
+function narAudioStop(){try{if(narAud){var a=narAud;narAud=null;a.onended=null;a.onerror=null;a.pause();}}catch(e){}}
+function narAudioFail(){narAudioStop();try{if(ui.L)ui.L.audio="";}catch(e){}nar.st="idle";narPaint();narPlay();}
+function narAudioPlay(){
+  var u=ui.L&&ui.L.audio;if(!u)return false;
+  try{
+    try{if(window.speechSynthesis)speechSynthesis.cancel();}catch(e){}
+    if(!narAud||narAud.src!==u){
+      narAudioStop();
+      var a=new Audio(u);a.preload="auto";narAud=a;
+      a.onended=function(){if(narAud!==a)return;narAud=null;nar.g++;nar.st="idle";nar.idx=0;narPaint();};
+      a.onerror=function(){if(narAud!==a)return;narAudioFail();};
+    }
+    var cur=narAud;
+    nar.g++;nar.st="play";narPaint();
+    var p=cur.play();
+    if(p&&p.catch)p.catch(function(){if(narAud===cur)narAudioFail();});
+    return true;
+  }catch(e){narAudioFail();return true;}
+}
+function narReset(){narAudioStop();nar.g++;nar.st="idle";nar.idx=0;nar.parts=[];narPaint();}
+function narPause(){try{if(narAud&&!narAud.paused)narAud.pause();}catch(e){}
   nar.g++;nar.st="pause";
   try{if(window.speechSynthesis)speechSynthesis.cancel();}catch(e){}
   narPaint();
 }
-function narPlay(){
+function narPlay(){if(ui.L&&ui.L.audio&&narAudioPlay())return;
   if(!ui.L)return;
   if(!window.speechSynthesis||typeof SpeechSynthesisUtterance==="undefined"){ui.tst.textContent="Voice is not available on this phone.";ui.tst.hidden=false;return;}
   if(nar.st!=="pause"||!nar.parts.length){nar.parts=speechParts(ui.L.spoken.join(". "));nar.idx=0;}
@@ -1056,7 +1077,7 @@ function lessonData(l){
     if(q)pq.push({q:q,a:a});
   });
   var title=clean(l.title)||"Lesson",text=clean(l.text);
-  return {title:title,text:text,label:l.label||"AI-prepared, not teacher-verified",ex:ex,pq:pq,spoken:[clean(l.title),text].concat(ex)};
+  return {title:title,text:text,label:l.label||"AI-prepared, not teacher-verified",ex:ex,pq:pq,audio:audioUrl(l),spoken:[clean(l.title),text].concat(ex)};
 }
 function ord(el,n){el.className+=" ecr-o"+n;return el;}
 
