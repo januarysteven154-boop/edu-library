@@ -37,7 +37,7 @@ var WALLS={
 var ACCS={orange:["Orange","#F25E1E","#F77864"],pink:["Pink","#C2417F","#E86AA6"],blue:["Blue","#1C6FA6","#3B8FD4"],green:["Green","#2FA36B","#56C48E"],violet:["Violet","#7A4CC2","#A58AEA"]};
 var SIZES={s:["Small",.92],m:["Normal",1],l:["Large",1.12],x:["Extra large",1.25]};
 var DEF={wall:"sunset",acc:"orange",size:"m"};
-var SITE="https://edu-library.edulibrary.workers.dev/";
+var SITE="https://edu-library-mw.edulibrary.workers.dev/";
 var wallTok=0,hashOn=false;
 
 function e(s){return String(s==null?"":s).replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c];});}
