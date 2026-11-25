@@ -1,4 +1,5 @@
-/* Edu Library: AI Examination Room (student screen) v2.1
+/* Edu Library: AI Examination Room (student screen) v2.2
+   v2.2: Submit and Quit now use a simple in-app question box in the room's own look, not the plain browser pop-up.
    v2.1: Light theme fix. The room keeps its own wallpaper colours in the Light theme: the page behind it always gets the wallpaper base colour, and cards, answer boxes and typing boxes can no longer turn white (white words on a white box) when the app is in Light.
    v2.0: question text now shows __underlined words__ as real underlined text (no more double dashes), and the level/class/subject cards no longer let the text overlap the "papers / questions" badge.
    v1.9: fourth wallpaper "Edu AI" (the robot picture, room-bg-eduai.jpg) with a dark layer over it so the text stays easy to read.
@@ -327,7 +328,14 @@ function css2(){
 ".rm .asw button.on{border-color:var(--rmA2);box-shadow:0 0 0 2px var(--rmA2)}"+
 ".rm .zsw{display:flex;gap:6px;margin:0 0 6px}"+
 ".rm .zsw button{flex:1;min-width:0;border:2px solid var(--line);border-radius:12px;padding:10px 2px;background:var(--rmCard);color:var(--ink);font-weight:800;min-height:44px}"+
-".rm .zsw button.on{border-color:var(--rmA2);box-shadow:0 0 0 2px var(--rmA2)}";
+".rm .zsw button.on{border-color:var(--rmA2);box-shadow:0 0 0 2px var(--rmA2)}"+
+".rmask{position:fixed;inset:0;z-index:99998;display:flex;align-items:center;justify-content:center;padding:20px;background:rgba(10,3,16,.55);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)}"+
+".rmask .rmb{width:min(340px,100%);border-radius:20px;padding:20px 18px 16px;background:linear-gradient(145deg,rgba(255,255,255,.2),var(--rmCard,rgba(40,12,42,.82)));background-color:rgba(40,12,42,.88);border:1px solid var(--line,rgba(255,255,255,.34));box-shadow:0 14px 38px rgba(0,0,0,.45),inset 0 1px 0 rgba(255,255,255,.3);color:var(--ink,#FDF5E8);font-family:Roboto,'Noto Sans',sans-serif;text-shadow:0 1px 3px rgba(0,0,0,.5)}"+
+".rmask h4{margin:0 0 8px;font-size:18px;font-weight:800}"+
+".rmask p{margin:0 0 16px;font-size:14.5px;line-height:1.45;color:var(--sub,#E8CDA8)}"+
+".rmask .rmbt{display:flex;gap:10px}"+
+".rmask .rmbt button{flex:1;min-height:46px;border-radius:12px;font-size:15px;font-weight:800;border:1px solid var(--line,rgba(255,255,255,.34));background:rgba(255,255,255,.14);color:var(--ink,#FDF5E8)}"+
+".rmask .rmbt button.y{border:none;background:linear-gradient(135deg,var(--rmA1,#F25E1E),var(--rmA2,#F77864));color:#fff;box-shadow:0 4px 14px rgba(0,0,0,.3)}";
   document.head.appendChild(s);
 }
 
@@ -726,15 +734,34 @@ async function runMark(){
   S.marking=false;
   finishAll();
 }
+/* In-app question box (replaces the plain browser confirm pop-up) */
+function ask(title,text,yes,no,onYes){
+  var old=document.getElementById("rmAsk");if(old&&old.parentNode)old.parentNode.removeChild(old);
+  var d=document.createElement("div");d.id="rmAsk";d.className="rmask";
+  d.innerHTML="<div class='rmb' role='dialog' aria-modal='true'><h4>"+e(title)+"</h4><p>"+e(text)+"</p><div class='rmbt'><button type='button' data-a='n'>"+e(no)+"</button><button type='button' class='y' data-a='y'>"+e(yes)+"</button></div></div>";
+  function close(){if(d.parentNode)d.parentNode.removeChild(d);}
+  d.addEventListener("click",function(ev){
+    var a=ev.target&&ev.target.getAttribute&&ev.target.getAttribute("data-a");
+    if(a==="y"){close();onYes();}
+    else if(a==="n"||ev.target===d)close();
+  });
+  document.body.appendChild(d);
+}
+function startMark(){
+  saveDraft();
+  S.screen="marking";S.wres={};
+  runMark();
+}
 function submit(){
   if(S.marking)return;
   stopSpeak();
   if(!S.ws.length){finishAll();return;}
   var blanks=S.ws.filter(function(w){return !String(S.wa[w.id]||"").trim();}).length;
-  if(blanks&&!confirm(blanks+" written question"+(blanks===1?" is":"s are")+" empty. Submit anyway?"))return;
-  saveDraft();
-  S.screen="marking";S.wres={};
-  runMark();
+  if(blanks){
+    ask("Submit your answers?",blanks===1?"1 written question has no answer. It will get 0 marks.":blanks+" written questions have no answer. They will get 0 marks.","Submit","Go back",startMark);
+    return;
+  }
+  startMark();
 }
 async function explain(i){
   var q=S.qs[i],box=document.getElementById("rmex"+i);
@@ -880,7 +907,7 @@ window.EduRoom={
     saveDraft();
     S.i=Math.max(0,Math.min(S.items.length-1,S.i+d));draw();
   },
-  quit:function(){if(confirm("Stop this practice? Your multiple-choice answers will not be saved. Written answers stay as drafts on this phone."))window.EduRoom.home();},
+  quit:function(){ask("Stop this practice?","Your multiple-choice answers will not be saved. Written answers stay on this phone as drafts.","Stop","Keep going",function(){window.EduRoom.home();});},
   retryMark:function(){S.mk.err="";S.marking=false;runMark();},
   unmark:function(){S.marking=false;S.screen="quiz";S.i=Math.max(0,S.items.length-1);draw();},
   result:function(){stopSpeak();S.screen="result";draw();},
@@ -891,7 +918,7 @@ window.EduRoom={
   speak:function(i){if(S.exp[i]&&S.exp[i]!=="Thinking..."&&typeof window.speakText==="function")window.speakText(SPK+i,S.exp[i]);},
   report:report,
   zoom:zoom,
-  version:"2.0",
+  version:"2.2",
   _t:{band:band,shuffle:shuffle,fmt:fmt,qf:qf,S:S,streak:streakInfo,weak:weakList,getSet:getSet}
 };
 })();
