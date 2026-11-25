@@ -10,6 +10,8 @@ RULES FOR ANY AI OR DEVELOPER EDITING THIS FILE (Edu Library)
 5. Keep large images out of this file; put them in /assets.
 6. Change only what was asked. Do not rebuild things that already work.
 7. Return the FULL updated file and check the syntax of every script block before giving it back.
+8. After EVERY app update, give the user the newest APK download link (works while he is signed in to GitHub): https://github.com/januarysteven154-boop/edu-library-android/releases/latest/download/EDU-Library-MW.apk
+   Testers get the app from the MediaFire folder: https://www.mediafire.com/folder/0qt2edejpk2ku/EDU-Library-MW.apk
 -->
 <meta charset="UTF-8">
 <script>window.eduLog=function(e){try{console.debug("[edu]",(e&&e.message)||e)}catch(_){window.eduLog&&eduLog(_)}};</script>
@@ -1037,7 +1039,7 @@ body.light .phero .brandline .bli{color:#fff}
 .orb2 svg{width:40px;height:40px;stroke-width:1.5;color:#fff}
 
 /* ADMIN PANEL REDESIGN: Malawi sunset glass look, own bottom nav, floating Edu Library AI */
-body.admpanel{background:linear-gradient(rgba(30,8,28,.18),rgba(30,8,28,.5)),url(https://edu-library.edulibrary.workers.dev/admin-bg.jpg) center top/cover no-repeat fixed,linear-gradient(180deg,#3a1a6e,#f25e1e 55%,#f9b81f)!important;background-color:#2f102d!important}
+body.admpanel{background:linear-gradient(rgba(30,8,28,.18),rgba(30,8,28,.5)),url(https://edu-library-mw.edulibrary.workers.dev/admin-bg.jpg) center top/cover no-repeat fixed,linear-gradient(180deg,#3a1a6e,#f25e1e 55%,#f9b81f)!important;background-color:#2f102d!important}
 body.admpanel::before{display:none!important}
 body.admpanel #topHeader,body.admpanel .bottomnav,body.admpanel #aiFab{display:none!important}
 body.admpanel .wrap{padding-bottom:160px}
@@ -1147,9 +1149,12 @@ body:not(.sunset):not(.light) .shelf .shnav{color:#19d3ff;border-color:rgba(25,2
 body.light #eduRays{opacity:.22}
 body.gate #eduRays{opacity:.35}
 @media (prefers-reduced-motion:reduce){#eduRays i{animation:none!important}}
+/* PROTOTYPE watermark: faded, behind-the-text feel, never blocks taps */
+#protoWm{position:fixed;inset:0;z-index:2147481500;pointer-events:none;user-select:none;-webkit-user-select:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='170'%3E%3Ctext x='150' y='90' text-anchor='middle' transform='rotate(-24 150 85)' font-family='Arial,sans-serif' font-weight='800' font-size='26' letter-spacing='5' fill='%234b8dff' fill-opacity='.15'%3EPROTOTYPE%3C/text%3E%3C/svg%3E");background-repeat:repeat;background-size:300px 170px}
 </style>
 </head>
 <body><script>(function(){try{var t=localStorage.getItem("edu_theme2")||"sunset";document.body.classList.add(t==="light"?"light":t==="dark"?"dark":"sunset")}catch(e){document.body.classList.add("sunset")}})();</script>
+<div id="protoWm" aria-hidden="true"></div>
 <header class="top" id="topHeader"></header>
 <main class="wrap" id="app"></main>
 <button class="aifab" id="aiFab" onclick="location.hash='#/ai'" title="Edu AI Assistant">🤖</button>
@@ -1588,8 +1593,8 @@ async function renderPages(url){
   }catch(e){if(await eduTryWord(url,body))return;body.innerHTML='<div class="empty">Preview unavailable. Use Save.'+(window.__eduWordWhy?'<div style="font-size:11px;opacity:.6;margin-top:8px">('+String(window.__eduWordWhy).replace(/[<>&]/g,"")+')</div>':'')+'</div>';}
 }
 /* Word (.docx) files: small viewer + reader scripts. A copy is kept on the phone, so Word files also open offline. */
-const EDU_WV_URL="https://edu-library.edulibrary.workers.dev/word-viewer.js";
-const EDU_DR_URL="https://edu-library.edulibrary.workers.dev/doc-reader.js";
+const EDU_WV_URL="https://edu-library-mw.edulibrary.workers.dev/word-viewer.js";
+const EDU_DR_URL="https://edu-library-mw.edulibrary.workers.dev/doc-reader.js";
 async function eduLoadCached(key,url){
   let txt=null;
   try{txt=localStorage.getItem(key);}catch(e){window.eduLog&&eduLog(e)}
@@ -1981,7 +1986,7 @@ function eduRoomOpen(app){
   setHeader(`<h2>AI Examination Room</h2>`);
   app.innerHTML='<div class="empty">Loading...</div>';
   const sc=document.createElement("script");
-  sc.src="https://edu-library.edulibrary.workers.dev/exam-room.js?v="+Date.now();
+  sc.src="https://edu-library-mw.edulibrary.workers.dev/exam-room.js?v="+Date.now();
   sc.onload=go;
   sc.onerror=()=>{
     /* website not reachable (offline): use the copy of exam-room.js saved inside the app */
@@ -2002,7 +2007,7 @@ function eduSocialOpen(app){
   setHeader(`<button class="back" onclick="location.hash='#/library'">\u2190</button><h2>Edu Social Hub</h2>`);
   app.innerHTML='<div class="empty">Loading...</div>';
   const sc=document.createElement("script");
-  sc.src="https://edu-library.edulibrary.workers.dev/social-hub.js?v="+Date.now();
+  sc.src="https://edu-library-mw.edulibrary.workers.dev/social-hub.js?v="+Date.now();
   sc.onload=()=>{ if(window.EduSocial) go(); else loadLocalSocial(); };
   sc.onerror=loadLocalSocial;
   function loadLocalSocial(){
@@ -2024,7 +2029,7 @@ function eduClassroomOpen(app){
   setHeader(`<h2>AI Classroom</h2>`);
   app.innerHTML='<div class="empty">Loading...</div>';
   const sc=document.createElement("script");
-  sc.src="https://edu-library.edulibrary.workers.dev/classroom.js?v="+Date.now();
+  sc.src="https://edu-library-mw.edulibrary.workers.dev/classroom.js?v="+Date.now();
   sc.onload=()=>{ if(window.EduClassroom) go(); else loadLocalClassroom(); };
   sc.onerror=loadLocalClassroom;
   function loadLocalClassroom(){
@@ -2411,12 +2416,12 @@ function renderAdmin(app){
 /* AI Library Manager: loads /library-manager.js only when the admin opens the AI Library tab */
 function loadLibraryManager(){
   if(window.EduLibraryManager)return Promise.resolve();
-  return new Promise(function(ok,bad){var s=document.createElement("script");s.src="https://edu-library.edulibrary.workers.dev/library-manager.js?v="+Date.now();s.onload=ok;s.onerror=function(){bad(new Error("Could not load library-manager.js"));};document.head.appendChild(s);});
+  return new Promise(function(ok,bad){var s=document.createElement("script");s.src="https://edu-library-mw.edulibrary.workers.dev/library-manager.js?v="+Date.now();s.onload=ok;s.onerror=function(){bad(new Error("Could not load library-manager.js"));};document.head.appendChild(s);});
 }
 /* AI Examination Room builder: loads /exam-builder.js only when the admin opens the Upload Exams tab */
 function loadExamBuilder(){
   if(window.EduExamBuilder)return Promise.resolve();
-  return new Promise(function(ok,bad){var s=document.createElement("script");s.src="https://edu-library.edulibrary.workers.dev/exam-builder.js?v="+Date.now();s.onload=ok;s.onerror=function(){bad(new Error("Could not load exam-builder.js"));};document.head.appendChild(s);});
+  return new Promise(function(ok,bad){var s=document.createElement("script");s.src="https://edu-library-mw.edulibrary.workers.dev/exam-builder.js?v="+Date.now();s.onload=ok;s.onerror=function(){bad(new Error("Could not load exam-builder.js"));};document.head.appendChild(s);});
 }
 let adminTab = "home";
 function admGo(t){adminTab=t;renderAdminPanel(document.getElementById("app"));window.scrollTo(0,0);}
@@ -3407,7 +3412,7 @@ function renderPrivacy(app){
   ${sec("Rules for using the app",li(["Use the app for learning. Do not misuse it, attack it, or try to get into other people's accounts.","Do not share your PIN or recovery code.","Do not use Edu AI to write hateful, harmful or inappropriate content.","We may stop an account that breaks these rules."]))}
   ${sec("Books, exams and AI answers",li(["Books and past papers belong to their owners. They are shared here for education. If you own something here and want it removed, contact us.","Edu AI and the AI-marked exams can make mistakes. Check important answers with your teacher or textbook. Use the report button if an answer looks wrong.","We try to keep the app running, but we cannot promise it will always be available."]))}
   ${sec("Changes",`<p class="rmdesc" style="margin:0">If we change this page, the date at the top will change. If the change is important, we will tell you in the app.</p>`)}
-  ${sec("Contact us",`<a class="aboutrow" href="mailto:edulibrary999@gmail.com" style="color:inherit;text-decoration:none"><span>Email</span><b style="text-decoration:underline">edulibrary999@gmail.com</b></a><a class="aboutrow" href="https://wa.me/265884858538" style="color:inherit;text-decoration:none"><span>WhatsApp</span><b style="text-decoration:underline">+265 884 858 538</b></a><p class="rmdesc" style="margin-top:10px">Also online: edu-library.edulibrary.workers.dev/privacy.html</p>`)}
+  ${sec("Contact us",`<a class="aboutrow" href="mailto:edulibrary999@gmail.com" style="color:inherit;text-decoration:none"><span>Email</span><b style="text-decoration:underline">edulibrary999@gmail.com</b></a><a class="aboutrow" href="https://wa.me/265884858538" style="color:inherit;text-decoration:none"><span>WhatsApp</span><b style="text-decoration:underline">+265 884 858 538</b></a><p class="rmdesc" style="margin-top:10px">Also online: edu-library-mw.edulibrary.workers.dev/privacy.html</p>`)}
   </div>`;
   window.scrollTo(0,0);
   try{applyLang();}catch(e){window.eduLog&&eduLog(e)}
@@ -3974,8 +3979,15 @@ window.addEventListener("hashchange", render);
 </script>
 <script>
 /* ---------- Reading mode + Settings ---------- */
-const APP_VERSION="1.8.36";
+const APP_VERSION="1.8.43";
 const APP_CHANGES=[
+ "1.8.43: The bell (Notifications) is now a simple list. Tap a notice to go straight there: your class opens AI Classroom, Social Hub messages open Social Hub, and a new app notice opens a page with a Download button.",
+ "1.8.42: When a new app is ready, the bell (Notifications) tells you in simple words. Tap Get the new app, then Yes, download, and you go to the download page. The Quick Quiz button now starts on the left so it no longer sits on top of the Edu AI character in the PDF reader.",
+ "1.8.41: The app now loads its extra files from the new EDU LIBRARY MW website address.",
+ "1.8.40: Quick Quiz now has an exit button (\u2715, top right) on every screen.",
+ "1.8.39: Quick Quiz is simpler: a round QQ button inside the PDF reader that you can drag anywhere along the screen edges. Tap it and the quiz starts at once from the pages you read; there is no setup form.",
+ "1.8.38: New Quick Quiz (QQ) button inside the PDF reader. After reading some pages, tap QQ to get 5 multiple-choice questions and 2 short written questions made from the pages read, with marking and a percentage. Scanned books are read from page pictures. The QQ button pulses gently after about 5 pages.",
+ "1.8.37: This is the PROTOTYPE release for early users. A faded PROTOTYPE word shows in the background of every page. All features are the same as the coming official app.",
  "1.8.36: Delete my chats now opens a clear in-app box with a red Delete my chats button and Cancel; the admin file delete button now says Delete.",
  "1.8.35: Edu AI now gets the student's class (Standard 1-8 or Form 1-4) from their saved profile and explains at that level.",
  "1.8.34: Server B now runs on a second Backblaze account (10 GB) in place of the old server that switched itself off.",
@@ -4322,9 +4334,30 @@ html,body{overflow-x:clip;max-width:100%}
    The number comes only from the backend (classroom action "notes"); classroom.js updates it through eduNotesRefresh. */
 (function(){
   window.eduNotesCount=0;
+  /* System update: version.js on the website says which version is the newest and where to download it.
+     It only counts when it has a download link and is newer than this app. */
+  window.eduUpdate=null;
+  function vNum(v){return String(v||"").split(".").map(function(x){return parseInt(x,10)||0;});}
+  function vNewer(a,b){var x=vNum(a),y=vNum(b);for(var i=0;i<Math.max(x.length,y.length);i++){var p=x[i]||0,q=y[i]||0;if(p>q)return true;if(p<q)return false;}return false;}
+  function updCheck(){
+    try{
+      if(navigator.onLine===false)return;
+      var s=document.createElement("script");
+      s.src="https://edu-library-mw.edulibrary.workers.dev/version.js?t="+Date.now();
+      s.onload=function(){
+        var u=window.EDU_UPDATE;try{s.remove();}catch(e){}
+        window.eduUpdate=(u&&u.link&&/^https:\/\//.test(String(u.link))&&vNewer(u.latest,APP_VERSION))?u:null;
+        paint();
+      };
+      s.onerror=function(){try{s.remove();}catch(e){}};
+      document.head.appendChild(s);
+    }catch(e){window.eduLog&&eduLog(e)}
+  }
+  setTimeout(updCheck,3000);
+  setInterval(updCheck,6*3600*1000);
   /* natural English voice (voice.js), loaded once; if it cannot load, the phone voice is used as before */
   (function(){function ld(src,bad){var x=document.createElement("script");x.src=src;x.onerror=bad;document.head.appendChild(x);}
-    setTimeout(function(){if(window.EduVoice)return;ld("https://edu-library.edulibrary.workers.dev/voice.js?v=1.2",function(){if(!window.EduVoice)ld("voice.js?v=1.2",function(){});});},1500);})();
+    setTimeout(function(){if(window.EduVoice)return;ld("https://edu-library-mw.edulibrary.workers.dev/voice.js?v=1.2",function(){if(!window.EduVoice)ld("voice.js?v=1.2",function(){});});},1500);})();
   let busy=false,again=false;
   /* Social Hub: number of new messages from classmates. The time of the last visit to the Hub is kept on this phone
      (one value per account); the server only counts messages after that time (social action "unread"). */
@@ -4371,7 +4404,7 @@ html,body{overflow-x:clip;max-width:100%}
     window.addEventListener("hashchange",function(){const now=inHub();if(now||was)socialSeen();was=now;});
   })();
   function paint(){
-    const n=(window.eduNotesCount||0)+(window.eduSocialCount||0);
+    const n=(window.eduNotesCount||0)+(window.eduSocialCount||0)+(window.eduUpdate?1:0);
     document.querySelectorAll(".calbadge").forEach(b=>{b.textContent=n>9?"9+":String(n);b.style.display=n>0?"flex":"none";});
     document.querySelectorAll(".calbtn").forEach(b=>b.setAttribute("aria-label","Notifications"+(n>0?", "+n+" new":"")));
   }
@@ -4403,7 +4436,7 @@ html,body{overflow-x:clip;max-width:100%}
   window.eduCalPlace=function(){try{const h=document.getElementById("topHeader"),r=document.querySelector(".calrow");if(r&&h)r.style.top=Math.round(h.getBoundingClientRect().bottom+8)+"px";}catch(e){window.eduLog&&eduLog(e)}};
   window.addEventListener("resize",function(){window.eduCalPlace();});
   /* Small class pop-up (summary only). The full timetable stays inside AI Classroom. */
-  (function(){var st=document.createElement("style");st.textContent="#eduCalPop{position:fixed;inset:0;z-index:2147482000;display:flex;align-items:flex-start;justify-content:flex-end;padding:112px 14px 0;background:rgba(0,0,0,.10)}#eduCalPop .cpb{width:min(300px,88vw);border-radius:18px;padding:16px 16px 14px;background:linear-gradient(145deg,rgba(255,255,255,.22),rgba(60,25,95,.34));-webkit-backdrop-filter:blur(22px) saturate(1.5);backdrop-filter:blur(22px) saturate(1.5);color:#fff;text-shadow:0 1px 3px rgba(0,0,0,.55);border:1px solid rgba(255,255,255,.34);box-shadow:0 12px 34px rgba(0,0,0,.35),inset 0 1px 0 rgba(255,255,255,.35);font-family:Roboto,'Noto Sans',sans-serif}#eduCalPop .cph{display:flex;align-items:center;justify-content:space-between;font-size:11.5px;color:#f9b81f;font-weight:700;letter-spacing:.3px;text-transform:uppercase}#eduCalPop .cpx{border:1px solid rgba(255,255,255,.3);background:rgba(255,255,255,.18);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);color:#fff;width:26px;height:26px;border-radius:13px;font-size:15px;line-height:26px;padding:0}#eduCalPop .cpd{font-size:13px;color:#f1e6da;margin-top:8px}#eduCalPop .cps{font-size:17px;font-weight:700;margin-top:4px}#eduCalPop .cpl{font-size:13.5px;margin-top:6px;line-height:1.4}#eduCalPop .cpt{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#ffc83d;margin-top:12px}#eduCalPop .cpt2{margin-top:18px;padding-top:12px;border-top:1px solid rgba(255,255,255,.28)}#eduCalPop .cpg{width:100%;margin-top:14px;border:1px solid rgba(255,255,255,.4);border-radius:11px;padding:10px;background:linear-gradient(135deg,rgba(242,94,30,.62),rgba(249,184,31,.38));-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);box-shadow:inset 0 1px 0 rgba(255,255,255,.35);color:#fff;font-weight:700;font-size:13px}";document.head.appendChild(st);})();
+  (function(){var st=document.createElement("style");st.textContent="#eduCalPop{position:fixed;inset:0;z-index:2147482000;display:flex;align-items:flex-start;justify-content:flex-end;padding:112px 14px 0;background:rgba(0,0,0,.10)}#eduCalPop .cpb{width:min(300px,88vw);border-radius:18px;padding:16px 16px 14px;background:linear-gradient(145deg,rgba(255,255,255,.22),rgba(60,25,95,.34));-webkit-backdrop-filter:blur(22px) saturate(1.5);backdrop-filter:blur(22px) saturate(1.5);color:#fff;text-shadow:0 1px 3px rgba(0,0,0,.55);border:1px solid rgba(255,255,255,.34);box-shadow:0 12px 34px rgba(0,0,0,.35),inset 0 1px 0 rgba(255,255,255,.35);font-family:Roboto,'Noto Sans',sans-serif}#eduCalPop .cph{display:flex;align-items:center;justify-content:space-between;font-size:11.5px;color:#f9b81f;font-weight:700;letter-spacing:.3px;text-transform:uppercase}#eduCalPop .cpx{border:1px solid rgba(255,255,255,.3);background:rgba(255,255,255,.18);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);color:#fff;width:26px;height:26px;border-radius:13px;font-size:15px;line-height:26px;padding:0}#eduCalPop .cps{font-size:17px;font-weight:700;margin-top:4px}#eduCalPop .cpl{font-size:13.5px;margin-top:6px;line-height:1.4}#eduCalPop .cpr{display:block;width:100%;text-align:left;margin-top:10px;padding:11px 12px;border:1px solid rgba(255,255,255,.34);border-radius:12px;background:rgba(255,255,255,.14);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);color:#fff;font:inherit;text-shadow:inherit}#eduCalPop .cpr:active{background:rgba(255,255,255,.26)}#eduCalPop .cpk{display:block;font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#ffc83d}#eduCalPop .cpv{display:block;font-size:15px;font-weight:700;margin-top:3px}#eduCalPop .cpq{display:block;font-size:12.5px;color:#f1e6da;margin-top:2px}#eduCalPop .cpg{width:100%;margin-top:14px;border:1px solid rgba(255,255,255,.4);border-radius:11px;padding:10px;background:linear-gradient(135deg,rgba(242,94,30,.62),rgba(249,184,31,.38));-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);box-shadow:inset 0 1px 0 rgba(255,255,255,.35);color:#fff;font-weight:700;font-size:13px}";document.head.appendChild(st);})();
   function cpClose(){var e=document.getElementById("eduCalPop");if(e)e.remove();}
   function cpEsc(t){return String(t==null?"":t).replace(/[&<>"]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c];});}
   function cpPick(o,keys){var src=[o,o&&o.payload,o&&o.data,o&&o.meta,o&&o.slot,o&&o.session];for(var i=0;i<src.length;i++){var x=src[i];if(!x||typeof x!=="object")continue;for(var k=0;k<keys.length;k++){var v=x[keys[k]];if(v!=null&&v!=="")return v;}}return cpDeep(o,keys);}
@@ -4414,14 +4447,22 @@ html,body{overflow-x:clip;max-width:100%}
   function cpShow(html){cpClose();var w=document.createElement("div");w.id="eduCalPop";w.innerHTML='<div class="cpb">'+html+'</div>';w.addEventListener("click",function(ev){if(ev.target===w)cpClose();});document.body.appendChild(w);}
   window.eduCalPopClose=cpClose;
   window.eduCalPopGo=function(){cpClose();location.hash="#/classroom";};
+  /* Notifications is a plain list. Tapping a row opens its place: class -> AI Classroom, Social Hub -> Social Hub, update -> update panel with Download. */
+  window.eduUpdateOpen=function(){var u=window.eduUpdate;if(!u)return;
+    cpShow('<div class="cph"><span>New update</span><button class="cpx" type="button" onclick="eduCalPopClose()" aria-label="Close">\u00d7</button></div><div class="cps" style="margin-top:10px">New EDU Library MW</div><div class="cpl">'+cpEsc(u.message||"A new EDU Library MW is ready. Download it to get the newest books and features.")+'</div><button class="cpg" type="button" onclick="eduUpdateGo()">Download</button>');};
+  window.eduUpdateGo=function(){var u=window.eduUpdate;cpClose();if(!u)return;
+    var a=document.createElement("a");a.href=u.link;a.rel="noopener";a.style.display="none";document.body.appendChild(a);a.click();setTimeout(function(){try{a.remove();}catch(e){window.eduLog&&eduLog(e)}},500);};
   window.eduOpenCalendar=async function(){
     var head='<div class="cph"><span>Notifications</span><button class="cpx" type="button" onclick="eduCalPopClose()" aria-label="Close">\u00d7</button></div>';
-    function socHtml(){var n=window.eduSocialCount||0;var m=window.eduSocialMore?"99+":String(n);
-      var t=n>0?(m+" new message"+(n===1?"":"s")+" in your class room"):"No new messages";
-      return '<div class="cpt cpt2">Social Hub</div><div class="cpl">'+t+'</div><button class="cpg" type="button" onclick="eduCalPopClose();location.hash=\'#/social\'">Open Social Hub</button>';}
-    head+='<div class="cpt">Calendar</div>';
-    var go='<button class="cpg" type="button" onclick="eduCalPopGo()">Open AI Classroom</button>'+socHtml();
-    cpShow(head+'<div class="cpl">Loading...</div>'+go);
+    function row(kind,line,sub,act){return '<button class="cpr" type="button" onclick="'+act+'"><span class="cpk">'+kind+'</span><span class="cpv">'+cpEsc(line)+'</span>'+(sub?'<span class="cpq">'+cpEsc(sub)+'</span>':'')+'</button>';}
+    function updRow(){var u=window.eduUpdate;if(!u)return "";
+      return row("New update","A new app is ready",u.message||"","eduUpdateOpen()");}
+    function socRow(){var n=window.eduSocialCount||0;if(n<1)return "";var m=window.eduSocialMore?"99+":String(n);
+      return row("Social Hub",m+" new message"+(n===1?"":"s"),"In your class room","eduCalPopClose();location.hash=\'#/social\'");}
+    function draw(calRow,msg){var rows=updRow()+calRow+socRow();
+      var body=rows?rows+(msg?'<div class="cpl" style="font-size:12.5px">'+cpEsc(msg)+'</div>':''):'<div class="cpl">'+cpEsc(msg||"No new notifications.")+'</div>';
+      cpShow(head+body);}
+    draw("","Loading...");
     var items=null,lvlName="";
     try{
       var tk=await EduAcct.token();
@@ -4433,18 +4474,16 @@ html,body{overflow-x:clip;max-width:100%}
         if(d&&d.ok===true){items=d.items||[];lvlName=d.level||"";}
       }
     }catch(e){window.eduLog&&eduLog(e)}
-    if(items===null){cpShow(head+'<div class="cpl">Could not load the class. Check your internet and try again.</div>'+go);return;}
+    if(items===null){draw("","Could not load your class. Check your internet and try again.");return;}
     var it=items.find(function(i){return i.status==="live"||i.status==="starting_soon"||i.status==="scheduled";});
-    if(!lvlName&&!items.length){cpShow(head+'<div class="cpl">Choose your education level in AI Classroom to see your classes.</div>'+go);return;}
-    if(!it){cpShow(head+'<div class="cpl">No upcoming class for your level yet.</div>'+go);return;}
+    if(!lvlName&&!items.length){draw(row("AI Classroom","Choose your education level","Then you will see your classes here","eduCalPopGo()"),"");return;}
+    if(!it){draw("","");return;}
     function t12(x){return String(x||"").replace(/^0(\d:)/,"$1");}
     var lv=it.level_name||"",sj=String(it.title||"");
     if(lv){var esc=lv.replace(/[.*+?^${}()|[\]\\]/g,"\\$&");sj=sj.replace(new RegExp("^"+esc+"\\s*[-:\\u00b7]?\\s*","i"),"");}
-    var tag=it.status==="live"?"Live now":(it.status==="starting_soon"?"Starting soon":"");
-    var out='<div class="cpd">'+cpEsc(cpDate(it.run_date+"T12:00:00Z")||it.run_date)+(tag?' \u00b7 <span style="color:#f9b81f">'+tag+'</span>':'')+'</div>';
-    out+='<div class="cps">'+cpEsc(t12(it.start_local)+" \u2013 "+t12(it.end_local))+'</div>';
-    out+='<div class="cpl" style="font-weight:700">'+cpEsc([lv,sj].filter(Boolean).join(" \u00b7 "))+'</div>';
-    cpShow(head+out+go);
+    var tag=it.status==="live"?"Live now":(it.status==="starting_soon"?"Starting soon":"Class");
+    var when=(cpDate(it.run_date+"T12:00:00Z")||it.run_date)+" \u00b7 "+t12(it.start_local)+" \u2013 "+t12(it.end_local);
+    draw(row(tag,[lv,sj].filter(Boolean).join(" \u00b7 "),when,"eduCalPopGo()"),"");
   };
   function ensure(){try{
     if(location.hash!=="#/library")return;
@@ -6270,6 +6309,276 @@ window.eduLoadOrbit=function(t){return '<div class="eduOrbitWrap" role="status">
 .acsteps b.on{background:#f45d22}
 .acsteps em{font-style:normal;font-size:12px;font-weight:700;opacity:.7;margin-left:4px}
 </style>
-<script src="quiz-popup.js?v=1"></script>
+<script src="quiz-popup.js?v=2"></script>
+<script id="eduQQJS">
+/* ===== Quick Quiz (QQ): a movable round QQ button inside the PDF reader ===== */
+(function(){
+  "use strict";
+  const MAXP=8, MAXIMG=5, NMCQ=5, NWR=2, PER_PAGE=1700, SZ=58, EDGE=10;
+  const $=(s,r)=>(r||document).querySelector(s);
+  const E=s=>String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+  const getPV=()=>{try{return typeof PV!=="undefined"?PV:null;}catch(e){return null;}};
+  const net=()=>{try{return window.eduIsOnline?window.eduIsOnline():navigator.onLine!==false;}catch(e){return true;}};
+  const log=e=>{try{window.eduLog&&window.eduLog(e);}catch(_){}};
+  const lang=()=>(typeof LANG!=="undefined"?LANG:"en");
+  const lvl=()=>(typeof eduLevelCode==="function"?eduLevelCode():"");
+
+  const css=document.createElement("style");
+  css.textContent=`
+  .qqfab{position:fixed;z-index:250;width:${SZ}px;height:${SZ}px;padding:0;border-radius:50%;display:flex;align-items:center;justify-content:center;font:900 19px/1 system-ui,sans-serif;letter-spacing:.5px;color:#fff;background:#621f5c;border:2px solid #f99f91;box-shadow:0 8px 24px rgba(0,0,0,.55),0 0 18px rgba(245,200,133,.8);touch-action:none;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;cursor:grab}
+  body.dark .qqfab,body.light .qqfab{background:#101a4d;border-color:#a08bff;box-shadow:0 8px 24px rgba(0,0,0,.6),0 0 18px rgba(143,123,255,.85)}
+  .qqfab.snap{transition:left .22s ease,top .22s ease}
+  .qqfab.drag{cursor:grabbing;transform:scale(1.08)}
+  .qqfab.qqpulse{animation:qqp 1.3s ease-out infinite}
+  @keyframes qqp{0%{box-shadow:0 0 0 0 rgba(255,181,71,.9)}100%{box-shadow:0 0 0 16px rgba(255,181,71,0)}}
+  .qqm{position:fixed;inset:0;z-index:300;background:rgba(0,0,0,.62);display:flex;align-items:flex-end;justify-content:center;--qbg:#2f102d;--qink:#fff2e0;--qsub:#e8b894;--qline:rgba(255,176,96,.3);--qacc:#ffb547}
+  body.dark .qqm{--qbg:#0e1530;--qink:#E6EEFF;--qsub:#8EA2C8;--qline:rgba(110,150,255,.3);--qacc:#00E5FF}
+  body.light .qqm{--qbg:#fff;--qink:#0b1b3f;--qsub:#4c5f8a;--qline:rgba(30,70,160,.25);--qacc:#e0620f}
+  .qqc{width:100%;max-width:480px;max-height:92vh;overflow:auto;background:var(--qbg);color:var(--qink);border-radius:22px 22px 0 0;padding:18px 18px calc(18px + env(safe-area-inset-bottom,0px));box-shadow:0 -10px 40px rgba(0,0,0,.45);font-size:15px;line-height:1.45}
+  @media(min-width:560px){.qqm{align-items:center}.qqc{border-radius:22px}}
+  .qqc h3{margin:0 0 4px;font-size:20px}
+  .qqc .qs{color:var(--qsub);font-size:13px;margin:0 0 12px}
+  .qqc textarea{width:100%;box-sizing:border-box;min-height:110px;resize:vertical;background:rgba(127,127,127,.14);color:var(--qink);border:1px solid var(--qline);border-radius:12px;padding:10px 12px;font:inherit}
+  .qqb{display:block;width:100%;margin-top:12px;border:0;border-radius:14px;padding:13px;font:inherit;font-weight:800;background:var(--qacc);color:#2b1030;cursor:pointer}
+  .qqb.sec{background:rgba(127,127,127,.2);color:var(--qink)}
+  .qqbar{height:6px;border-radius:4px;background:rgba(127,127,127,.25);margin:0 0 12px;overflow:hidden}.qqbar i{display:block;height:100%;background:var(--qacc);border-radius:4px;transition:width .25s}
+  .qqq{font-weight:800;font-size:17px;margin:4px 0 12px}
+  .qqo{display:block;width:100%;text-align:left;margin:0 0 8px;padding:12px 14px;border-radius:14px;border:1.5px solid var(--qline);background:rgba(127,127,127,.1);color:var(--qink);font:inherit;cursor:pointer}
+  .qqo.ok{border-color:#2fa36b;background:rgba(47,163,107,.22)}.qqo.bad{border-color:#d93025;background:rgba(217,48,37,.2)}.qqo.dim{opacity:.55}
+  .qqwhy{margin:8px 0 0;padding:10px 12px;border-radius:12px;background:rgba(127,127,127,.14);font-size:14px}
+  .qqpct{font-size:46px;font-weight:900;color:var(--qacc);margin:4px 0}
+  .qqchip{display:inline-block;padding:2px 10px;border-radius:99px;font-size:12px;font-weight:800;color:#fff}
+  .qqchip.right{background:#2fa36b}.qqchip.almost{background:#d98a12}.qqchip.wrong{background:#d93025}
+  .qqrev{border-top:1px solid var(--qline);padding:10px 0;font-size:14px}.qqrev small{display:block;color:var(--qsub)}
+  .qqspin{width:38px;height:38px;border-radius:50%;border:4px solid rgba(127,127,127,.3);border-top-color:var(--qacc);margin:14px auto;animation:qqr .8s linear infinite}
+  @keyframes qqr{to{transform:rotate(360deg)}}
+  .qqc .ctr{text-align:center}
+  .qqx{position:sticky;top:0;float:right;z-index:2;width:34px;height:34px;margin:-6px -6px 0 8px;padding:0;border:0;border-radius:50%;background:rgba(127,127,127,.28);color:var(--qink);font-size:16px;line-height:1;cursor:pointer}
+  `;
+  document.head.appendChild(css);
+
+  /* ---------- the movable round button ---------- */
+  const POSK="edu_qq_pos";
+  function loadPos(){try{const p=JSON.parse(localStorage.getItem(POSK)||"null");if(p&&typeof p.y==="number")return p;}catch(e){log(e);}return null;}
+  function savePos(side,y){try{localStorage.setItem(POSK,JSON.stringify({side,y}));}catch(e){log(e);}}
+  const minY=()=>64,maxY=()=>Math.max(minY(),innerHeight-SZ-12);
+  const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+  const leftFor=side=>side==="l"?EDGE:innerWidth-SZ-EDGE;
+  function place(f,side,y){f.dataset.side=side;f.style.left=leftFor(side)+"px";f.style.top=clamp(y,minY(),maxY())+"px";}
+
+  function makeFab(P){
+    const f=document.createElement("button");
+    f.type="button";f.className="qqfab";f.textContent="QQ";f.title="Quick Quiz";f.setAttribute("aria-label","Quick Quiz");
+    document.body.appendChild(f);
+    /* same home as the Edu AI button (right side, above the bottom bar) unless moved before */
+    const p=loadPos();
+    let qs=p?p.side:"l",qy=p?p.y:innerHeight-84-SZ;
+    /* the Edu AI character sits at the bottom right of the reader: keep QQ off it */
+    if(qs==="r"&&qy+SZ>innerHeight-150)qs="l";
+    place(f,qs,qy);
+    let down=false,moved=false,sx=0,sy=0,ox=0,oy=0;
+    f.addEventListener("pointerdown",e=>{
+      down=true;moved=false;sx=e.clientX;sy=e.clientY;
+      const r=f.getBoundingClientRect();ox=e.clientX-r.left;oy=e.clientY-r.top;
+      f.classList.remove("snap");try{f.setPointerCapture(e.pointerId);}catch(_){}
+    });
+    f.addEventListener("pointermove",e=>{
+      if(!down)return;
+      if(!moved&&Math.hypot(e.clientX-sx,e.clientY-sy)<8)return;
+      moved=true;f.classList.add("drag");
+      f.style.left=clamp(e.clientX-ox,0,innerWidth-SZ)+"px";
+      f.style.top=clamp(e.clientY-oy,minY(),maxY())+"px";
+      e.preventDefault();
+    });
+    const end=e=>{
+      if(!down)return;down=false;f.classList.remove("drag");
+      try{f.releasePointerCapture(e.pointerId);}catch(_){}
+      if(!moved){start(P);return;}
+      /* it never rests in the middle: it settles on the nearest side edge */
+      const r=f.getBoundingClientRect(),side=(r.left+SZ/2)<innerWidth/2?"l":"r",y=clamp(r.top,minY(),maxY());
+      f.classList.add("snap");place(f,side,y);savePos(side,y);
+      setTimeout(()=>f.classList.remove("snap"),300);
+    };
+    f.addEventListener("pointerup",end);
+    f.addEventListener("pointercancel",end);
+    f.addEventListener("contextmenu",e=>e.preventDefault());
+    return f;
+  }
+  addEventListener("resize",()=>{const f=$(".qqfab");if(f)place(f,f.dataset.side||"r",parseFloat(f.style.top)||minY());});
+
+  /* ---------- tracking which pages were really looked at ---------- */
+  function attach(P){
+    const T=P.__qq={seen:new Set(),fresh:0,timers:new Map(),sc:null,btn:null};
+    const io=new IntersectionObserver(es=>es.forEach(e=>{
+      const p=+e.target.dataset.p,rb=e.rootBounds,h=e.boundingClientRect.height||1;
+      const need=Math.min(h*0.4,(rb?rb.height:600)*0.4);
+      const on=e.isIntersecting&&e.intersectionRect.height>=need;
+      if(on&&!T.seen.has(p)&&!T.timers.has(p)){
+        T.timers.set(p,setTimeout(()=>{T.timers.delete(p);if(!T.seen.has(p)){T.seen.add(p);T.fresh++;nudge(P);}},1500));
+      }else if(!on&&T.timers.has(p)){clearTimeout(T.timers.get(p));T.timers.delete(p);}
+    }),{root:P.body,threshold:[0,.1,.2,.3,.4,.5,.6,.8,1]});
+    P.wrap.querySelectorAll(".pvpage").forEach(d=>io.observe(d));
+    P.body.addEventListener("scroll",()=>{clearTimeout(T.sc);T.sc=setTimeout(()=>nudge(P),2500);},{passive:true});
+    T.btn=makeFab(P);
+  }
+  function nudge(P){const T=P.__qq;if(T&&T.btn&&T.fresh>=5)T.btn.classList.add("qqpulse");}
+
+  setInterval(()=>{
+    try{
+      const P=getPV(),pv=$(".pv");
+      if(!pv){const o=$(".qqm");if(o)o.remove();const f=$(".qqfab");if(f)f.remove();return;}
+      if(P&&P.pdf&&P.wrap&&P.body&&!P.__qq)attach(P);
+    }catch(e){log(e);}
+  },700);
+
+  /* ---------- small dialog helpers ---------- */
+  function sheet(html){
+    let m=$(".qqm");
+    if(!m){m=document.createElement("div");m.className="qqm";m.innerHTML='<div class="qqc"></div>';document.body.appendChild(m);}
+    const c=$(".qqc",m);
+    c.innerHTML='<button type="button" class="qqx" aria-label="Exit Quick Quiz" title="Exit">\u2715</button>'+html;
+    c.querySelector(".qqx").onclick=closeSheet;
+    c.scrollTop=0;return m;
+  }
+  function closeSheet(){const m=$(".qqm");if(m)m.remove();}
+  const gone=P=>!getPV()||getPV()!==P||!$(".qqm");
+  function bookTitle(){const b=$(".pv .pvbar b");return b?b.textContent.trim().slice(0,100):"";}
+  function wait(msg,sub){sheet('<div class="ctr"><div class="qqspin"></div><b>'+E(msg)+'</b><p class="qs">'+E(sub||"")+'</p></div><button class="qqb sec" id="qqwc">Cancel</button>');$("#qqwc").onclick=closeSheet;}
+  function fail(msg,retry){
+    sheet('<h3>Quick Quiz</h3><p class="qs">'+E(msg)+'</p>'+(retry?'<button class="qqb" id="qqre">Try again</button>':"")+'<button class="qqb sec" id="qqcl">Close</button>');
+    $("#qqcl").onclick=closeSheet;if(retry)$("#qqre").onclick=retry;
+  }
+
+  /* ---------- tap QQ: the quiz starts at once ---------- */
+  function visiblePage(P){
+    const br=P.body.getBoundingClientRect(),mid=br.top+br.height/2;let best=1;
+    P.wrap.querySelectorAll(".pvpage").forEach(d=>{const r=d.getBoundingClientRect();if(r.top<=mid&&r.bottom>=mid)best=+d.dataset.p;});
+    return best;
+  }
+  function start(P){
+    if(!P||!P.__qq||P!==getPV())return;
+    if(!net()){sheet('<h3>Quick Quiz</h3><p class="qs">Quick Quiz needs internet. Please reconnect and try again.</p><button class="qqb" id="qqx">OK</button>');$("#qqx").onclick=closeSheet;return;}
+    const T=P.__qq;let nums=[...T.seen].sort((a,b)=>a-b).slice(-MAXP);
+    if(!nums.length)nums=[visiblePage(P)];
+    build(P,nums);
+  }
+  async function post(body,ms){
+    const ctrl=new AbortController(),to=setTimeout(()=>ctrl.abort(),ms||70000);
+    try{
+      const res=await fetch(getAIEndpoint(),{method:"POST",signal:ctrl.signal,headers:await eduAuthHeaders(),body:JSON.stringify(body)});
+      let d=null;try{d=await res.json();}catch(e){log(e);}
+      if(res.status===401&&window.EduAcct){try{EduAcct.expired();}catch(e){log(e);}throw new Error("Please sign in again to use Quick Quiz.");}
+      if(!res.ok)throw new Error((d&&d.error)||("Server responded "+res.status));
+      return d||{};
+    }catch(e){
+      if(e&&e.name==="AbortError")throw new Error("This is taking too long. Please try again.");
+      throw e;
+    }finally{clearTimeout(to);}
+  }
+  async function pageText(P,n){
+    const pg=await P.pdf.getPage(n),tc=await pg.getTextContent();
+    return tc.items.map(i=>i.str||"").join(" ").replace(/\s+/g," ").trim();
+  }
+  async function pageImage(P,n){
+    const pg=await P.pdf.getPage(n),v1=pg.getViewport({scale:1}),v=pg.getViewport({scale:1000/v1.width});
+    const cv=document.createElement("canvas");cv.width=Math.round(v.width);cv.height=Math.round(v.height);
+    const cx=cv.getContext("2d");cx.fillStyle="#fff";cx.fillRect(0,0,cv.width,cv.height);
+    await pg.render({canvasContext:cx,viewport:v}).promise;
+    let d=cv.toDataURL("image/jpeg",.6).split(",")[1];
+    if(d.length>850000)d=cv.toDataURL("image/jpeg",.42).split(",")[1];
+    cv.width=0;return d;
+  }
+  async function build(P,nums){
+    try{
+      wait("Getting your quiz ready…","Reading the pages you read.");
+      const texts=[];for(const n of nums){texts.push(await pageText(P,n));if(gone(P))return;}
+      const total=texts.reduce((a,t)=>a+t.length,0),scan=total/nums.length<120;
+      const body={mode:"quiz",count:NMCQ,written:NWR,topic:bookTitle(),language:lang(),level:lvl()};
+      if(scan){
+        const use=nums.slice(-MAXIMG);
+        wait("Getting your quiz ready…","This book is a scan, so I am reading the page pictures.");
+        body.images=[];for(const n of use){body.images.push(await pageImage(P,n));if(gone(P))return;}
+      }else{
+        body.pages=nums.map((n,i)=>"[Page "+n+"]\n"+texts[i].slice(0,PER_PAGE)).join("\n\n");
+      }
+      const d=await post(body,75000);
+      if(gone(P))return;
+      const mcq=Array.isArray(d.quiz)?d.quiz:[],wr=Array.isArray(d.written)?d.written:[];
+      if(mcq.length<3)throw new Error("The quiz could not be made. Please try again.");
+      if(P.__qq){P.__qq.fresh=0;if(P.__qq.btn)P.__qq.btn.classList.remove("qqpulse");}
+      run({mcq,written:wr,i:0,picked:[],wans:[]},P);
+    }catch(e){
+      log(e);if(!$(".qqm"))return;
+      fail(String(e&&e.message||"Something went wrong."),()=>build(P,nums));
+    }
+  }
+
+  /* ---------- questions ---------- */
+  function run(Q,P){
+    const total=Q.mcq.length+Q.written.length;
+    if(Q.i<Q.mcq.length)return showMcq(Q,P,total);
+    if(Q.i<total)return showWritten(Q,P,total);
+    return finish(Q,P);
+  }
+  function showMcq(Q,P,total){
+    const it=Q.mcq[Q.i];
+    sheet(`<div class="qqbar"><i style="width:${Math.round(Q.i/total*100)}%"></i></div>
+      <p class="qs">Question ${Q.i+1} of ${total}</p>
+      <div class="qqq">${E(it.q)}</div>${it.options.map((o,k)=>`<button class="qqo" data-k="${k}">${E(o)}</button>`).join("")}<div id="qqfb"></div>`);
+    let done=false;
+    document.querySelectorAll(".qqo").forEach(b=>b.onclick=()=>{
+      if(done)return;done=true;const k=+b.dataset.k;Q.picked[Q.i]=k;
+      document.querySelectorAll(".qqo").forEach(x=>{const j=+x.dataset.k;x.classList.add(j===it.answer?"ok":(j===k?"bad":"dim"));});
+      $("#qqfb").innerHTML=(it.why?'<div class="qqwhy"><b>'+(k===it.answer?"Correct! ":"Not quite. ")+"</b>"+E(it.why)+"</div>":"")+'<button class="qqb" id="qqnx">'+(Q.i+1<total?"Next":"Finish")+"</button>";
+      $("#qqnx").onclick=()=>{Q.i++;run(Q,P);};
+    });
+  }
+  function showWritten(Q,P,total){
+    const w=Q.written[Q.i-Q.mcq.length];
+    sheet(`<div class="qqbar"><i style="width:${Math.round(Q.i/total*100)}%"></i></div>
+      <p class="qs">Question ${Q.i+1} of ${total} · write your answer</p>
+      <div class="qqq">${E(w.q)}</div>
+      <textarea id="qqa" maxlength="600" placeholder="Type your answer in your own words"></textarea>
+      <button class="qqb" id="qqnx">${Q.i+1<total?"Next":"Finish"}</button>`);
+    $("#qqnx").onclick=()=>{Q.wans[Q.i-Q.mcq.length]=($("#qqa").value||"").trim();Q.i++;run(Q,P);};
+  }
+
+  /* ---------- marking and result ---------- */
+  async function finish(Q,P){
+    const idx=[];Q.written.forEach((w,j)=>{if(Q.wans[j])idx.push(j);});
+    Q.marks=Q.written.map(()=>({verdict:"wrong",comment:"No answer given."}));
+    if(idx.length){
+      wait("Marking your answers…","Almost done.");
+      try{
+        const d=await post({mode:"mark",language:lang(),level:lvl(),items:idx.map(j=>({q:Q.written[j].q,model:Q.written[j].model,answer:Q.wans[j]}))},60000);
+        if(Array.isArray(d.marks)&&d.marks.length===idx.length)idx.forEach((j,k)=>{Q.marks[j]=d.marks[k];});
+        else throw new Error("bad marks");
+      }catch(e){
+        log(e);if(!$(".qqm"))return;
+        sheet('<h3>Quick Quiz</h3><p class="qs">I could not mark your written answers this time.</p><button class="qqb" id="qqre">Try again</button><button class="qqb sec" id="qqsk">Skip written answers</button>');
+        $("#qqre").onclick=()=>finish(Q,P);
+        $("#qqsk").onclick=()=>{Q.marks=Q.written.map(()=>({verdict:"skipped",comment:""}));results(Q,P);};
+        return;
+      }
+    }
+    results(Q,P);
+  }
+  function results(Q,P){
+    let mc=0;Q.mcq.forEach((it,i)=>{if(Q.picked[i]===it.answer)mc++;});
+    const pts={right:1,almost:.5,wrong:0},skipped=Q.marks.length>0&&Q.marks.every(m=>m.verdict==="skipped");
+    let wp=0;Q.marks.forEach(m=>{wp+=pts[m.verdict]||0;});
+    const tot=Q.mcq.length+(skipped?0:Q.written.length),pct=Math.round((mc+(skipped?0:wp))/tot*100);
+    const msg=pct>=80?"Great job! You understood these pages well.":pct>=50?"Good effort. Look again at the parts you missed.":"Read these pages again, then try another quiz.";
+    sheet(`<div class="ctr"><h3>Quick Quiz</h3><div class="qqpct">${pct}%</div><b>${E(msg)}</b></div>
+      ${Q.written.map((w,j)=>{const m=Q.marks[j];if(!m||m.verdict==="skipped")return"";return`<div class="qqrev"><b>${E(w.q)}</b>
+        <span class="qqchip ${m.verdict}">${m.verdict==="right"?"Right":m.verdict==="almost"?"Almost right":"Not right"}</span> ${E(m.comment)}
+        <small>Model answer: ${E(w.model)}</small></div>`;}).join("")}
+      <button class="qqb" id="qqdn">Done</button><button class="qqb sec" id="qqnw">New quiz</button>`);
+    $("#qqdn").onclick=closeSheet;
+    $("#qqnw").onclick=()=>start(P);
+  }
+})();
+
+</script>
 </body>
 </html>
