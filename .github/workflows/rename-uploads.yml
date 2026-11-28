@@ -1,0 +1,33 @@
+name: Rename uploads
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  rename:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Remove version numbers from file names
+        run: |
+          changed=0
+          for f in *-*.*.*.*; do
+            [ -f "$f" ] || continue
+            new=$(echo "$f" | sed -E 's/-[0-9]+\.[0-9]+\.[0-9]+(\.[A-Za-z0-9]+)$/\1/')
+            if [ "$new" != "$f" ]; then
+              mv -f "$f" "$new"
+              changed=1
+            fi
+          done
+          if [ "$changed" = "1" ]; then
+            git config user.name "github-actions"
+            git config user.email "github-actions@users.noreply.github.com"
+            git add -A
+            git commit -m "Rename uploaded files"
+            git push
+          fi
